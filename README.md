@@ -1,75 +1,43 @@
-# React + TypeScript + Vite
+# Sistema de Gestión Financiera
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bienvenido al proyecto de Sistema de Gestión Financiera, una aplicación web diseñada para ayudar a los usuarios a gestionar sus finanzas de manera eficiente y efectiva.
 
-Currently, two official plugins are available:
+## Tecnologías Utilizadas
+- **React**: Una biblioteca de JavaScript para construir interfaces de usuario.
+- **TypeScript**: Un superconjunto de JavaScript que añade tipos estáticos.
+- **Vite**: Un entorno de desarrollo rápido y ligero.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Características
+- **Interfaz de Usuario Intuitiva**: Navegación fácil y accesible.
+- **Gestión de Ingresos y Gastos**: Permite a los usuarios registrar y categorizar sus transacciones.
+- **Informes y Análisis**: Genera informes visuales sobre el estado financiero del usuario.
+- **Autenticación de Usuarios**: Seguridad en el acceso a la aplicación.
 
-## React Compiler
+## Instalación
+Para instalar y ejecutar el proyecto, sigue estos pasos:
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/EmersonRodas9029/sistema_de_gestion_financiera_frontend.git
+   cd sistema_de_gestion_financiera_frontend
+   ```
+2. Instala las dependencias:
+   ```bash
+   npm install
+   ```
+3. Inicia el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Contribuciones
+Las contribuciones son bienvenidas. Si deseas contribuir, por favor sigue estos pasos:
+1. Haz un fork del repositorio.
+2. Crea una nueva rama (`git checkout -b feature/nueva-caracteristica`).
+3. Realiza tus cambios y haz un commit (`git commit -m 'Añadir nueva característica'`).
+4. Envía un pull request.
 
-## Expanding the ESLint configuration
+## Licencia
+Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-# sistema_de_gestion_financiera_frontend
-# sistema_de_gestion_financiera_frontend
+## Contacto
+Para más información, puedes contactar a [tu nombre o correo electrónico].
