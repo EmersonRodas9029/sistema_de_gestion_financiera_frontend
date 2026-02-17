@@ -72,3 +72,4 @@ export default defineConfig([
 ])
 ```
 # sistema_de_gestion_financiera_frontend
+# sistema_de_gestion_financiera_frontend
