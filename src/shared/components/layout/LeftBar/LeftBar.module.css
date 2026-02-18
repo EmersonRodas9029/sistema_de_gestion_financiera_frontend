@@ -1,0 +1,17 @@
+/* Estilos adicionales si necesitas personalizar más allá de Tailwind */
+.scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
