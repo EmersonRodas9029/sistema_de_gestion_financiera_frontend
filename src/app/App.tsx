@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { MainLayout } from '../shared/components/layout/MainLayout';
 
 // Páginas de ejemplo
@@ -26,21 +26,45 @@ const Incomes = () => (
   </div>
 );
 
-export const App = () => {
+// Componente wrapper para obtener la ubicación actual
+const AppContent = () => {
+  const location = useLocation();
   const userRole = 'admin';
   const userName = 'Emerson';
 
+  // Determinar el título de la página según la ruta
+  const getPageTitle = () => {
+    switch(location.pathname) {
+      case '/dashboard':
+        return 'Dashboard';
+      case '/admin/clients':
+        return 'Gestión de Clientes';
+      case '/expenses':
+        return 'Gastos';
+      case '/incomes':
+        return 'Ingresos';
+      default:
+        return 'Dashboard';
+    }
+  };
+
+  return (
+    <MainLayout userRole={userRole} userName={userName} pageTitle={getPageTitle()}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin/clients" element={<Clients />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/incomes" element={<Incomes />} />
+        <Route path="/" element={<Dashboard />} />
+      </Routes>
+    </MainLayout>
+  );
+};
+
+export const App = () => {
   return (
     <BrowserRouter>
-      <MainLayout userRole={userRole} userName={userName}>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin/clients" element={<Clients />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/incomes" element={<Incomes />} />
-          <Route path="/" element={<Dashboard />} />
-        </Routes>
-      </MainLayout>
+      <AppContent />
     </BrowserRouter>
   );
 };

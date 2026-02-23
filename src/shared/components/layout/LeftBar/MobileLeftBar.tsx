@@ -1,25 +1,21 @@
-import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { LeftBar } from './LeftBar';
 
-export const MobileLeftBar = ({ userRole, userName }: { userRole: 'admin' | 'client', userName?: string }) => {
-  const [isOpen, setIsOpen] = useState(false);
+interface MobileLeftBarProps {
+  userRole: 'admin' | 'client';
+  userName?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
+export const MobileLeftBar = ({ userRole, userName, isOpen = false, onClose }: MobileLeftBarProps) => {
   return (
     <>
-      {/* Botón de menú hamburguesa */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
       {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={onClose}
         />
       )}
 
