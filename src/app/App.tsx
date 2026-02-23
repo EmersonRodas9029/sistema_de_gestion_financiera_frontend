@@ -1,5 +1,15 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from '../features/auth/components/LoginPage';
 import { MainLayout } from '../shared/components/layout/MainLayout';
+
+// =====================================================
+// CONFIGURACIÓN DE AUTENTICACIÓN
+// =====================================================
+// Cambia esta variable a true cuando quieras activar la autenticación
+// - false: Puedes acceder a todas las páginas sin login
+// - true:  Obliga a pasar por login primero
+const REQUIRE_AUTH = false;
+// =====================================================
 
 // Páginas de ejemplo
 const Dashboard = () => (
@@ -26,36 +36,56 @@ const Incomes = () => (
   </div>
 );
 
-// Componente wrapper para obtener la ubicación actual
-const AppContent = () => {
-  const location = useLocation();
+const Categories = () => (
+  <div className="bg-white p-6 rounded-lg shadow">
+    <h1 className="text-gray-900">Categories Page</h1>
+  </div>
+);
+
+const Goals = () => (
+  <div className="bg-white p-6 rounded-lg shadow">
+    <h1 className="text-gray-900">Goals Page</h1>
+  </div>
+);
+
+const Reports = () => (
+  <div className="bg-white p-6 rounded-lg shadow">
+    <h1 className="text-gray-900">Reports Page</h1>
+  </div>
+);
+
+const Settings = () => (
+  <div className="bg-white p-6 rounded-lg shadow">
+    <h1 className="text-gray-900">Settings Page</h1>
+  </div>
+);
+
+// Componente para rutas protegidas
+const ProtectedRoutes = () => {
   const userRole = 'admin';
   const userName = 'Emerson';
+  const isAuthenticated = true; // Simulación de autenticación
 
-  // Determinar el título de la página según la ruta
-  const getPageTitle = () => {
-    switch(location.pathname) {
-      case '/dashboard':
-        return 'Dashboard';
-      case '/admin/clients':
-        return 'Gestión de Clientes';
-      case '/expenses':
-        return 'Gastos';
-      case '/incomes':
-        return 'Ingresos';
-      default:
-        return 'Dashboard';
-    }
-  };
+  // Si REQUIRE_AUTH está activado y no está autenticado, redirigir al login
+  if (REQUIRE_AUTH && !isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
+  // Si REQUIRE_AUTH está desactivado, mostrar las rutas directamente
   return (
-    <MainLayout userRole={userRole} userName={userName} pageTitle={getPageTitle()}>
+    <MainLayout userRole={userRole} userName={userName}>
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin/clients" element={<Clients />} />
+        <Route path="/admin/reports" element={<Reports />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/incomes" element={<Incomes />} />
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/analytics" element={<Reports />} />
+        <Route path="/wallet" element={<Incomes />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </MainLayout>
   );
@@ -64,7 +94,10 @@ const AppContent = () => {
 export const App = () => {
   return (
     <BrowserRouter>
-      <AppContent />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/*" element={<ProtectedRoutes />} />
+      </Routes>
     </BrowserRouter>
   );
 };
