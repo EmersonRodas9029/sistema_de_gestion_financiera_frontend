@@ -7,7 +7,7 @@ import { MainLayout } from '../shared/components/layout/MainLayout';
 // =====================================================
 // Cambia esta variable a true cuando quieras activar la autenticación
 // - false: Puedes acceder a todas las páginas sin login
-// - true:  Obliga a pasar por login primero
+// - true:  Obliga a pasar por login primeroa
 const REQUIRE_AUTH = false;
 // =====================================================
 

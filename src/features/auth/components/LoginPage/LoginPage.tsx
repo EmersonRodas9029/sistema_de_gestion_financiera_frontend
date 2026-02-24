@@ -18,7 +18,7 @@ export const LoginPage = () => {
     <div className="min-h-screen flex">
       {/* Left side - Hero section with gradient */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Fondo con gradiente usando los colores de la paleta */}
+        {/* Fondo con gradiente usando los colores de la paletaa */}
         <div 
           className="absolute inset-0"
           style={{ 

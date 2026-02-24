@@ -119,7 +119,7 @@ export const LoginForm = ({ onBack }: LoginFormProps) => {
           <span>Iniciar Sesión</span>
         </button>
 
-        {/* Demo credentials */}
+        {/* Demo credentials a*/}
         <div className="bg-gray-100 p-4 rounded-xl">
           <p className="text-xs text-gray-600 mb-2">Credenciales de demostración:</p>
           <div className="space-y-1 text-sm">
