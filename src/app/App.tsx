@@ -7,6 +7,7 @@ import { IncomesPage } from '../features/incomes/pages/IncomesPage';
 import { ExpensesPage } from '../features/expenses/pages/ExpensesPage';
 import { CategoriesPage } from '../features/categories/pages/CategoriesPage';
 import { GoalsPage } from '../features/goals/pages/GoalsPage';
+import { ChartsPage } from '../features/charts/pages/ChartsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -45,12 +46,6 @@ const Wallet = () => (
   </div>
 );
 
-const Analytics = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Analytics Page</h1>
-  </div>
-);
-
 // Componente para rutas protegidas
 const ProtectedRoutes = () => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
@@ -73,7 +68,7 @@ const ProtectedRoutes = () => {
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/analytics" element={<ChartsPage />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
