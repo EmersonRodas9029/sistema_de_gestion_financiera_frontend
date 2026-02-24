@@ -4,6 +4,7 @@ import { MainLayout } from '../shared/components/layout/MainLayout';
 import { HomePage } from '../features/home/pages/HomePage';
 import { AdminPage } from '../features/admin/pages/AdminPage';
 import { IncomesPage } from '../features/incomes/pages/IncomesPage';
+import { ExpensesPage } from '../features/expenses/pages/ExpensesPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -21,12 +22,6 @@ const Dashboard = () => (
 const Clients = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Clients Management</h1>
-  </div>
-);
-
-const Expenses = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Expenses Page</h1>
   </div>
 );
 
@@ -85,7 +80,7 @@ const ProtectedRoutes = () => {
         <Route path="/admin/clients" element={<Clients />} />
         <Route path="/admin/reports" element={<Reports />} />
         <Route path="/incomes" element={<IncomesPage />} />
-        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/analytics" element={<Analytics />} />
