@@ -11,6 +11,7 @@ import { ChartsPage } from '../features/charts/pages/ChartsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
 import { SavingsPage } from '../features/savings/pages/SavingsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
+import { SettingsPage } from '../features/settings/pages/SettingsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -28,12 +29,6 @@ const Dashboard = () => (
 const Reports = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Reports Page</h1>
-  </div>
-);
-
-const Settings = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Settings Page</h1>
   </div>
 );
 
@@ -69,7 +64,7 @@ const ProtectedRoutes = () => {
         <Route path="/analytics" element={<ChartsPage />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </MainLayout>
   );
