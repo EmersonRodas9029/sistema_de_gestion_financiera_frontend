@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -33,18 +33,24 @@ interface LeftBarProps {
 }
 
 export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarProps) => {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    navigate('/login');
+  };
+
   const menuItems: MenuItem[] = [
-    // Sección Principal
     {
-      path: '/dashboard',
-      name: 'Dashboard',
+      path: '/',
+      name: 'Inicio',
       icon: <LayoutDashboard size={20} />,
       roles: ['admin', 'client'],
       section: 'main'
     },
-    // Sección Gestión (solo admin)
     {
       path: '/admin/clients',
       name: 'Clientes',
@@ -59,7 +65,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       roles: ['admin'],
       section: 'management'
     },
-    // Sección Finanzas (solo client)
     {
       path: '/incomes',
       name: 'Ingresos',
@@ -82,21 +87,12 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       section: 'main'
     },
     {
-      path: '/wallet',
-      name: 'Billetera',
-      icon: <Wallet size={20} />,
-      roles: ['client'],
-      section: 'main'
-    },
-    // Sección Categorías (compartida)
-    {
       path: '/categories',
       name: 'Categorías',
       icon: <FolderTree size={20} />,
       roles: ['admin', 'client'],
       section: 'management'
     },
-    // Sección Análisis
     {
       path: '/analytics',
       name: 'Análisis',
@@ -104,7 +100,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       roles: ['admin', 'client'],
       section: 'other'
     },
-    // Sección Configuración
     {
       path: '/settings',
       name: 'Configuración',
@@ -118,7 +113,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
     item.roles.includes(userRole)
   );
 
-  // Agrupar items por sección
   const mainItems = filteredMenuItems.filter(item => item.section === 'main');
   const managementItems = filteredMenuItems.filter(item => item.section === 'management');
   const otherItems = filteredMenuItems.filter(item => item.section === 'other');
@@ -169,11 +163,10 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         background: 'linear-gradient(180deg, #321D28 0%, #6E4068 50%, #BC455F 100%)'
       }}
     >
-      {/* Logo y toggle */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 mb-4">
         {!collapsed && (
           <h1 className="text-xl font-bold text-white tracking-tight">
-            Finanzas
+            FinanSys
           </h1>
         )}
         <button
@@ -184,7 +177,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         </button>
       </div>
 
-      {/* Perfil de usuario */}
       <div className="flex items-center p-3 border-b border-white/10 mb-4">
         <div 
           className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
@@ -204,16 +196,13 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         )}
       </div>
 
-      {/* Navegación con secciones separadas */}
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         {renderMenuSection(mainItems, 'PRINCIPAL')}
         {renderMenuSection(managementItems, 'GESTIÓN')}
         {renderMenuSection(otherItems, 'OTROS')}
       </nav>
 
-      {/* Botones adicionales */}
       <div className="p-3 border-t border-white/10">
-        {/* Notificaciones */}
         <button
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${
             collapsed ? 'justify-center' : 'space-x-3'
@@ -228,7 +217,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
           )}
         </button>
 
-        {/* Ayuda */}
         <button
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-2 ${
             collapsed ? 'justify-center' : 'space-x-3'
@@ -238,12 +226,11 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
           {!collapsed && <span className="text-sm font-medium">Ayuda</span>}
         </button>
 
-        {/* Cerrar sesión */}
         <button
+          onClick={handleLogout}
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300 hover:translate-x-1 ${
             collapsed ? 'justify-center' : 'space-x-3'
           }`}
-          onClick={() => console.log('Logout')}
         >
           <LogOut size={20} />
           {!collapsed && <span className="text-sm font-medium">Cerrar sesión</span>}
