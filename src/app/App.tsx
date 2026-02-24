@@ -9,6 +9,7 @@ import { CategoriesPage } from '../features/categories/pages/CategoriesPage';
 import { GoalsPage } from '../features/goals/pages/GoalsPage';
 import { ChartsPage } from '../features/charts/pages/ChartsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
+import { SavingsPage } from '../features/savings/pages/SavingsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -62,6 +63,7 @@ const ProtectedRoutes = () => {
         <Route path="/incomes" element={<IncomesPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/savings" element={<SavingsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/analytics" element={<ChartsPage />} />
         <Route path="/wallet" element={<Wallet />} />
