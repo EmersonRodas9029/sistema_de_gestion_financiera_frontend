@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MainLayout } from '../shared/components/layout/MainLayout';
 import { AdminPage } from '../features/admin/pages/AdminPage';
+import { HomePage } from '../features/home/pages/HomePage';
 
 // Páginas de ejemplo (las crearemos después)
 const Dashboard = () => (
@@ -35,12 +36,12 @@ export const App = () => {
     <BrowserRouter>
       <MainLayout userRole={userRole} userName={userName}>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/clients" element={<Clients />} />
           <Route path="/expenses" element={<Expenses />} />
           <Route path="/incomes" element={<Incomes />} />
-          <Route path="/" element={<AdminPage />} />
         </Routes>
       </MainLayout>
     </BrowserRouter>
