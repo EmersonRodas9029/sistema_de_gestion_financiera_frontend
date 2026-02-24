@@ -5,6 +5,7 @@ import { HomePage } from '../features/home/pages/HomePage';
 import { AdminPage } from '../features/admin/pages/AdminPage';
 import { IncomesPage } from '../features/incomes/pages/IncomesPage';
 import { ExpensesPage } from '../features/expenses/pages/ExpensesPage';
+import { CategoriesPage } from '../features/categories/pages/CategoriesPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -22,12 +23,6 @@ const Dashboard = () => (
 const Clients = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Clients Management</h1>
-  </div>
-);
-
-const Categories = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Categories Page</h1>
   </div>
 );
 
@@ -82,7 +77,7 @@ const ProtectedRoutes = () => {
         <Route path="/incomes" element={<IncomesPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/goals" element={<Goals />} />
-        <Route path="/categories" element={<Categories />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/settings" element={<Settings />} />
