@@ -15,7 +15,31 @@ import {
   FolderTree,
   FileText,
   Bell,
-  HelpCircle
+  HelpCircle,
+  Home,
+  BarChart3,
+  PiggyBank,
+  CreditCard,
+  Receipt,
+  UserCircle,
+  Briefcase,
+  Award,
+  Gift,
+  Star,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Calendar,
+  DollarSign,
+  ShoppingBag,
+  Heart,
+  BookOpen,
+  Coffee,
+  Dog,
+  Sparkles,
+  Activity,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon
 } from 'lucide-react';
 
 interface MenuItem {
@@ -24,6 +48,7 @@ interface MenuItem {
   icon: React.ReactNode;
   roles: ('admin' | 'client')[];
   section?: 'main' | 'management' | 'other';
+  badge?: number;
 }
 
 interface LeftBarProps {
@@ -43,13 +68,69 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
     navigate('/login');
   };
 
+  const handleNotifications = () => {
+    navigate('/notifications');
+  };
+
+  // Notificaciones no leídas (simulado)
+  const unreadNotifications = 3;
+
   const menuItems: MenuItem[] = [
     {
       path: '/',
       name: 'Inicio',
+      icon: <Home size={20} />,
+      roles: ['admin', 'client'],
+      section: 'main'
+    },
+    {
+      path: '/dashboard',
+      name: 'Dashboard',
       icon: <LayoutDashboard size={20} />,
       roles: ['admin', 'client'],
       section: 'main'
+    },
+    {
+      path: '/incomes',
+      name: 'Ingresos',
+      icon: <TrendingUpIcon size={20} />,
+      roles: ['admin', 'client'],
+      section: 'main'
+    },
+    {
+      path: '/expenses',
+      name: 'Gastos',
+      icon: <TrendingDownIcon size={20} />,
+      roles: ['admin', 'client'],
+      section: 'main'
+    },
+    {
+      path: '/savings',
+      name: 'Metas de Ahorro',
+      icon: <PiggyBank size={20} />,
+      roles: ['admin', 'client'],
+      section: 'main'
+    },
+    {
+      path: '/goals',
+      name: 'Metas',
+      icon: <Target size={20} />,
+      roles: ['admin', 'client'],
+      section: 'main'
+    },
+    {
+      path: '/categories',
+      name: 'Categorías',
+      icon: <FolderTree size={20} />,
+      roles: ['admin', 'client'],
+      section: 'management'
+    },
+    {
+      path: '/analytics',
+      name: 'Análisis',
+      icon: <BarChart3 size={20} />,
+      roles: ['admin', 'client'],
+      section: 'other'
     },
     {
       path: '/admin/clients',
@@ -66,39 +147,11 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       section: 'management'
     },
     {
-      path: '/incomes',
-      name: 'Ingresos',
-      icon: <TrendingUp size={20} />,
+      path: '/wallet',
+      name: 'Billetera',
+      icon: <Wallet size={20} />,
       roles: ['client'],
       section: 'main'
-    },
-    {
-      path: '/expenses',
-      name: 'Gastos',
-      icon: <TrendingDown size={20} />,
-      roles: ['client'],
-      section: 'main'
-    },
-    {
-      path: '/goals',
-      name: 'Metas',
-      icon: <Target size={20} />,
-      roles: ['client'],
-      section: 'main'
-    },
-    {
-      path: '/categories',
-      name: 'Categorías',
-      icon: <FolderTree size={20} />,
-      roles: ['admin', 'client'],
-      section: 'management'
-    },
-    {
-      path: '/analytics',
-      name: 'Análisis',
-      icon: <PieChart size={20} />,
-      roles: ['admin', 'client'],
-      section: 'other'
     },
     {
       path: '/settings',
@@ -163,6 +216,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         background: 'linear-gradient(180deg, #321D28 0%, #6E4068 50%, #BC455F 100%)'
       }}
     >
+      {/* Logo y toggle */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 mb-4">
         {!collapsed && (
           <h1 className="text-xl font-bold text-white tracking-tight">
@@ -177,6 +231,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         </button>
       </div>
 
+      {/* Perfil de usuario */}
       <div className="flex items-center p-3 border-b border-white/10 mb-4">
         <div 
           className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg"
@@ -196,27 +251,37 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         )}
       </div>
 
+      {/* Navegación con secciones separadas */}
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         {renderMenuSection(mainItems, 'PRINCIPAL')}
         {renderMenuSection(managementItems, 'GESTIÓN')}
         {renderMenuSection(otherItems, 'OTROS')}
       </nav>
 
+      {/* Botones adicionales */}
       <div className="p-3 border-t border-white/10">
+        {/* Notificaciones - AHORA NAVEGA A LA PÁGINA */}
         <button
+          onClick={handleNotifications}
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${
             collapsed ? 'justify-center' : 'space-x-3'
           }`}
         >
           <Bell size={20} />
           {!collapsed && <span className="text-sm font-medium">Notificaciones</span>}
-          {!collapsed && (
+          {!collapsed && unreadNotifications > 0 && (
             <span className="ml-auto bg-[#F05984] text-white text-xs px-1.5 py-0.5 rounded-full">
-              3
+              {unreadNotifications}
+            </span>
+          )}
+          {collapsed && unreadNotifications > 0 && (
+            <span className="absolute -top-1 -right-1 bg-[#F05984] text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+              {unreadNotifications}
             </span>
           )}
         </button>
 
+        {/* Ayuda */}
         <button
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-2 ${
             collapsed ? 'justify-center' : 'space-x-3'
@@ -226,6 +291,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
           {!collapsed && <span className="text-sm font-medium">Ayuda</span>}
         </button>
 
+        {/* Cerrar sesión */}
         <button
           onClick={handleLogout}
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300 hover:translate-x-1 ${

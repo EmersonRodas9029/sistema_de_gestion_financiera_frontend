@@ -10,6 +10,7 @@ import { GoalsPage } from '../features/goals/pages/GoalsPage';
 import { ChartsPage } from '../features/charts/pages/ChartsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
 import { SavingsPage } from '../features/savings/pages/SavingsPage';
+import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -67,6 +68,7 @@ const ProtectedRoutes = () => {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/analytics" element={<ChartsPage />} />
         <Route path="/wallet" element={<Wallet />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </MainLayout>
