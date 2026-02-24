@@ -3,13 +3,11 @@ import { LoginPage } from '../features/auth/pages/LoginPage';
 import { MainLayout } from '../shared/components/layout/MainLayout';
 import { HomePage } from '../features/home/pages/HomePage';
 import { AdminPage } from '../features/admin/pages/AdminPage';
+import { IncomesPage } from '../features/incomes/pages/IncomesPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
 // =====================================================
-// Cambia esta variable a true cuando quieras activar la autenticación
-// - false: Puedes acceder a todas las páginas sin login
-// - true:  Obliga a pasar por login primero
 const REQUIRE_AUTH = false;
 // =====================================================
 
@@ -29,12 +27,6 @@ const Clients = () => (
 const Expenses = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Expenses Page</h1>
-  </div>
-);
-
-const Incomes = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Incomes Page</h1>
   </div>
 );
 
@@ -62,19 +54,28 @@ const Settings = () => (
   </div>
 );
 
+const Wallet = () => (
+  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+    <h1 className="text-white text-2xl font-bold">Wallet Page</h1>
+  </div>
+);
+
+const Analytics = () => (
+  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+    <h1 className="text-white text-2xl font-bold">Analytics Page</h1>
+  </div>
+);
+
 // Componente para rutas protegidas
 const ProtectedRoutes = () => {
-  // Obtener datos de autenticación del localStorage
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
   const userRole = localStorage.getItem('userRole') as 'admin' | 'client' || 'client';
   const userName = localStorage.getItem('userName') || 'Usuario';
 
-  // Si REQUIRE_AUTH está activado y no está autenticado, redirigir al login
   if (REQUIRE_AUTH && !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Si REQUIRE_AUTH está desactivado, mostrar las rutas directamente
   return (
     <MainLayout userRole={userRole} userName={userName}>
       <Routes>
@@ -83,12 +84,12 @@ const ProtectedRoutes = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/clients" element={<Clients />} />
         <Route path="/admin/reports" element={<Reports />} />
+        <Route path="/incomes" element={<IncomesPage />} />
         <Route path="/expenses" element={<Expenses />} />
-        <Route path="/incomes" element={<Incomes />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/categories" element={<Categories />} />
-        <Route path="/analytics" element={<Reports />} />
-        <Route path="/wallet" element={<Incomes />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/wallet" element={<Wallet />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </MainLayout>
