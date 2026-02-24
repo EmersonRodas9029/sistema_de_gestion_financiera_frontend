@@ -21,7 +21,8 @@ import {
   FolderTree,
   BarChart3,
   Goal,
-  ArrowRight
+  ArrowRight,
+  Users
 } from 'lucide-react';
 
 interface Transaction {
@@ -60,7 +61,7 @@ export const HomePage = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [showWelcome, setShowWelcome] = useState(true);
 
-  // Opciones rápidas - 6 apartados principales
+  // Opciones rápidas - 7 apartados principales
   const quickOptions: QuickOption[] = [
     {
       id: 'expenses',
@@ -69,7 +70,7 @@ export const HomePage = () => {
       icon: <TrendingDown size={32} />,
       color: 'from-red-500/20 to-red-600/20',
       route: '/expenses',
-      stats: '1,245.50'
+      stats: '$1,245'
     },
     {
       id: 'categories',
@@ -96,7 +97,16 @@ export const HomePage = () => {
       icon: <TrendingUp size={32} />,
       color: 'from-green-500/20 to-green-600/20',
       route: '/incomes',
-      stats: '3,250.00'
+      stats: '$3,250'
+    },
+    {
+      id: 'clients',
+      title: 'Clientes',
+      description: 'Gestiona tus clientes',
+      icon: <Users size={32} />,
+      color: 'from-cyan-500/20 to-cyan-600/20',
+      route: '/admin/clients',
+      stats: '28 activos'
     },
     {
       id: 'financial-goal',
@@ -171,7 +181,8 @@ export const HomePage = () => {
   const quickStats = {
     balance: 12580.75,
     monthlyIncome: 3250.00,
-    monthlyExpenses: 1245.50
+    monthlyExpenses: 1245.50,
+    totalClients: 28
   };
 
   useEffect(() => {
@@ -231,7 +242,7 @@ export const HomePage = () => {
                 {currentTime.charAt(0).toUpperCase() + currentTime.slice(1)}
               </p>
               <p className="text-white/40 text-sm mt-2">
-                Tu balance total es {formatCurrency(quickStats.balance)}
+                Tu balance total es {formatCurrency(quickStats.balance)} | {quickStats.totalClients} clientes activos
               </p>
             </div>
             <button className="p-3 hover:bg-white/10 rounded-xl transition-colors">
@@ -242,7 +253,7 @@ export const HomePage = () => {
       )}
 
       {/* Balance Rápido */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Balance Total</p>
           <p className="text-2xl font-bold text-white">{formatCurrency(quickStats.balance)}</p>
@@ -253,7 +264,7 @@ export const HomePage = () => {
               <TrendingUp size={16} className="text-green-400" />
             </div>
             <div>
-              <p className="text-white/60 text-sm">Ingresos del mes</p>
+              <p className="text-white/60 text-sm">Ingresos</p>
               <p className="text-white font-bold">{formatCurrency(quickStats.monthlyIncome)}</p>
             </div>
           </div>
@@ -264,17 +275,28 @@ export const HomePage = () => {
               <TrendingDown size={16} className="text-red-400" />
             </div>
             <div>
-              <p className="text-white/60 text-sm">Gastos del mes</p>
+              <p className="text-white/60 text-sm">Gastos</p>
               <p className="text-white font-bold">{formatCurrency(quickStats.monthlyExpenses)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-cyan-500/20 rounded-lg">
+              <Users size={16} className="text-cyan-400" />
+            </div>
+            <div>
+              <p className="text-white/60 text-sm">Clientes</p>
+              <p className="text-white font-bold">{quickStats.totalClients}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 6 Apartados Principales */}
+      {/* 7 Apartados Principales */}
       <div>
         <h2 className="text-xl font-semibold text-white mb-4">Accesos Rápidos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {quickOptions.map((option) => (
             <button
               key={option.id}
