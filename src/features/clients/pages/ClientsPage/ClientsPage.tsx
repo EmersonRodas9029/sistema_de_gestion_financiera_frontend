@@ -58,7 +58,88 @@ import {
   Clock as ClockIcon,
   CheckCircle as CheckCircleIcon,
   XCircle as XCircleIcon,
-  AlertCircle as AlertCircleIcon
+  AlertCircle as AlertCircleIcon,
+  X,
+  Save,
+  Plus,
+  Upload,
+  Camera,
+  Lock,
+  Unlock,
+  Ban,
+  RefreshCcw,
+  Send,
+  Printer,
+  Share2,
+  Link,
+  Copy,
+  Flag,
+  Tag,
+  FolderTree,
+  Archive,
+  ArchiveRestore,
+  Bell,
+  BellOff,
+  Shield,
+  ShieldOff,
+  Key,
+  Fingerprint,
+  Globe,
+  Languages,
+  Moon,
+  Sun,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Wifi,
+  WifiOff,
+  Bluetooth,
+  BluetoothConnected,
+  BluetoothOff,
+  Volume2,
+  VolumeX,
+  Vibrate,
+  Battery,
+  BatteryCharging,
+  BatteryFull,
+  BatteryLow,
+  BatteryMedium,
+  BatteryWarning,
+  Server,
+  Cloud,
+  CloudOff,
+  Database,
+  HardDrive,
+  Cpu,
+  Thermometer,
+  Fan,
+  Droplet,
+  Wind,
+  Zap,
+  ZapOff,
+  Sparkles,
+  Palette,
+  Brush,
+  Type,
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  List,
+  ListOrdered,
+  ListChecks,
+  Minus,
+  MinusCircle,
+  PlusCircle,
+  XCircle as XCircleIcon2,
+  CheckCircle as CheckCircleIcon2,
+  AlertTriangle,
+  Info,
+  HelpCircle
 } from 'lucide-react';
 
 interface Client {
@@ -72,14 +153,16 @@ interface Client {
   city: string;
   country: string;
   type: 'individual' | 'company' | 'enterprise';
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
-  plan: 'basic' | 'professional' | 'enterprise' | 'custom';
+  status: 'active' | 'inactive' | 'pending' | 'suspended' | 'blocked';
+  plan: 'basic' | 'professional' | 'enterprise' | 'custom' | 'trial';
   since: string;
+  lastLogin: string;
   lastContact: string;
   totalTransactions: number;
   totalSpent: number;
   totalInvoices: number;
   pendingInvoices: number;
+  overdueInvoices: number;
   averageTicket: number;
   creditLimit?: number;
   currentCredit?: number;
@@ -92,6 +175,9 @@ interface Client {
   avatar?: string;
   contacts?: Contact[];
   projects?: Project[];
+  documents?: Document[];
+  activityLog?: Activity[];
+  settings?: ClientSettings;
 }
 
 interface Contact {
@@ -106,11 +192,39 @@ interface Contact {
 interface Project {
   id: string;
   name: string;
-  status: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
   budget: number;
+  spent: number;
   progress: number;
   startDate: string;
   endDate: string;
+}
+
+interface Document {
+  id: string;
+  name: string;
+  type: 'invoice' | 'contract' | 'proposal' | 'report' | 'other';
+  size: string;
+  date: string;
+  url: string;
+}
+
+interface Activity {
+  id: string;
+  type: 'login' | 'transaction' | 'payment' | 'document' | 'note' | 'status';
+  description: string;
+  date: string;
+  user?: string;
+}
+
+interface ClientSettings {
+  notifications: boolean;
+  autoInvoices: boolean;
+  paymentReminders: boolean;
+  monthlyReports: boolean;
+  twoFactorAuth: boolean;
+  apiAccess: boolean;
+  customDomain?: string;
 }
 
 interface ClientSummary {
@@ -118,11 +232,17 @@ interface ClientSummary {
   activeClients: number;
   inactiveClients: number;
   pendingClients: number;
+  suspendedClients: number;
+  blockedClients: number;
+  trialClients: number;
   totalRevenue: number;
   averageSpent: number;
   topClients: number;
   newThisMonth: number;
+  newThisWeek: number;
+  churnRate: number;
   growth: number;
+  projectedRevenue: number;
 }
 
 export const ClientsPage = () => {
@@ -131,14 +251,24 @@ export const ClientsPage = () => {
   const [selectedType, setSelectedType] = useState<string>('todos');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPlan, setSelectedPlan] = useState<string>('todos');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'detailed'>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'spent' | 'transactions'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'spent' | 'transactions' | 'status'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [dateRange, setDateRange] = useState<{start: string; end: string}>({
+    start: '',
+    end: ''
+  });
 
   const itemsPerPage = 12;
 
@@ -146,13 +276,19 @@ export const ClientsPage = () => {
   const summary: ClientSummary = {
     totalClients: 156,
     activeClients: 128,
-    inactiveClients: 18,
-    pendingClients: 10,
+    inactiveClients: 12,
+    pendingClients: 8,
+    suspendedClients: 5,
+    blockedClients: 3,
+    trialClients: 15,
     totalRevenue: 285450.75,
     averageSpent: 2230.50,
     topClients: 15,
     newThisMonth: 12,
-    growth: 8.5
+    newThisWeek: 3,
+    churnRate: 2.5,
+    growth: 8.5,
+    projectedRevenue: 325000
   };
 
   // Datos de ejemplo - Clientes
@@ -171,11 +307,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'enterprise',
       since: '2023-01-15',
+      lastLogin: '2024-02-24 09:30',
       lastContact: '2024-02-23',
       totalTransactions: 145,
       totalSpent: 45250.75,
       totalInvoices: 28,
       pendingInvoices: 2,
+      overdueInvoices: 0,
       averageTicket: 312.50,
       creditLimit: 50000,
       currentCredit: 12500,
@@ -186,6 +324,14 @@ export const ClientsPage = () => {
       notes: 'Cliente VIP, proyectos recurrentes',
       tags: ['vip', 'tecnología', 'recurrente'],
       avatar: 'https://i.pravatar.cc/150?u=1',
+      settings: {
+        notifications: true,
+        autoInvoices: true,
+        paymentReminders: true,
+        monthlyReports: true,
+        twoFactorAuth: true,
+        apiAccess: true
+      },
       contacts: [
         {
           id: 'CON-001',
@@ -202,9 +348,34 @@ export const ClientsPage = () => {
           name: 'Desarrollo Web App',
           status: 'in-progress',
           budget: 15000,
+          spent: 9750,
           progress: 65,
           startDate: '2024-01-10',
           endDate: '2024-04-30'
+        }
+      ],
+      documents: [
+        {
+          id: 'DOC-001',
+          name: 'Contrato anual 2024',
+          type: 'contract',
+          size: '2.4 MB',
+          date: '2024-01-10',
+          url: '#'
+        }
+      ],
+      activityLog: [
+        {
+          id: 'ACT-001',
+          type: 'login',
+          description: 'Inicio de sesión',
+          date: '2024-02-24 09:30'
+        },
+        {
+          id: 'ACT-002',
+          type: 'payment',
+          description: 'Pago recibido $2,500',
+          date: '2024-02-23 15:20'
         }
       ]
     },
@@ -222,16 +393,26 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'professional',
       since: '2023-03-20',
+      lastLogin: '2024-02-23 14:15',
       lastContact: '2024-02-22',
       totalTransactions: 67,
       totalSpent: 12450.00,
       totalInvoices: 15,
       pendingInvoices: 1,
+      overdueInvoices: 0,
       averageTicket: 185.50,
       paymentMethod: 'tarjeta',
       paymentTerms: '15 días',
       tags: ['freelance', 'diseño'],
-      avatar: 'https://i.pravatar.cc/150?u=2'
+      avatar: 'https://i.pravatar.cc/150?u=2',
+      settings: {
+        notifications: true,
+        autoInvoices: false,
+        paymentReminders: true,
+        monthlyReports: false,
+        twoFactorAuth: false,
+        apiAccess: false
+      }
     },
     {
       id: 'CLI-003',
@@ -247,11 +428,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'enterprise',
       since: '2022-11-05',
+      lastLogin: '2024-02-22 11:30',
       lastContact: '2024-02-21',
       totalTransactions: 234,
       totalSpent: 89750.25,
       totalInvoices: 42,
       pendingInvoices: 3,
+      overdueInvoices: 1,
       averageTicket: 385.00,
       creditLimit: 100000,
       currentCredit: 34500,
@@ -260,7 +443,15 @@ export const ClientsPage = () => {
       taxId: 'A-87654321',
       website: 'www.constructorarodriguez.com',
       tags: ['construcción', 'empresa', 'vip'],
-      avatar: 'https://i.pravatar.cc/150?u=3'
+      avatar: 'https://i.pravatar.cc/150?u=3',
+      settings: {
+        notifications: true,
+        autoInvoices: true,
+        paymentReminders: true,
+        monthlyReports: true,
+        twoFactorAuth: true,
+        apiAccess: true
+      }
     },
     {
       id: 'CLI-004',
@@ -276,11 +467,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'professional',
       since: '2023-06-12',
+      lastLogin: '2024-02-21 16:45',
       lastContact: '2024-02-20',
       totalTransactions: 89,
       totalSpent: 18750.50,
       totalInvoices: 18,
       pendingInvoices: 0,
+      overdueInvoices: 0,
       averageTicket: 210.50,
       paymentMethod: 'tarjeta',
       paymentTerms: '30 días',
@@ -299,18 +492,28 @@ export const ClientsPage = () => {
       country: 'España',
       type: 'individual',
       status: 'pending',
-      plan: 'basic',
+      plan: 'trial',
       since: '2024-02-01',
+      lastLogin: '2024-02-19 10:20',
       lastContact: '2024-02-19',
       totalTransactions: 12,
       totalSpent: 2350.00,
       totalInvoices: 3,
       pendingInvoices: 2,
+      overdueInvoices: 0,
       averageTicket: 195.50,
       paymentMethod: 'efectivo',
       paymentTerms: 'contado',
       tags: ['consultoría', 'nuevo'],
-      avatar: 'https://i.pravatar.cc/150?u=5'
+      avatar: 'https://i.pravatar.cc/150?u=5',
+      settings: {
+        notifications: true,
+        autoInvoices: false,
+        paymentReminders: true,
+        monthlyReports: false,
+        twoFactorAuth: false,
+        apiAccess: false
+      }
     },
     {
       id: 'CLI-006',
@@ -326,11 +529,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'professional',
       since: '2023-09-18',
+      lastLogin: '2024-02-20 09:15',
       lastContact: '2024-02-18',
       totalTransactions: 56,
       totalSpent: 23450.75,
       totalInvoices: 12,
       pendingInvoices: 1,
+      overdueInvoices: 0,
       averageTicket: 420.00,
       paymentMethod: 'transferencia',
       paymentTerms: '30 días',
@@ -353,17 +558,27 @@ export const ClientsPage = () => {
       status: 'inactive',
       plan: 'basic',
       since: '2022-05-10',
+      lastLogin: '2024-01-15 08:30',
       lastContact: '2024-01-15',
       totalTransactions: 34,
       totalSpent: 8750.00,
       totalInvoices: 8,
       pendingInvoices: 0,
+      overdueInvoices: 0,
       averageTicket: 257.00,
       paymentMethod: 'transferencia',
       paymentTerms: '60 días',
       taxId: 'B-12345987',
       tags: ['legal', 'inactivo'],
-      avatar: 'https://i.pravatar.cc/150?u=7'
+      avatar: 'https://i.pravatar.cc/150?u=7',
+      settings: {
+        notifications: false,
+        autoInvoices: false,
+        paymentReminders: false,
+        monthlyReports: false,
+        twoFactorAuth: false,
+        apiAccess: false
+      }
     },
     {
       id: 'CLI-008',
@@ -379,11 +594,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'professional',
       since: '2023-08-22',
+      lastLogin: '2024-02-19 12:30',
       lastContact: '2024-02-17',
       totalTransactions: 78,
       totalSpent: 15680.00,
       totalInvoices: 16,
       pendingInvoices: 2,
+      overdueInvoices: 0,
       averageTicket: 201.00,
       paymentMethod: 'tarjeta',
       paymentTerms: '15 días',
@@ -404,11 +621,13 @@ export const ClientsPage = () => {
       status: 'suspended',
       plan: 'basic',
       since: '2022-02-28',
+      lastLogin: '2024-01-30 14:20',
       lastContact: '2024-01-30',
       totalTransactions: 45,
       totalSpent: 12340.50,
       totalInvoices: 10,
       pendingInvoices: 4,
+      overdueInvoices: 2,
       averageTicket: 274.00,
       creditLimit: 10000,
       currentCredit: 8500,
@@ -416,7 +635,15 @@ export const ClientsPage = () => {
       paymentTerms: '30 días',
       taxId: 'B-45678123',
       tags: ['transporte', 'moroso'],
-      avatar: 'https://i.pravatar.cc/150?u=9'
+      avatar: 'https://i.pravatar.cc/150?u=9',
+      settings: {
+        notifications: false,
+        autoInvoices: false,
+        paymentReminders: false,
+        monthlyReports: false,
+        twoFactorAuth: false,
+        apiAccess: false
+      }
     },
     {
       id: 'CLI-010',
@@ -432,11 +659,13 @@ export const ClientsPage = () => {
       status: 'active',
       plan: 'professional',
       since: '2023-11-05',
+      lastLogin: '2024-02-22 11:10',
       lastContact: '2024-02-16',
       totalTransactions: 23,
       totalSpent: 8760.25,
       totalInvoices: 5,
       pendingInvoices: 1,
+      overdueInvoices: 0,
       averageTicket: 380.00,
       paymentMethod: 'transferencia',
       paymentTerms: '30 días',
@@ -471,8 +700,13 @@ export const ClientsPage = () => {
         : new Date(b.since).getTime() - new Date(a.since).getTime();
     } else if (sortBy === 'spent') {
       return sortOrder === 'asc' ? a.totalSpent - b.totalSpent : b.totalSpent - a.totalSpent;
-    } else {
+    } else if (sortBy === 'transactions') {
       return sortOrder === 'asc' ? a.totalTransactions - b.totalTransactions : b.totalTransactions - a.totalTransactions;
+    } else {
+      const statusOrder = { active: 1, pending: 2, inactive: 3, suspended: 4, blocked: 5 };
+      return sortOrder === 'asc'
+        ? statusOrder[a.status] - statusOrder[b.status]
+        : statusOrder[b.status] - statusOrder[a.status];
     }
   });
 
@@ -486,6 +720,25 @@ export const ClientsPage = () => {
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedClients.length === paginatedClients.length) {
+      setSelectedClients([]);
+    } else {
+      setSelectedClients(paginatedClients.map(c => c.id));
+    }
+  };
+
+  const handleSelectClient = (id: string) => {
+    setSelectedClients(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkAction = (action: string) => {
+    console.log('Acción masiva:', action, selectedClients);
+    setShowBulkActions(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -529,9 +782,16 @@ export const ClientsPage = () => {
         );
       case 'suspended':
         return (
-          <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-            <AlertCircle size={12} />
+          <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+            <Ban size={12} />
             Suspendido
+          </span>
+        );
+      case 'blocked':
+        return (
+          <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+            <Lock size={12} />
+            Bloqueado
           </span>
         );
       default:
@@ -562,6 +822,8 @@ export const ClientsPage = () => {
         return <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full text-xs">Empresarial</span>;
       case 'custom':
         return <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs">Personalizado</span>;
+      case 'trial':
+        return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">Prueba</span>;
       default:
         return null;
     }
@@ -606,6 +868,14 @@ export const ClientsPage = () => {
             <UsersIcon size={20} />
           </button>
           <button
+            onClick={() => setViewMode('detailed')}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === 'detailed' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+            }`}
+          >
+            <FileText size={20} />
+          </button>
+          <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
           >
@@ -615,31 +885,59 @@ export const ClientsPage = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Admin View */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Total Clientes</p>
           <p className="text-2xl font-bold text-white">{summary.totalClients}</p>
           <div className="flex items-center gap-1 mt-1">
             <TrendingUp size={14} className="text-green-400" />
-            <span className="text-green-400 text-xs">{summary.growth}%</span>
+            <span className="text-green-400 text-xs">+{summary.growth}%</span>
             <span className="text-white/40 text-xs ml-1">vs mes anterior</span>
           </div>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Clientes Activos</p>
+          <p className="text-white/60 text-sm">Activos</p>
           <p className="text-xl font-bold text-green-400">{summary.activeClients}</p>
           <p className="text-white/40 text-xs mt-1">{summary.newThisMonth} nuevos este mes</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Ingresos Totales</p>
           <p className="text-xl font-bold text-white">{formatCurrency(summary.totalRevenue)}</p>
-          <p className="text-white/40 text-xs mt-1">Promedio: {formatCurrency(summary.averageSpent)}</p>
+          <p className="text-white/40 text-xs mt-1">Proyectado: {formatCurrency(summary.projectedRevenue)}</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Top Clientes</p>
-          <p className="text-xl font-bold text-yellow-400">{summary.topClients}</p>
-          <p className="text-white/40 text-xs mt-1">generan el 45% de ingresos</p>
+          <p className="text-white/60 text-sm">Churn Rate</p>
+          <p className="text-xl font-bold text-red-400">{summary.churnRate}%</p>
+          <p className="text-white/40 text-xs mt-1">{summary.inactiveClients + summary.suspendedClients + summary.blockedClients} inactivos</p>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Pendientes</p>
+          <p className="text-yellow-400 font-bold">{summary.pendingClients}</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Suspendidos</p>
+          <p className="text-orange-400 font-bold">{summary.suspendedClients}</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Bloqueados</p>
+          <p className="text-red-400 font-bold">{summary.blockedClients}</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Prueba</p>
+          <p className="text-green-400 font-bold">{summary.trialClients}</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Top Clientes</p>
+          <p className="text-purple-400 font-bold">{summary.topClients}</p>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 text-center">
+          <p className="text-white/40 text-xs">Esta semana</p>
+          <p className="text-blue-400 font-bold">{summary.newThisWeek}</p>
         </div>
       </div>
 
@@ -659,16 +957,6 @@ export const ClientsPage = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-              >
-                <option value="todos">Todos los tipos</option>
-                <option value="individual">Individual</option>
-                <option value="company">Empresa</option>
-                <option value="enterprise">Corporativo</option>
-              </select>
-              <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
@@ -678,6 +966,17 @@ export const ClientsPage = () => {
                 <option value="inactive">Inactivo</option>
                 <option value="pending">Pendiente</option>
                 <option value="suspended">Suspendido</option>
+                <option value="blocked">Bloqueado</option>
+              </select>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+              >
+                <option value="todos">Todos los tipos</option>
+                <option value="individual">Individual</option>
+                <option value="company">Empresa</option>
+                <option value="enterprise">Corporativo</option>
               </select>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -687,7 +986,18 @@ export const ClientsPage = () => {
               >
                 <Filter size={20} />
               </button>
-              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                title="Importar"
+              >
+                <Upload size={20} />
+              </button>
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                title="Exportar"
+              >
                 <Download size={20} />
               </button>
             </div>
@@ -696,7 +1006,7 @@ export const ClientsPage = () => {
           {/* Advanced Filters */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-white/10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-white/60 text-xs mb-1 block">Plan</label>
                   <select
@@ -705,6 +1015,7 @@ export const ClientsPage = () => {
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
                   >
                     <option value="todos">Todos los planes</option>
+                    <option value="trial">Prueba</option>
                     <option value="basic">Básico</option>
                     <option value="professional">Profesional</option>
                     <option value="enterprise">Empresarial</option>
@@ -715,6 +1026,8 @@ export const ClientsPage = () => {
                   <label className="text-white/60 text-xs mb-1 block">Fecha desde</label>
                   <input
                     type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
                   />
                 </div>
@@ -722,12 +1035,102 @@ export const ClientsPage = () => {
                   <label className="text-white/60 text-xs mb-1 block">Fecha hasta</label>
                   <input
                     type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">Gasto mínimo</label>
+                  <input
+                    type="number"
+                    placeholder="0.00"
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
                   />
                 </div>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Bulk Actions Bar */}
+        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
+                onChange={handleSelectAll}
+                className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+              />
+              <span className="text-white/60 text-sm">Seleccionar todo</span>
+            </label>
+            {selectedClients.length > 0 && (
+              <>
+                <span className="text-white/40 text-sm">
+                  {selectedClients.length} seleccionados
+                </span>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowBulkActions(!showBulkActions)}
+                    className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
+                  >
+                    <span>Acciones</span>
+                    <ChevronDown size={14} />
+                  </button>
+                  {showBulkActions && (
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-[#1a0f14] border border-white/10 rounded-lg shadow-lg z-10">
+                      <div className="p-1">
+                        <button
+                          onClick={() => handleBulkAction('activate')}
+                          className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                        >
+                          Activar seleccionados
+                        </button>
+                        <button
+                          onClick={() => handleBulkAction('suspend')}
+                          className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                        >
+                          Suspender seleccionados
+                        </button>
+                        <button
+                          onClick={() => handleBulkAction('block')}
+                          className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                        >
+                          Bloquear seleccionados
+                        </button>
+                        <div className="border-t border-white/10 my-1"></div>
+                        <button
+                          onClick={() => handleBulkAction('email')}
+                          className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                        >
+                          Enviar email
+                        </button>
+                        <button
+                          onClick={() => handleBulkAction('export')}
+                          className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                        >
+                          Exportar seleccionados
+                        </button>
+                        <div className="border-t border-white/10 my-1"></div>
+                        <button
+                          onClick={() => handleBulkAction('delete')}
+                          className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          Eliminar seleccionados
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white/40 text-sm">
+              {filteredClients.length} resultados
+            </span>
+          </div>
         </div>
 
         {/* Sort Bar */}
@@ -780,177 +1183,297 @@ export const ClientsPage = () => {
             </button>
             <button
               onClick={() => {
-                setSortBy('transactions');
+                setSortBy('status');
                 setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
               }}
               className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'transactions' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
+                sortBy === 'status' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
               }`}
             >
               <Activity size={14} />
-              <span>Transacciones</span>
-              {sortBy === 'transactions' && (
+              <span>Estado</span>
+              {sortBy === 'status' && (
                 sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
               )}
             </button>
           </div>
-          <span className="text-white/40 text-sm">
-            {filteredClients.length} resultados
-          </span>
         </div>
 
-        {/* Grid/List View */}
-        <div className="p-4">
-          {viewMode === 'grid' ? (
-            /* Grid View */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {paginatedClients.map((client) => (
-                <div
-                  key={client.id}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all cursor-pointer"
-                  onClick={() => setSelectedClient(client)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold text-lg">
-                        {client.avatar ? (
-                          <img src={client.avatar} alt={client.name} className="w-full h-full rounded-xl object-cover" />
-                        ) : (
-                          client.name.charAt(0)
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-white font-medium">{client.name}</h3>
-                        <p className="text-white/40 text-xs">{client.company}</p>
-                      </div>
-                    </div>
-                    {getStatusBadge(client.status)}
-                  </div>
-
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <MailIcon size={14} className="text-white/40" />
-                      <span className="text-white/60">{client.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <PhoneIcon size={14} className="text-white/40" />
-                      <span className="text-white/60">{client.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPinIcon size={14} className="text-white/40" />
-                      <span className="text-white/60">{client.city}, {client.country}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {getTypeBadge(client.type)}
-                    {getPlanBadge(client.plan)}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/10">
-                    <div>
-                      <p className="text-white/40 text-xs">Transacciones</p>
-                      <p className="text-white font-medium">{client.totalTransactions}</p>
-                    </div>
-                    <div>
-                      <p className="text-white/40 text-xs">Total gastado</p>
-                      <p className="text-white font-medium">{formatCurrency(client.totalSpent)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
-                    <div className="flex items-center gap-1 text-white/40 text-xs">
-                      <CalendarIcon size={12} />
-                      <span>Cliente desde {formatDate(client.since)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Eye size={14} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Edit size={14} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <MoreVertical size={14} className="text-white/60" />
-                      </button>
-                    </div>
-                  </div>
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedClients.map((client) => (
+              <div
+                key={client.id}
+                className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all cursor-pointer relative"
+                onClick={() => setSelectedClient(client)}
+              >
+                <div className="absolute top-2 left-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedClients.includes(client.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelectClient(client.id);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+                  />
                 </div>
-              ))}
-            </div>
-          ) : (
-            /* List View */
-            <div className="space-y-2">
-              {paginatedClients.map((client) => (
-                <div
-                  key={client.id}
-                  className="bg-white/5 rounded-lg p-3 border border-white/10 hover:border-[#F05984]/50 transition-all cursor-pointer"
-                  onClick={() => setSelectedClient(client)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold">
+                <div className="flex items-start justify-between mb-3 mt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold text-lg">
                       {client.avatar ? (
-                        <img src={client.avatar} alt={client.name} className="w-full h-full rounded-lg object-cover" />
+                        <img src={client.avatar} alt={client.name} className="w-full h-full rounded-xl object-cover" />
                       ) : (
                         client.name.charAt(0)
                       )}
                     </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-white font-medium">{client.name}</h3>
-                        {getStatusBadge(client.status)}
-                        {getTypeBadge(client.type)}
-                        {getPlanBadge(client.plan)}
+                    <div>
+                      <h3 className="text-white font-medium">{client.name}</h3>
+                      <p className="text-white/40 text-xs">{client.company}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(client.status)}
+                </div>
+
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <MailIcon size={14} className="text-white/40" />
+                    <span className="text-white/60 truncate">{client.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <PhoneIcon size={14} className="text-white/40" />
+                    <span className="text-white/60">{client.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPinIcon size={14} className="text-white/40" />
+                    <span className="text-white/60 truncate">{client.city}, {client.country}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {getTypeBadge(client.type)}
+                  {getPlanBadge(client.plan)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/10">
+                  <div>
+                    <p className="text-white/40 text-xs">Transacciones</p>
+                    <p className="text-white font-medium">{client.totalTransactions}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/40 text-xs">Total gastado</p>
+                    <p className="text-white font-medium">{formatCurrency(client.totalSpent)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
+                  <div className="flex items-center gap-1 text-white/40 text-xs">
+                    <CalendarIcon size={12} />
+                    <span>Cliente desde {formatDate(client.since)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <Eye size={14} className="text-white/60" />
+                    </button>
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <Edit size={14} className="text-white/60" />
+                    </button>
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <MoreVertical size={14} className="text-white/60" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="p-4 space-y-2">
+            {paginatedClients.map((client) => (
+              <div
+                key={client.id}
+                className="bg-white/5 rounded-lg p-3 border border-white/10 hover:border-[#F05984]/50 transition-all cursor-pointer"
+                onClick={() => setSelectedClient(client)}
+              >
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedClients.includes(client.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelectClient(client.id);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+                  />
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold">
+                    {client.avatar ? (
+                      <img src={client.avatar} alt={client.name} className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      client.name.charAt(0)
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-medium">{client.name}</h3>
+                      {getStatusBadge(client.status)}
+                      {getTypeBadge(client.type)}
+                      {getPlanBadge(client.plan)}
+                    </div>
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="flex items-center gap-1 text-xs">
+                        <MailIcon size={12} className="text-white/40" />
+                        <span className="text-white/60">{client.email}</span>
                       </div>
-                      <div className="flex items-center gap-4 mt-1">
-                        <div className="flex items-center gap-1 text-xs">
-                          <MailIcon size={12} className="text-white/40" />
-                          <span className="text-white/60">{client.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs">
-                          <PhoneIcon size={12} className="text-white/40" />
-                          <span className="text-white/60">{client.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs">
-                          <Building2Icon size={12} className="text-white/40" />
-                          <span className="text-white/60">{client.company}</span>
-                        </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <PhoneIcon size={12} className="text-white/40" />
+                        <span className="text-white/60">{client.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <Building2Icon size={12} className="text-white/40" />
+                        <span className="text-white/60">{client.company}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-white/40 text-xs">Transacciones</p>
+                      <p className="text-white text-sm">{client.totalTransactions}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/40 text-xs">Total</p>
+                      <p className="text-white text-sm font-medium">{formatCurrency(client.totalSpent)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/40 text-xs">Último login</p>
+                      <p className="text-white text-sm">{client.lastLogin.split(' ')[0]}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <Eye size={16} className="text-white/60" />
+                    </button>
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <Edit size={16} className="text-white/60" />
+                    </button>
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors">
+                      <MoreVertical size={16} className="text-white/60" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Detailed View */}
+        {viewMode === 'detailed' && (
+          <div className="p-4 space-y-4">
+            {paginatedClients.map((client) => (
+              <div
+                key={client.id}
+                className="bg-white/5 rounded-lg p-4 border border-white/10 hover:border-[#F05984]/50 transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedClients.includes(client.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelectClient(client.id);
+                    }}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+                  />
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold text-lg">
+                    {client.avatar ? (
+                      <img src={client.avatar} alt={client.name} className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      client.name.charAt(0)
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-white font-semibold">{client.name}</h3>
+                      {getStatusBadge(client.status)}
+                      {getTypeBadge(client.type)}
+                      {getPlanBadge(client.plan)}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4 mb-3">
+                      <div>
+                        <p className="text-white/40 text-xs">Email</p>
+                        <p className="text-white text-sm">{client.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs">Teléfono</p>
+                        <p className="text-white text-sm">{client.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs">Empresa</p>
+                        <p className="text-white text-sm">{client.company}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs">Cargo</p>
+                        <p className="text-white text-sm">{client.position}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
+                    <div className="grid grid-cols-5 gap-4 pt-3 border-t border-white/10">
+                      <div>
+                        <p className="text-white/40 text-xs">Cliente desde</p>
+                        <p className="text-white text-sm">{formatDate(client.since)}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-xs">Último login</p>
+                        <p className="text-white text-sm">{client.lastLogin}</p>
+                      </div>
+                      <div>
                         <p className="text-white/40 text-xs">Transacciones</p>
                         <p className="text-white text-sm">{client.totalTransactions}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-white/40 text-xs">Total</p>
+                      <div>
+                        <p className="text-white/40 text-xs">Total gastado</p>
                         <p className="text-white text-sm font-medium">{formatCurrency(client.totalSpent)}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-white/40 text-xs">Desde</p>
-                        <p className="text-white text-sm">{formatDate(client.since)}</p>
+                      <div>
+                        <p className="text-white/40 text-xs">Facturas pendientes</p>
+                        <p className="text-yellow-400 text-sm">{client.pendingInvoices}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Eye size={16} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Edit size={16} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <MoreVertical size={16} className="text-white/60" />
-                      </button>
-                    </div>
+                    {client.tags.length > 0 && (
+                      <div className="flex gap-2 mt-2">
+                        {client.tags.map((tag, index) => (
+                          <span key={index} className="text-xs bg-white/10 text-white/60 px-2 py-1 rounded-full">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                      <Eye size={18} className="text-white/60" />
+                    </button>
+                    <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                      <Edit size={18} className="text-white/60" />
+                    </button>
+                    <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                      <Mail size={18} className="text-white/60" />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="p-4 border-t border-white/10 flex items-center justify-between">
@@ -1032,8 +1555,17 @@ export const ClientsPage = () => {
                 </div>
               </div>
 
+              {/* Tabs */}
+              <div className="flex border-b border-white/10 mb-4">
+                <button className="px-4 py-2 text-[#F05984] border-b-2 border-[#F05984] font-medium">Información</button>
+                <button className="px-4 py-2 text-white/60 hover:text-white">Actividad</button>
+                <button className="px-4 py-2 text-white/60 hover:text-white">Proyectos</button>
+                <button className="px-4 py-2 text-white/60 hover:text-white">Documentos</button>
+                <button className="px-4 py-2 text-white/60 hover:text-white">Configuración</button>
+              </div>
+
+              {/* Información principal */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Información principal */}
                 <div className="lg:col-span-2 space-y-4">
                   <div className="bg-white/5 rounded-lg p-4">
                     <h3 className="text-white font-semibold mb-3">Información de Contacto</h3>
@@ -1087,40 +1619,6 @@ export const ClientsPage = () => {
                     </div>
                   </div>
 
-                  {selectedClient.projects && selectedClient.projects.length > 0 && (
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <h3 className="text-white font-semibold mb-3">Proyectos Activos</h3>
-                      <div className="space-y-3">
-                        {selectedClient.projects.map((project) => (
-                          <div key={project.id} className="bg-white/5 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-white font-medium">{project.name}</span>
-                              <span className="text-white/40 text-xs">{project.status}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <p className="text-white/40 text-xs">Presupuesto</p>
-                                <p className="text-white">{formatCurrency(project.budget)}</p>
-                              </div>
-                              <div>
-                                <p className="text-white/40 text-xs">Progreso</p>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F]"
-                                      style={{ width: `${project.progress}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-white text-xs">{project.progress}%</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {selectedClient.notes && (
                     <div className="bg-white/5 rounded-lg p-4">
                       <h3 className="text-white font-semibold mb-2">Notas</h3>
@@ -1150,12 +1648,12 @@ export const ClientsPage = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <p className="text-white/40 text-xs">Ticket promedio</p>
-                          <p className="text-white text-sm">{formatCurrency(selectedClient.averageTicket)}</p>
+                          <p className="text-white/40 text-xs">Pendientes</p>
+                          <p className="text-yellow-400 text-sm font-bold">{selectedClient.pendingInvoices}</p>
                         </div>
                         <div>
-                          <p className="text-white/40 text-xs">Pendiente</p>
-                          <p className="text-yellow-400 text-sm font-bold">{selectedClient.pendingInvoices}</p>
+                          <p className="text-white/40 text-xs">Vencidas</p>
+                          <p className="text-red-400 text-sm font-bold">{selectedClient.overdueInvoices || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -1169,29 +1667,13 @@ export const ClientsPage = () => {
                         <p className="text-white text-sm">{formatDate(selectedClient.since)}</p>
                       </div>
                       <div>
+                        <p className="text-white/40 text-xs">Último login</p>
+                        <p className="text-white text-sm">{selectedClient.lastLogin}</p>
+                      </div>
+                      <div>
                         <p className="text-white/40 text-xs">Último contacto</p>
                         <p className="text-white text-sm">{formatDate(selectedClient.lastContact)}</p>
                       </div>
-                      {selectedClient.creditLimit && (
-                        <>
-                          <div>
-                            <p className="text-white/40 text-xs">Límite de crédito</p>
-                            <p className="text-white text-sm">{formatCurrency(selectedClient.creditLimit)}</p>
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-xs">Crédito utilizado</p>
-                            <div className="flex items-center gap-2">
-                              <p className="text-white text-sm">{formatCurrency(selectedClient.currentCredit || 0)}</p>
-                              <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-yellow-400"
-                                  style={{ width: `${((selectedClient.currentCredit || 0) / selectedClient.creditLimit) * 100}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </div>
 
