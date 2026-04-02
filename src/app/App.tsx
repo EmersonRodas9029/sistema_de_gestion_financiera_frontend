@@ -14,6 +14,7 @@ import { NotificationsPage } from '../features/notifications/pages/Notifications
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RecurringExpensesPage } from '../features/recurring-expenses/pages/RecurringExpensesPage';
 import { BudgetsPage } from '../features/budgets/pages/BudgetsPage';
+import { ReportsPage } from '../features/reports/pages/ReportsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -25,12 +26,6 @@ const REQUIRE_AUTH = false;
 const Dashboard = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Dashboard Content</h1>
-  </div>
-);
-
-const Reports = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Reports Page</h1>
   </div>
 );
 
@@ -57,7 +52,7 @@ const ProtectedRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/clients" element={<ClientsPage />} />
-        <Route path="/admin/reports" element={<Reports />} />
+        <Route path="/admin/reports" element={<ReportsPage />} />
         <Route path="/incomes" element={<IncomesPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />
