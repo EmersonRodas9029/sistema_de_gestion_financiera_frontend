@@ -13,6 +13,7 @@ import { SavingsPage } from '../features/savings/pages/SavingsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RecurringExpensesPage } from '../features/recurring-expenses/pages/RecurringExpensesPage';
+import { BudgetsPage } from '../features/budgets/pages/BudgetsPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -67,6 +68,7 @@ const ProtectedRoutes = () => {
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/budgets" element={<BudgetsPage />} />
       </Routes>
     </MainLayout>
   );
