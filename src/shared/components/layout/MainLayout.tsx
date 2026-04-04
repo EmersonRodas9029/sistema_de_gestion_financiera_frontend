@@ -79,7 +79,6 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
   const [currentDateTime, setCurrentDateTime] = useState({
     date: '',
     time: '',
-    fullDateTime: ''
   });
 
   useEffect(() => {
@@ -93,14 +92,13 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
       };
       const timeOptions: Intl.DateTimeFormatOptions = { 
         hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
+        minute: '2-digit',
+        second: '2-digit'
       };
       
       setCurrentDateTime({
         date: now.toLocaleDateString('es-ES', dateOptions),
         time: now.toLocaleTimeString('es-ES', timeOptions),
-        fullDateTime: now.toLocaleString('es-ES')
       });
     };
 
@@ -118,20 +116,22 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-main">
       <MobileLeftBar userRole={userRole} userName={userName} />
       <main className="lg:ml-64 transition-all duration-300">
-        {/* Header con título de página, fecha/hora y usuario */}
-        <div className="bg-gradient-to-r from-[#321D28] to-[#6E4068] border-b border-white/10 sticky top-0 z-10">
+        {/* Header con efecto vidrio */}
+        <div className="sticky top-0 z-10 glass-effect">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               {/* Lado izquierdo - Título e icono */}
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg">
+                <div className="p-2 rounded-lg bg-white/10 transition-all duration-300 hover:scale-105">
                   {pageIcon}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                    {pageTitle}
+                  </h1>
                   <p className="text-white/50 text-sm mt-0.5">
                     {userRole === 'admin' ? 'Panel de Administración' : 'Panel de Usuario'}
                   </p>
@@ -142,7 +142,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
               <div className="flex items-center gap-6">
                 {/* Fecha y Hora */}
                 <div className="hidden md:block">
-                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2">
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 backdrop-blur-sm">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-white/60" />
                       <span className="text-white/80 text-sm capitalize">
@@ -161,19 +161,19 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
 
                 {/* Usuario con dropdown */}
                 <div className="relative group">
-                  <button className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 hover:bg-white/20 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold">
+                  <button className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-2 hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold shadow-lg">
                       {userName?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="hidden sm:block text-left">
                       <p className="text-white text-sm font-medium">{userName || 'Usuario'}</p>
                       <p className="text-white/50 text-xs capitalize">{userRole}</p>
                     </div>
-                    <ChevronDown size={16} className="text-white/60 group-hover:rotate-180 transition-transform" />
+                    <ChevronDown size={16} className="text-white/60 group-hover:rotate-180 transition-transform duration-300" />
                   </button>
                   
                   {/* Dropdown menu */}
-                  <div className="absolute right-0 mt-2 w-56 bg-[#1a0f14] rounded-lg border border-white/10 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-[#1a0f14] rounded-xl border border-white/10 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 backdrop-blur-sm">
                     <div className="p-2">
                       <div className="px-3 py-2 border-b border-white/10">
                         <p className="text-white text-sm font-medium">{userName || 'Usuario'}</p>
@@ -181,21 +181,21 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
                       </div>
                       <button
                         onClick={() => navigate('/settings')}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-colors text-sm"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-all duration-200 text-sm hover:translate-x-1"
                       >
                         <User size={16} />
                         <span>Mi Perfil</span>
                       </button>
                       <button
                         onClick={() => navigate('/settings')}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-colors text-sm"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-all duration-200 text-sm hover:translate-x-1"
                       >
                         <Settings size={16} />
                         <span>Configuración</span>
                       </button>
                       <button
                         onClick={() => navigate('/notifications')}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-colors text-sm"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg transition-all duration-200 text-sm hover:translate-x-1"
                       >
                         <Bell size={16} />
                         <span>Notificaciones</span>
@@ -203,7 +203,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
                       <div className="border-t border-white/10 my-1"></div>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-sm"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200 text-sm hover:translate-x-1"
                       >
                         <LogOut size={16} />
                         <span>Cerrar Sesión</span>
@@ -217,7 +217,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
         </div>
         
         {/* Contenido principal */}
-        <div className="p-6">
+        <div className="p-6 animate-fade-in">
           {children}
         </div>
       </main>
