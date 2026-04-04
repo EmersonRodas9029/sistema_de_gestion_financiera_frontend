@@ -39,7 +39,52 @@ import {
   Sparkles,
   Activity,
   TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon
+  TrendingDown as TrendingDownIcon,
+  Repeat,
+  Target as TargetIcon,
+  Save,
+  Download,
+  Upload,
+  Shield,
+  Lock,
+  Key,
+  Fingerprint,
+  Globe,
+  Languages,
+  Moon,
+  Sun,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Wifi,
+  Volume2,
+  Battery,
+  Server,
+  Cloud,
+  Database,
+  HardDrive,
+  Cpu,
+  Thermometer,
+  Fan,
+  Droplet,
+  Wind,
+  Zap,
+  Palette,
+  Brush,
+  Type,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  List,
+  ListOrdered,
+  ListChecks,
+  Minus,
+  PlusCircle,
+  XCircle,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 
 interface MenuItem {
@@ -47,8 +92,7 @@ interface MenuItem {
   name: string;
   icon: React.ReactNode;
   roles: ('admin' | 'client')[];
-  section?: 'main' | 'management' | 'other';
-  badge?: number;
+  section?: 'main' | 'finances' | 'goals' | 'management' | 'reports' | 'settings';
 }
 
 interface LeftBarProps {
@@ -76,6 +120,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
   const unreadNotifications = 3;
 
   const menuItems: MenuItem[] = [
+    // Sección Principal
     {
       path: '/',
       name: 'Inicio',
@@ -90,47 +135,60 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       roles: ['admin', 'client'],
       section: 'main'
     },
+    
+    // Sección Finanzas
     {
       path: '/incomes',
       name: 'Ingresos',
       icon: <TrendingUpIcon size={20} />,
       roles: ['admin', 'client'],
-      section: 'main'
+      section: 'finances'
     },
     {
       path: '/expenses',
       name: 'Gastos',
       icon: <TrendingDownIcon size={20} />,
       roles: ['admin', 'client'],
-      section: 'main'
+      section: 'finances'
+    },
+    {
+      path: '/recurring-expenses',
+      name: 'Gastos Recurrentes',
+      icon: <Repeat size={20} />,
+      roles: ['admin', 'client'],
+      section: 'finances'
+    },
+    {
+      path: '/budgets',
+      name: 'Presupuestos',
+      icon: <Wallet size={20} />,
+      roles: ['admin', 'client'],
+      section: 'finances'
+    },
+    
+    // Sección Metas
+    {
+      path: '/goals',
+      name: 'Metas Financieras',
+      icon: <TargetIcon size={20} />,
+      roles: ['admin', 'client'],
+      section: 'goals'
     },
     {
       path: '/savings',
       name: 'Metas de Ahorro',
       icon: <PiggyBank size={20} />,
       roles: ['admin', 'client'],
-      section: 'main'
+      section: 'goals'
     },
-    {
-      path: '/goals',
-      name: 'Metas',
-      icon: <Target size={20} />,
-      roles: ['admin', 'client'],
-      section: 'main'
-    },
+    
+    // Sección Gestión
     {
       path: '/categories',
       name: 'Categorías',
       icon: <FolderTree size={20} />,
       roles: ['admin', 'client'],
       section: 'management'
-    },
-    {
-      path: '/analytics',
-      name: 'Análisis',
-      icon: <BarChart3 size={20} />,
-      roles: ['admin', 'client'],
-      section: 'other'
     },
     {
       path: '/admin/clients',
@@ -140,25 +198,43 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       section: 'management'
     },
     {
+      path: '/wallet',
+      name: 'Billetera',
+      icon: <CreditCard size={20} />,
+      roles: ['admin', 'client'],
+      section: 'management'
+    },
+    
+    // Sección Reportes y Análisis
+    {
+      path: '/analytics',
+      name: 'Gráficos',
+      icon: <BarChart3 size={20} />,
+      roles: ['admin', 'client'],
+      section: 'reports'
+    },
+    {
       path: '/admin/reports',
       name: 'Reportes',
       icon: <FileText size={20} />,
       roles: ['admin'],
-      section: 'management'
+      section: 'reports'
     },
+    
+    // Sección Configuración
     {
-      path: '/wallet',
-      name: 'Billetera',
-      icon: <Wallet size={20} />,
-      roles: ['client'],
-      section: 'main'
+      path: '/notifications',
+      name: 'Notificaciones',
+      icon: <Bell size={20} />,
+      roles: ['admin', 'client'],
+      section: 'settings'
     },
     {
       path: '/settings',
       name: 'Configuración',
       icon: <Settings size={20} />,
       roles: ['admin', 'client'],
-      section: 'other'
+      section: 'settings'
     }
   ];
 
@@ -167,8 +243,11 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
   );
 
   const mainItems = filteredMenuItems.filter(item => item.section === 'main');
+  const financesItems = filteredMenuItems.filter(item => item.section === 'finances');
+  const goalsItems = filteredMenuItems.filter(item => item.section === 'goals');
   const managementItems = filteredMenuItems.filter(item => item.section === 'management');
-  const otherItems = filteredMenuItems.filter(item => item.section === 'other');
+  const reportsItems = filteredMenuItems.filter(item => item.section === 'reports');
+  const settingsItems = filteredMenuItems.filter(item => item.section === 'settings');
 
   const renderMenuSection = (items: MenuItem[], title?: string) => {
     if (items.length === 0) return null;
@@ -251,16 +330,19 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         )}
       </div>
 
-      {/* Navegación con secciones separadas */}
+      {/* Navegación con todas las secciones */}
       <nav className="flex-1 overflow-y-auto py-2 px-2">
         {renderMenuSection(mainItems, 'PRINCIPAL')}
+        {renderMenuSection(financesItems, 'FINANZAS')}
+        {renderMenuSection(goalsItems, 'METAS')}
         {renderMenuSection(managementItems, 'GESTIÓN')}
-        {renderMenuSection(otherItems, 'OTROS')}
+        {renderMenuSection(reportsItems, 'REPORTES')}
+        {renderMenuSection(settingsItems, 'CONFIGURACIÓN')}
       </nav>
 
       {/* Botones adicionales */}
       <div className="p-3 border-t border-white/10">
-        {/* Notificaciones - AHORA NAVEGA A LA PÁGINA */}
+        {/* Notificaciones */}
         <button
           onClick={handleNotifications}
           className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${
