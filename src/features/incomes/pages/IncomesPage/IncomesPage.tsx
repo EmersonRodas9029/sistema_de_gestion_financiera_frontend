@@ -51,7 +51,8 @@ import {
   Wifi,
   Droplet,
   Home as HomeIcon,
-  ChevronDown
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface Income {
