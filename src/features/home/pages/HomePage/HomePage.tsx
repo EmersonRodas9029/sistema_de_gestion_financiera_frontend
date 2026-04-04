@@ -9,12 +9,6 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
-  MoreHorizontal,
-  CreditCard,
-  DollarSign,
-  Landmark,
-  Receipt,
   Bell,
   ChevronRight,
   Sparkles,
@@ -22,27 +16,24 @@ import {
   BarChart3,
   Goal,
   ArrowRight,
-  Users
+  Users,
+  UserCircle,
+  Building2,
+  Briefcase,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  Settings,
+  HelpCircle,
+  Home,
+  LayoutDashboard,
+  Repeat,
+  PiggyBank,
+  CreditCard,
+  DollarSign,
+  Receipt
 } from 'lucide-react';
-
-interface Transaction {
-  id: number;
-  description: string;
-  amount: number;
-  type: 'income' | 'expense';
-  category: string;
-  date: string;
-  status: 'completada' | 'pendiente' | 'fallida';
-}
-
-interface FinancialGoal {
-  id: number;
-  name: string;
-  current: number;
-  target: number;
-  deadline: string;
-  category: string;
-}
 
 interface QuickOption {
   id: string;
@@ -57,124 +48,144 @@ interface QuickOption {
 export const HomePage = () => {
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
-  const [userName] = useState('Emerson'); // Esto vendrá del contexto de autenticación
+  const [userName] = useState(localStorage.getItem('userName') || 'Emerson');
+  const [userRole] = useState<'admin' | 'client'>(localStorage.getItem('userRole') as 'admin' | 'client' || 'client');
   const [currentTime, setCurrentTime] = useState('');
   const [showWelcome, setShowWelcome] = useState(true);
 
-  // Opciones rápidas - 7 apartados principales
+  // Todas las opciones disponibles en el sistema
   const quickOptions: QuickOption[] = [
+    // Finanzas
+    {
+      id: 'incomes',
+      title: 'Ingresos',
+      description: 'Registra y controla tus ingresos',
+      icon: <TrendingUp size={28} />,
+      color: 'from-green-500/20 to-green-600/20',
+      route: '/incomes',
+      stats: 'Total: $3,250'
+    },
     {
       id: 'expenses',
       title: 'Gastos',
       description: 'Controla tus gastos diarios',
-      icon: <TrendingDown size={32} />,
+      icon: <TrendingDown size={28} />,
       color: 'from-red-500/20 to-red-600/20',
       route: '/expenses',
-      stats: '$1,245'
+      stats: 'Total: $1,245'
     },
     {
-      id: 'categories',
-      title: 'Categorías',
-      description: 'Organiza por categorías',
-      icon: <FolderTree size={32} />,
-      color: 'from-purple-500/20 to-purple-600/20',
-      route: '/categories',
-      stats: '8 activas'
-    },
-    {
-      id: 'charts',
-      title: 'Gráficos',
-      description: 'Visualiza tus finanzas',
-      icon: <BarChart3 size={32} />,
-      color: 'from-blue-500/20 to-blue-600/20',
-      route: '/analytics',
-      stats: '12 meses'
-    },
-    {
-      id: 'incomes',
-      title: 'Ingresos',
-      description: 'Registra tus ingresos',
-      icon: <TrendingUp size={32} />,
-      color: 'from-green-500/20 to-green-600/20',
-      route: '/incomes',
-      stats: '$3,250'
-    },
-    {
-      id: 'clients',
-      title: 'Clientes',
-      description: 'Gestiona tus clientes',
-      icon: <Users size={32} />,
-      color: 'from-cyan-500/20 to-cyan-600/20',
-      route: '/admin/clients',
-      stats: '28 activos'
-    },
-    {
-      id: 'financial-goal',
-      title: 'Meta Financiera',
-      description: 'Define tus metas',
-      icon: <Target size={32} />,
+      id: 'recurring-expenses',
+      title: 'Gastos Recurrentes',
+      description: 'Suscripciones y pagos periódicos',
+      icon: <Repeat size={28} />,
       color: 'from-orange-500/20 to-orange-600/20',
+      route: '/recurring-expenses',
+      stats: '12 activos'
+    },
+    {
+      id: 'budgets',
+      title: 'Presupuestos',
+      description: 'Controla tus límites de gasto',
+      icon: <Wallet size={28} />,
+      color: 'from-blue-500/20 to-blue-600/20',
+      route: '/budgets',
+      stats: '80% utilizado'
+    },
+    
+    // Metas
+    {
+      id: 'goals',
+      title: 'Metas Financieras',
+      description: 'Define tus objetivos financieros',
+      icon: <Target size={28} />,
+      color: 'from-purple-500/20 to-purple-600/20',
       route: '/goals',
       stats: '3 activas'
     },
     {
-      id: 'savings-goal',
-      title: 'Meta de Ahorro',
+      id: 'savings',
+      title: 'Metas de Ahorro',
       description: 'Ahorra para el futuro',
-      icon: <Goal size={32} />,
+      icon: <PiggyBank size={28} />,
       color: 'from-pink-500/20 to-pink-600/20',
       route: '/savings',
-      stats: '2 en progreso'
-    }
-  ];
-
-  // Datos de ejemplo
-  const recentTransactions: Transaction[] = [
+      stats: '$7,850 ahorrados'
+    },
+    
+    // Gestión
     {
-      id: 1,
-      description: 'Pago de nómina',
-      amount: 2500.00,
-      type: 'income',
-      category: 'Salario',
-      date: 'Hoy, 10:30',
-      status: 'completada'
+      id: 'categories',
+      title: 'Categorías',
+      description: 'Organiza tus transacciones',
+      icon: <FolderTree size={28} />,
+      color: 'from-cyan-500/20 to-cyan-600/20',
+      route: '/categories',
+      stats: '12 categorías'
     },
     {
-      id: 2,
-      description: 'Supermercado',
-      amount: 156.75,
-      type: 'expense',
-      category: 'Alimentación',
-      date: 'Hoy, 09:15',
-      status: 'completada'
+      id: 'wallet',
+      title: 'Billetera',
+      description: 'Tus cuentas y tarjetas',
+      icon: <CreditCard size={28} />,
+      color: 'from-indigo-500/20 to-indigo-600/20',
+      route: '/wallet',
+      stats: '3 cuentas'
     },
+    
+    // Análisis
     {
-      id: 3,
-      description: 'Netflix',
-      amount: 15.99,
-      type: 'expense',
-      category: 'Suscripciones',
-      date: 'Ayer',
-      status: 'completada'
-    }
-  ];
-
-  const goals: FinancialGoal[] = [
-    {
-      id: 1,
-      name: 'Vacaciones',
-      current: 850,
-      target: 2000,
-      deadline: 'Jun 2024',
-      category: 'Viajes'
+      id: 'analytics',
+      title: 'Gráficos',
+      description: 'Visualiza tus finanzas',
+      icon: <BarChart3 size={28} />,
+      color: 'from-teal-500/20 to-teal-600/20',
+      route: '/analytics',
+      stats: '12 meses'
     },
+    
+    // Reportes (solo admin)
+    ...(userRole === 'admin' ? [{
+      id: 'reports',
+      title: 'Reportes',
+      description: 'Genera reportes personalizados',
+      icon: <FileText size={28} />,
+      color: 'from-gray-500/20 to-gray-600/20',
+      route: '/admin/reports',
+      stats: '8 disponibles'
+    }] : []),
+    
+    // Clientes (solo admin)
+    ...(userRole === 'admin' ? [{
+      id: 'clients',
+      title: 'Clientes',
+      description: 'Gestiona tus clientes',
+      icon: <Users size={28} />,
+      color: 'from-amber-500/20 to-amber-600/20',
+      route: '/admin/clients',
+      stats: '28 activos'
+    }] : []),
+    
+    // Dashboard
     {
-      id: 2,
-      name: 'Fondo de emergencia',
-      current: 3200,
-      target: 5000,
-      deadline: 'Dic 2024',
-      category: 'Ahorro'
+      id: 'dashboard',
+      title: 'Dashboard',
+      description: 'Panel de control principal',
+      icon: <LayoutDashboard size={28} />,
+      color: 'from-emerald-500/20 to-emerald-600/20',
+      route: '/dashboard',
+      stats: 'Resumen'
+    },
+    
+    // Configuración
+    {
+      id: 'settings',
+      title: 'Configuración',
+      description: 'Personaliza tu experiencia',
+      icon: <Settings size={28} />,
+      color: 'from-slate-500/20 to-slate-600/20',
+      route: '/settings',
+      stats: 'Preferencias'
     }
   ];
 
@@ -182,7 +193,9 @@ export const HomePage = () => {
     balance: 12580.75,
     monthlyIncome: 3250.00,
     monthlyExpenses: 1245.50,
-    totalClients: 28
+    totalCategories: 12,
+    activeGoals: 3,
+    monthlySavings: 2004.25
   };
 
   useEffect(() => {
@@ -221,10 +234,6 @@ export const HomePage = () => {
     }).format(amount);
   };
 
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
-  };
-
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
       {/* Welcome Banner Personalizado */}
@@ -242,7 +251,7 @@ export const HomePage = () => {
                 {currentTime.charAt(0).toUpperCase() + currentTime.slice(1)}
               </p>
               <p className="text-white/40 text-sm mt-2">
-                Tu balance total es {formatCurrency(quickStats.balance)} | {quickStats.totalClients} clientes activos
+                Tu balance total es {formatCurrency(quickStats.balance)} | Ahorro mensual: {formatCurrency(quickStats.monthlySavings)}
               </p>
             </div>
             <button className="p-3 hover:bg-white/10 rounded-xl transition-colors">
@@ -252,8 +261,8 @@ export const HomePage = () => {
         </div>
       )}
 
-      {/* Balance Rápido */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Balance Total</p>
           <p className="text-2xl font-bold text-white">{formatCurrency(quickStats.balance)}</p>
@@ -282,31 +291,29 @@ export const HomePage = () => {
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <Users size={16} className="text-cyan-400" />
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Target size={16} className="text-blue-400" />
             </div>
             <div>
-              <p className="text-white/60 text-sm">Clientes</p>
-              <p className="text-white font-bold">{quickStats.totalClients}</p>
+              <p className="text-white/60 text-sm">Ahorro</p>
+              <p className="text-white font-bold">{formatCurrency(quickStats.monthlySavings)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 7 Apartados Principales */}
+      {/* Todas las opciones disponibles */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Accesos Rápidos</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">Módulos del Sistema</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {quickOptions.map((option) => (
             <button
               key={option.id}
               onClick={() => navigate(option.route)}
-              className="group relative overflow-hidden bg-white/5 backdrop-blur-sm hover:bg-white/10 rounded-xl p-6 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-[#F05984]/50 text-left"
+              className="group relative overflow-hidden bg-white/5 backdrop-blur-sm hover:bg-white/10 rounded-xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-[#F05984]/50 text-left"
             >
-              {/* Fondo degradado en hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${option.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
               
-              {/* Contenido */}
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`p-3 rounded-xl bg-gradient-to-br ${option.color} group-hover:scale-110 transition-transform duration-300`}>
@@ -339,88 +346,32 @@ export const HomePage = () => {
         </div>
       </div>
 
-      {/* Resumen de Metas y Transacciones Recientes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Metas rápidas */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold">Tus Metas</h3>
-            <button 
-              onClick={() => navigate('/goals')}
-              className="text-white/40 hover:text-white transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <div className="space-y-4">
-            {goals.map((goal) => {
-              const progress = getProgressPercentage(goal.current, goal.target);
-              return (
-                <div key={goal.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-white/10 rounded-lg">
-                        <Target size={14} className="text-white" />
-                      </div>
-                      <span className="text-white text-sm">{goal.name}</span>
-                    </div>
-                    <span className="text-white/40 text-xs">{goal.deadline}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-white/60">{formatCurrency(goal.current)}</span>
-                    <span className="text-white/40">de {formatCurrency(goal.target)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Información adicional según el rol */}
+      {userRole === 'admin' && (
+        <div className="bg-gradient-to-r from-[#321D28]/50 to-[#6E4068]/50 rounded-xl p-4 border border-white/10">
+          <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+            <Users size={18} className="text-[#F05984]" />
+            Panel de Administración
+          </h3>
+          <p className="text-white/60 text-sm">
+            Tienes acceso completo a la gestión de clientes y reportes avanzados.
+            Puedes ver y administrar todos los clientes desde el módulo de Clientes.
+          </p>
         </div>
+      )}
 
-        {/* Transacciones recientes */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold">Movimientos Recientes</h3>
-            <button 
-              onClick={() => navigate('/expenses')}
-              className="text-white/40 hover:text-white transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    transaction.type === 'income' ? 'bg-green-500/20' : 'bg-red-500/20'
-                  }`}>
-                    {transaction.type === 'income' ? (
-                      <TrendingUp size={14} className="text-green-400" />
-                    ) : (
-                      <TrendingDown size={14} className="text-red-400" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white text-sm">{transaction.description}</p>
-                    <p className="text-white/40 text-xs">{transaction.category} • {transaction.date}</p>
-                  </div>
-                </div>
-                <span className={`text-sm font-medium ${
-                  transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
+      {userRole === 'client' && (
+        <div className="bg-gradient-to-r from-[#321D28]/50 to-[#6E4068]/50 rounded-xl p-4 border border-white/10">
+          <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+            <UserCircle size={18} className="text-[#F05984]" />
+            Tu Panel Personal
+          </h3>
+          <p className="text-white/60 text-sm">
+            Gestiona tus finanzas personales, establece metas de ahorro y controla tus gastos.
+            Todos tus datos están seguros y disponibles en tiempo real.
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 };
