@@ -105,7 +105,7 @@ export const IncomesPage = () => {
     notes: ''
   });
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 6; // Cambiado a 6 elementos por página
 
   // Función para filtrar por período
   const filterByPeriod = (date: string, period: string): boolean => {
@@ -144,7 +144,7 @@ export const IncomesPage = () => {
     growth: 12.5
   };
 
-  // Datos de ejemplo - Ingresos
+  // Datos de ejemplo - 10 ingresos para probar filtros
   const [incomes, setIncomes] = useState<Income[]>([
     {
       id: 'INC-001',
@@ -203,16 +203,120 @@ export const IncomesPage = () => {
     },
     {
       id: 'INC-004',
-      description: 'Pago futuro - Marzo',
-      amount: 1800.00,
-      category: 'Salario',
-      date: '2024-03-15',
+      description: 'Pago de alquiler oficina',
+      amount: 1200.00,
+      category: 'Ingresos pasivos',
+      subcategory: 'Alquiler',
+      date: '2024-02-20',
       paymentMethod: 'transferencia',
-      status: 'programado',
+      status: 'completado',
       client: 'Empresa ABC',
+      clientId: 'CLI-004',
+      invoice: 'INV-2024-004',
+      attachments: 0,
+      recurring: true,
+      recurringFrequency: 'mensual',
+      tax: 0.15,
+      tags: ['alquiler', 'pasivo']
+    },
+    {
+      id: 'INC-005',
+      description: 'Consultoría empresarial',
+      amount: 850.00,
+      category: 'Consultoría',
+      subcategory: 'Consultoría financiera',
+      date: '2024-02-19',
+      paymentMethod: 'transferencia',
+      status: 'completado',
+      client: 'Ana Martínez',
+      clientId: 'CLI-005',
+      invoice: 'INV-2024-005',
+      attachments: 1,
       recurring: false,
       tax: 0.21,
-      tags: ['futuro']
+      tags: ['consultoría']
+    },
+    {
+      id: 'INC-006',
+      description: 'Pago pendiente - Proyecto App',
+      amount: 2340.00,
+      category: 'Servicios profesionales',
+      date: '2024-03-01',
+      paymentMethod: 'transferencia',
+      status: 'pendiente',
+      client: 'Roberto Sánchez',
+      clientId: 'CLI-006',
+      project: 'Desarrollo App',
+      invoice: 'INV-2024-006',
+      attachments: 0,
+      recurring: false,
+      tax: 0.21,
+      tags: ['servicios', 'pendiente']
+    },
+    {
+      id: 'INC-007',
+      description: 'Membresía Premium',
+      amount: 1250.00,
+      category: 'Suscripciones',
+      subcategory: 'Membresía anual',
+      date: '2024-03-15',
+      paymentMethod: 'tarjeta',
+      status: 'programado',
+      client: 'Laura Torres',
+      clientId: 'CLI-007',
+      invoice: 'INV-2024-007',
+      attachments: 0,
+      recurring: true,
+      recurringFrequency: 'anual',
+      tax: 0.21,
+      tags: ['suscripción']
+    },
+    {
+      id: 'INC-008',
+      description: 'Venta en efectivo',
+      amount: 500.00,
+      category: 'Ventas',
+      date: '2024-02-18',
+      paymentMethod: 'efectivo',
+      status: 'completado',
+      client: 'Cliente Anónimo',
+      invoice: 'INV-2024-008',
+      attachments: 0,
+      recurring: false,
+      tax: 0.21,
+      tags: ['ventas', 'efectivo']
+    },
+    {
+      id: 'INC-009',
+      description: 'Pago con cheque - Atrasado',
+      amount: 750.00,
+      category: 'Servicios profesionales',
+      date: '2024-02-17',
+      paymentMethod: 'cheque',
+      status: 'pendiente',
+      client: 'Empresa XYZ',
+      clientId: 'CLI-009',
+      invoice: 'INV-2024-009',
+      attachments: 1,
+      recurring: false,
+      tax: 0.21,
+      tags: ['servicios', 'cheque']
+    },
+    {
+      id: 'INC-010',
+      description: 'Bono anual',
+      amount: 3000.00,
+      category: 'Salario',
+      date: '2024-02-16',
+      paymentMethod: 'transferencia',
+      status: 'completado',
+      client: 'Tech Solutions S.L.',
+      clientId: 'CLI-001',
+      invoice: 'INV-2024-010',
+      attachments: 0,
+      recurring: false,
+      tax: 0.15,
+      tags: ['salario', 'bono']
     }
   ]);
 
@@ -220,26 +324,50 @@ export const IncomesPage = () => {
   const categories: CategorySummary[] = [
     {
       name: 'Salario',
-      amount: 2500.00,
+      amount: 5500.00,
       percentage: 32,
       color: 'from-green-500 to-green-600',
       icon: <Briefcase size={16} />,
-      count: 1
+      count: 2
     },
     {
       name: 'Servicios profesionales',
-      amount: 3500.00,
-      percentage: 28,
+      amount: 6590.00,
+      percentage: 38,
       color: 'from-blue-500 to-blue-600',
       icon: <Laptop size={16} />,
-      count: 1
+      count: 3
     },
     {
       name: 'Ventas',
-      amount: 1250.50,
-      percentage: 16,
+      amount: 1750.50,
+      percentage: 10,
       color: 'from-purple-500 to-purple-600',
       icon: <ShoppingBag size={16} />,
+      count: 2
+    },
+    {
+      name: 'Ingresos pasivos',
+      amount: 1200.00,
+      percentage: 7,
+      color: 'from-orange-500 to-orange-600',
+      icon: <HomeIcon size={16} />,
+      count: 1
+    },
+    {
+      name: 'Consultoría',
+      amount: 850.00,
+      percentage: 5,
+      color: 'from-pink-500 to-pink-600',
+      icon: <Users size={16} />,
+      count: 1
+    },
+    {
+      name: 'Suscripciones',
+      amount: 1250.00,
+      percentage: 7,
+      color: 'from-indigo-500 to-indigo-600',
+      icon: <CreditCard size={16} />,
       count: 1
     }
   ];
@@ -488,7 +616,7 @@ export const IncomesPage = () => {
       {/* Categories Summary */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
         <h3 className="text-white font-semibold mb-3">Ingresos por categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {categories.map((cat, index) => (
             <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-2 mb-2">
@@ -581,6 +709,9 @@ export const IncomesPage = () => {
                     <option value="Salario" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salario</option>
                     <option value="Servicios profesionales" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios profesionales</option>
                     <option value="Ventas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ventas</option>
+                    <option value="Ingresos pasivos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ingresos pasivos</option>
+                    <option value="Consultoría" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Consultoría</option>
+                    <option value="Suscripciones" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Suscripciones</option>
                   </select>
                 </div>
                 <div>
@@ -855,7 +986,7 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Modal para crear nuevo ingreso - Sin emojis */}
+      {/* Modal para crear nuevo ingreso */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -879,7 +1010,7 @@ export const IncomesPage = () => {
 
             <div className="p-6">
               <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
-                {/* Primera fila - 2 columnas */}
+                {/* Formulario... (igual que antes) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
@@ -912,7 +1043,6 @@ export const IncomesPage = () => {
                   </div>
                 </div>
 
-                {/* Segunda fila - 2 columnas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
@@ -947,7 +1077,6 @@ export const IncomesPage = () => {
                   </div>
                 </div>
 
-                {/* Tercera fila - 2 columnas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
@@ -978,7 +1107,6 @@ export const IncomesPage = () => {
                   </div>
                 </div>
 
-                {/* Cuarta fila - 2 columnas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
@@ -1008,7 +1136,6 @@ export const IncomesPage = () => {
                   </div>
                 </div>
 
-                {/* Quinta fila - 1 columna */}
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
                   <textarea
@@ -1020,7 +1147,6 @@ export const IncomesPage = () => {
                   />
                 </div>
 
-                {/* Botones */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                   <button
                     type="button"
