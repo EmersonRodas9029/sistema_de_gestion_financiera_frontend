@@ -20,71 +20,8 @@ import {
   BarChart3,
   PiggyBank,
   CreditCard,
-  Receipt,
-  UserCircle,
-  Briefcase,
-  Award,
-  Gift,
-  Star,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Calendar,
-  DollarSign,
-  ShoppingBag,
-  Heart,
-  BookOpen,
-  Coffee,
-  Dog,
-  Sparkles,
-  Activity,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
   Repeat,
-  Target as TargetIcon,
-  Save,
-  Download,
-  Upload,
-  Shield,
-  Lock,
-  Key,
-  Fingerprint,
-  Globe,
-  Languages,
-  Moon,
-  Sun,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Laptop,
-  Wifi,
-  Volume2,
-  Battery,
-  Server,
-  Cloud,
-  Database,
-  HardDrive,
-  Cpu,
-  Thermometer,
-  Fan,
-  Droplet,
-  Wind,
-  Zap,
-  Palette,
-  Brush,
-  Type,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  List,
-  ListOrdered,
-  ListChecks,
-  Minus,
-  PlusCircle,
-  XCircle,
-  AlertTriangle,
-  Info
+  UserCircle
 } from 'lucide-react';
 
 interface MenuItem {
@@ -140,14 +77,14 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
     {
       path: '/incomes',
       name: 'Ingresos',
-      icon: <TrendingUpIcon size={20} />,
+      icon: <TrendingUp size={20} />,
       roles: ['admin', 'client'],
       section: 'finances'
     },
     {
       path: '/expenses',
       name: 'Gastos',
-      icon: <TrendingDownIcon size={20} />,
+      icon: <TrendingDown size={20} />,
       roles: ['admin', 'client'],
       section: 'finances'
     },
@@ -170,7 +107,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
     {
       path: '/goals',
       name: 'Metas Financieras',
-      icon: <TargetIcon size={20} />,
+      icon: <Target size={20} />,
       roles: ['admin', 'client'],
       section: 'goals'
     },
@@ -223,13 +160,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
     
     // Sección Configuración
     {
-      path: '/notifications',
-      name: 'Notificaciones',
-      icon: <Bell size={20} />,
-      roles: ['admin', 'client'],
-      section: 'settings'
-    },
-    {
       path: '/settings',
       name: 'Configuración',
       icon: <Settings size={20} />,
@@ -259,13 +189,13 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
             {title}
           </h3>
         )}
-        <ul className="space-y-2 px-2">
+        <ul className="space-y-1 px-2">
           {items.map((item) => (
             <li key={item.path}>
               <NavLink
                 to={item.path}
                 className={({ isActive }) => {
-                  return `flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                  return `flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${
                     collapsed ? 'justify-center' : 'space-x-3'
                   } ${
                     isActive 
@@ -292,9 +222,21 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         collapsed ? 'w-20' : 'w-64'
       }`}
       style={{ 
-        background: 'linear-gradient(180deg, #321D28 0%, #6E4068 50%, #BC455F 100%)'
+        background: 'linear-gradient(180deg, #321D28 0%, #6E4068 50%, #BC455F 100%)',
+        overflowY: 'auto',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
       }}
     >
+      {/* Ocultar scrollbar para Chrome, Safari y Edge */}
+      <style>
+        {`
+          aside::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
+      
       {/* Logo y toggle */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 mb-4">
         {!collapsed && (
@@ -330,8 +272,8 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         )}
       </div>
 
-      {/* Navegación con todas las secciones */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
+      {/* Navegación con todas las secciones - sin scrollbar visible */}
+      <nav className="flex-1 py-2 px-2">
         {renderMenuSection(mainItems, 'PRINCIPAL')}
         {renderMenuSection(financesItems, 'FINANZAS')}
         {renderMenuSection(goalsItems, 'METAS')}
@@ -341,11 +283,11 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       </nav>
 
       {/* Botones adicionales */}
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/10 mt-auto">
         {/* Notificaciones */}
         <button
           onClick={handleNotifications}
-          className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${
+          className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${
             collapsed ? 'justify-center' : 'space-x-3'
           }`}
         >
@@ -365,7 +307,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
 
         {/* Ayuda */}
         <button
-          className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-2 ${
+          className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-2 ${
             collapsed ? 'justify-center' : 'space-x-3'
           }`}
         >
@@ -376,7 +318,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
         {/* Cerrar sesión */}
         <button
           onClick={handleLogout}
-          className={`flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300 hover:translate-x-1 ${
+          className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300 hover:translate-x-1 ${
             collapsed ? 'justify-center' : 'space-x-3'
           }`}
         >
