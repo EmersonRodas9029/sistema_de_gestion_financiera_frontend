@@ -27,7 +27,6 @@ import {
   Settings,
   HelpCircle,
   Home,
-  LayoutDashboard,
   Repeat,
   PiggyBank,
   CreditCard,
@@ -123,15 +122,6 @@ export const HomePage = () => {
       route: '/categories',
       stats: '12 categorías'
     },
-    {
-      id: 'wallet',
-      title: 'Billetera',
-      description: 'Tus cuentas y tarjetas',
-      icon: <CreditCard size={28} />,
-      color: 'from-indigo-500/20 to-indigo-600/20',
-      route: '/wallet',
-      stats: '3 cuentas'
-    },
     
     // Análisis
     {
@@ -165,17 +155,6 @@ export const HomePage = () => {
       route: '/admin/clients',
       stats: '28 activos'
     }] : []),
-    
-    // Dashboard
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      description: 'Panel de control principal',
-      icon: <LayoutDashboard size={28} />,
-      color: 'from-emerald-500/20 to-emerald-600/20',
-      route: '/dashboard',
-      stats: 'Resumen'
-    },
     
     // Configuración
     {
