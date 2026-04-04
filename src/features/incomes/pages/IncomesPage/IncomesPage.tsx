@@ -101,6 +101,7 @@ export const IncomesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('este-mes');
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'calendar'>('table');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -250,6 +251,38 @@ export const IncomesPage = () => {
       recurringFrequency: 'anual',
       tax: 0.21,
       tags: ['suscripción', 'recurrente']
+    },
+    {
+      id: 'INC-008',
+      description: 'Pago en efectivo - Venta directa',
+      amount: 500.00,
+      category: 'Ventas',
+      subcategory: 'Venta directa',
+      date: '2024-02-18',
+      paymentMethod: 'efectivo',
+      status: 'completado',
+      client: 'Cliente Anónimo',
+      invoice: 'INV-2024-008',
+      attachments: 0,
+      recurring: false,
+      tax: 0.21,
+      tags: ['ventas', 'efectivo']
+    },
+    {
+      id: 'INC-009',
+      description: 'Cheque - Pago atrasado',
+      amount: 750.00,
+      category: 'Servicios profesionales',
+      date: '2024-02-17',
+      paymentMethod: 'cheque',
+      status: 'pendiente',
+      client: 'Empresa XYZ',
+      clientId: 'CLI-009',
+      invoice: 'INV-2024-009',
+      attachments: 1,
+      recurring: false,
+      tax: 0.21,
+      tags: ['servicios', 'cheque']
     }
   ];
 
@@ -311,8 +344,9 @@ export const IncomesPage = () => {
                          income.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'todas' || income.category === selectedCategory;
     const matchesStatus = selectedStatus === 'todos' || income.status === selectedStatus;
+    const matchesPaymentMethod = selectedPaymentMethod === 'todos' || income.paymentMethod === selectedPaymentMethod;
     
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod;
   });
 
   // Ordenar ingresos
@@ -396,8 +430,27 @@ export const IncomesPage = () => {
         return <CreditCard size={14} />;
       case 'transferencia':
         return <Wallet size={14} />;
+      case 'cheque':
+        return <FileText size={14} />;
       default:
         return <CreditCard size={14} />;
+    }
+  };
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch(method) {
+      case 'efectivo':
+        return 'Efectivo';
+      case 'tarjeta':
+        return 'Tarjeta';
+      case 'transferencia':
+        return 'Transferencia';
+      case 'cheque':
+        return 'Cheque';
+      case 'otro':
+        return 'Otro';
+      default:
+        return method;
     }
   };
 
@@ -580,12 +633,17 @@ export const IncomesPage = () => {
                 </div>
                 <div>
                   <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
-                  <select className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm">
-                    <option>Todos los métodos</option>
-                    <option>Efectivo</option>
-                    <option>Tarjeta</option>
-                    <option>Transferencia</option>
-                    <option>Cheque</option>
+                  <select
+                    value={selectedPaymentMethod}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  >
+                    <option value="todos">Todos los métodos</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="otro">Otro</option>
                   </select>
                 </div>
               </div>
@@ -708,7 +766,7 @@ export const IncomesPage = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         {getPaymentMethodIcon(income.paymentMethod)}
-                        <span className="text-white text-sm capitalize">{income.paymentMethod}</span>
+                        <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -776,7 +834,7 @@ export const IncomesPage = () => {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-white/60">Método:</span>
-                    <span className="text-white capitalize">{income.paymentMethod}</span>
+                    <span className="text-white capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
                   </div>
                 </div>
 
