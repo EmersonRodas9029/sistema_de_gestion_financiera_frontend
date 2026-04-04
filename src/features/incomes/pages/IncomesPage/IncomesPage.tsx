@@ -22,37 +22,20 @@ import {
   ChevronRight,
   ChevronLeft,
   FileText,
-  Mail,
-  Phone,
-  User,
-  Building2,
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Upload,
   Printer,
-  Share2,
   Tag,
-  FolderTree,
-  Users,
-  Home,
   Briefcase,
-  Gift,
-  Award,
-  Smartphone,
   Laptop,
-  Car,
-  Heart,
-  BookOpen,
-  Coffee,
   ShoppingBag,
-  Zap,
-  Wifi,
-  Droplet,
   Home as HomeIcon,
+  Users,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  XCircle as XCircleIcon
 } from 'lucide-react';
 
 interface Income {
@@ -103,7 +86,7 @@ export const IncomesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('este-mes');
-  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'calendar'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -338,6 +321,15 @@ export const IncomesPage = () => {
     }
   ];
 
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('todas');
+    setSelectedStatus('todos');
+    setSelectedPaymentMethod('todos');
+    setSelectedPeriod('este-mes');
+    setCurrentPage(1);
+  };
+
   const filteredIncomes = incomes.filter(income => {
     const matchesSearch = income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          income.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -453,6 +445,12 @@ export const IncomesPage = () => {
         return method;
     }
   };
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters = searchTerm !== '' || 
+    selectedCategory !== 'todas' || 
+    selectedStatus !== 'todos' || 
+    selectedPaymentMethod !== 'todos';
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -594,6 +592,15 @@ export const IncomesPage = () => {
               <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
                 <Printer size={20} />
               </button>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
+                >
+                  <XCircleIcon size={16} />
+                  <span>Limpiar filtros</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -706,7 +713,7 @@ export const IncomesPage = () => {
           </span>
         </div>
 
-        {/* Table View */}
+        {/* Table View - Sin columna de acciones */}
         {viewMode === 'table' && (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -720,7 +727,6 @@ export const IncomesPage = () => {
                   <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
                   <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
                   <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
-                  <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -778,22 +784,6 @@ export const IncomesPage = () => {
                     <td className="py-3 px-4 text-right">
                       <span className="text-white font-medium">{formatCurrency(income.amount)}</span>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
-                          <Eye size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
-                          <Edit size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-red-400">
-                          <Trash2 size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
-                          <MoreVertical size={16} />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -801,7 +791,7 @@ export const IncomesPage = () => {
           </div>
         )}
 
-        {/* Grid View */}
+        {/* Grid View - Sin botones de acción */}
         {viewMode === 'grid' && (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedIncomes.map((income) => (
@@ -840,14 +830,6 @@ export const IncomesPage = () => {
 
                 <div className="flex items-center justify-between pt-3 border-t border-white/10">
                   <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
-                  <div className="flex gap-1">
-                    <button className="p-1.5 hover:bg-white/10 rounded transition-colors">
-                      <Eye size={16} className="text-white/60" />
-                    </button>
-                    <button className="p-1.5 hover:bg-white/10 rounded transition-colors">
-                      <Edit size={16} className="text-white/60" />
-                    </button>
-                  </div>
                 </div>
 
                 {income.tags && income.tags.length > 0 && (
