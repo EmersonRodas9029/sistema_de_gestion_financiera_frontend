@@ -107,6 +107,31 @@ export const IncomesPage = () => {
 
   const itemsPerPage = 10;
 
+  // Función para filtrar por período
+  const filterByPeriod = (date: string, period: string): boolean => {
+    const incomeDate = new Date(date);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    
+    switch(period) {
+      case 'este-mes':
+        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+      case 'este-semana':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+        return incomeDate >= startOfWeek && incomeDate <= endOfWeek;
+      case 'este-ano':
+        return incomeDate.getFullYear() === currentYear;
+      case 'personalizado':
+        return true;
+      default:
+        return true;
+    }
+  };
+
   // Resumen de ingresos
   const summary: IncomeSummary = {
     total: 45250.75,
@@ -175,6 +200,19 @@ export const IncomesPage = () => {
       recurring: false,
       tax: 0.21,
       tags: ['ventas', 'digital']
+    },
+    {
+      id: 'INC-004',
+      description: 'Pago futuro - Marzo',
+      amount: 1800.00,
+      category: 'Salario',
+      date: '2024-03-15',
+      paymentMethod: 'transferencia',
+      status: 'programado',
+      client: 'Empresa ABC',
+      recurring: false,
+      tax: 0.21,
+      tags: ['futuro']
     }
   ]);
 
@@ -255,8 +293,9 @@ export const IncomesPage = () => {
     const matchesCategory = selectedCategory === 'todas' || income.category === selectedCategory;
     const matchesStatus = selectedStatus === 'todos' || income.status === selectedStatus;
     const matchesPaymentMethod = selectedPaymentMethod === 'todos' || income.paymentMethod === selectedPaymentMethod;
+    const matchesPeriod = filterByPeriod(income.date, selectedPeriod);
     
-    return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod;
+    return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod && matchesPeriod;
   });
 
   // Ordenar ingresos
@@ -367,7 +406,8 @@ export const IncomesPage = () => {
   const hasActiveFilters = searchTerm !== '' || 
     selectedCategory !== 'todas' || 
     selectedStatus !== 'todos' || 
-    selectedPaymentMethod !== 'todos';
+    selectedPaymentMethod !== 'todos' ||
+    selectedPeriod !== 'este-mes';
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -815,7 +855,7 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Modal para crear nuevo ingreso */}
+      {/* Modal para crear nuevo ingreso - Sin emojis */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -917,10 +957,10 @@ export const IncomesPage = () => {
                       className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
-                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>💰 Efectivo</option>
-                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>💳 Tarjeta</option>
-                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>🏦 Transferencia</option>
-                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📄 Cheque</option>
+                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
                     </select>
                   </div>
                   <div>
@@ -931,9 +971,9 @@ export const IncomesPage = () => {
                       className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>✅ Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>⏳ Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📅 Programado</option>
+                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
                     </select>
                   </div>
                 </div>
