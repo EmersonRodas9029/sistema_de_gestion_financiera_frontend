@@ -34,7 +34,6 @@ import {
   X,
   Save,
   User,
-  Building2,
   Hash,
   Calendar as CalendarIcon
 } from 'lucide-react';
@@ -492,12 +491,13 @@ export const IncomesPage = () => {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
-                <option value="este-mes">Este mes</option>
-                <option value="este-semana">Esta semana</option>
-                <option value="este-ano">Este año</option>
-                <option value="personalizado">Personalizado</option>
+                <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
+                <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
+                <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
+                <option value="personalizado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Personalizado</option>
               </select>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -534,12 +534,13 @@ export const IncomesPage = () => {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="todas">Todas las categorías</option>
-                    <option value="Salario">Salario</option>
-                    <option value="Servicios profesionales">Servicios profesionales</option>
-                    <option value="Ventas">Ventas</option>
+                    <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                    <option value="Salario" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salario</option>
+                    <option value="Servicios profesionales" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios profesionales</option>
+                    <option value="Ventas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ventas</option>
                   </select>
                 </div>
                 <div>
@@ -547,12 +548,13 @@ export const IncomesPage = () => {
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="todos">Todos los estados</option>
-                    <option value="completado">Completado</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="programado">Programado</option>
+                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
                   </select>
                 </div>
                 <div>
@@ -560,13 +562,14 @@ export const IncomesPage = () => {
                   <select
                     value={selectedPaymentMethod}
                     onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="todos">Todos los métodos</option>
-                    <option value="efectivo">Efectivo</option>
-                    <option value="tarjeta">Tarjeta</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="cheque">Cheque</option>
+                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
+                    <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                    <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                    <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                    <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
                   </select>
                 </div>
               </div>
@@ -812,7 +815,7 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Modal mejorado para crear nuevo ingreso - Más ancho y con dos columnas */}
+      {/* Modal para crear nuevo ingreso */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -877,15 +880,16 @@ export const IncomesPage = () => {
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
                       className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                       required
                     >
-                      <option value="">Seleccionar categoría</option>
-                      <option value="Salario">Salario</option>
-                      <option value="Servicios profesionales">Servicios profesionales</option>
-                      <option value="Ventas">Ventas</option>
-                      <option value="Ingresos pasivos">Ingresos pasivos</option>
-                      <option value="Consultoría">Consultoría</option>
-                      <option value="Suscripciones">Suscripciones</option>
+                      <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
+                      <option value="Salario" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salario</option>
+                      <option value="Servicios profesionales" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios profesionales</option>
+                      <option value="Ventas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ventas</option>
+                      <option value="Ingresos pasivos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ingresos pasivos</option>
+                      <option value="Consultoría" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Consultoría</option>
+                      <option value="Suscripciones" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Suscripciones</option>
                     </select>
                   </div>
                   <div>
@@ -911,11 +915,12 @@ export const IncomesPage = () => {
                       value={formData.paymentMethod}
                       onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
                       className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
-                      <option value="efectivo">💰 Efectivo</option>
-                      <option value="tarjeta">💳 Tarjeta</option>
-                      <option value="transferencia">🏦 Transferencia</option>
-                      <option value="cheque">📄 Cheque</option>
+                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>💰 Efectivo</option>
+                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>💳 Tarjeta</option>
+                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>🏦 Transferencia</option>
+                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📄 Cheque</option>
                     </select>
                   </div>
                   <div>
@@ -924,10 +929,11 @@ export const IncomesPage = () => {
                       value={formData.status}
                       onChange={(e) => setFormData({...formData, status: e.target.value})}
                       className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
-                      <option value="completado">✅ Completado</option>
-                      <option value="pendiente">⏳ Pendiente</option>
-                      <option value="programado">📅 Programado</option>
+                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>✅ Completado</option>
+                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>⏳ Pendiente</option>
+                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📅 Programado</option>
                     </select>
                   </div>
                 </div>
@@ -962,7 +968,7 @@ export const IncomesPage = () => {
                   </div>
                 </div>
 
-                {/* Quinta fila - 1 columna (notas) */}
+                {/* Quinta fila - 1 columna */}
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
                   <textarea
@@ -974,7 +980,7 @@ export const IncomesPage = () => {
                   />
                 </div>
 
-                {/* Botones de acción */}
+                {/* Botones */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                   <button
                     type="button"
