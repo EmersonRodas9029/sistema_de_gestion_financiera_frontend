@@ -65,13 +65,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       roles: ['admin', 'client'],
       section: 'main'
     },
-    {
-      path: '/dashboard',
-      name: 'Dashboard',
-      icon: <LayoutDashboard size={20} />,
-      roles: ['admin', 'client'],
-      section: 'main'
-    },
     
     // Sección Finanzas
     {
@@ -132,13 +125,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       name: 'Clientes',
       icon: <Users size={20} />,
       roles: ['admin'],
-      section: 'management'
-    },
-    {
-      path: '/wallet',
-      name: 'Billetera',
-      icon: <CreditCard size={20} />,
-      roles: ['admin', 'client'],
       section: 'management'
     },
     
