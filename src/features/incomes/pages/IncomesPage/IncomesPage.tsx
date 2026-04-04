@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -71,6 +71,212 @@ interface CategorySummary {
   count: number;
 }
 
+// Datos iniciales por defecto
+const defaultIncomes: Income[] = [
+  {
+    id: 'INC-001',
+    description: 'Pago de nómina - Febrero',
+    amount: 2500.00,
+    category: 'Salario',
+    subcategory: 'Salario mensual',
+    date: '2024-02-23',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'Tech Solutions S.L.',
+    clientId: 'CLI-001',
+    project: 'Desarrollo Web',
+    invoice: 'INV-2024-001',
+    notes: 'Pago correspondiente a nómina de febrero',
+    attachments: 2,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.15,
+    tags: ['salario', 'mensual', 'fijo']
+  },
+  {
+    id: 'INC-002',
+    description: 'Pago de cliente - Proyecto Web',
+    amount: 3500.00,
+    category: 'Servicios profesionales',
+    subcategory: 'Desarrollo web',
+    date: '2024-02-22',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'María González',
+    clientId: 'CLI-002',
+    project: 'Rediseño Web',
+    invoice: 'INV-2024-002',
+    attachments: 3,
+    recurring: false,
+    tax: 0.21,
+    tags: ['servicios', 'proyecto']
+  },
+  {
+    id: 'INC-003',
+    description: 'Venta de productos',
+    amount: 1250.50,
+    category: 'Ventas',
+    subcategory: 'Productos digitales',
+    date: '2024-02-21',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    client: 'Juan Pérez',
+    clientId: 'CLI-003',
+    invoice: 'INV-2024-003',
+    attachments: 1,
+    recurring: false,
+    tax: 0.21,
+    tags: ['ventas', 'digital']
+  },
+  {
+    id: 'INC-004',
+    description: 'Pago de alquiler oficina',
+    amount: 1200.00,
+    category: 'Ingresos pasivos',
+    subcategory: 'Alquiler',
+    date: '2024-02-20',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'Empresa ABC',
+    clientId: 'CLI-004',
+    invoice: 'INV-2024-004',
+    attachments: 0,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.15,
+    tags: ['alquiler', 'pasivo']
+  },
+  {
+    id: 'INC-005',
+    description: 'Consultoría empresarial',
+    amount: 850.00,
+    category: 'Consultoría',
+    subcategory: 'Consultoría financiera',
+    date: '2024-02-19',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'Ana Martínez',
+    clientId: 'CLI-005',
+    invoice: 'INV-2024-005',
+    attachments: 1,
+    recurring: false,
+    tax: 0.21,
+    tags: ['consultoría']
+  },
+  {
+    id: 'INC-006',
+    description: 'Pago pendiente - Proyecto App',
+    amount: 2340.00,
+    category: 'Servicios profesionales',
+    date: '2024-03-01',
+    paymentMethod: 'transferencia',
+    status: 'pendiente',
+    client: 'Roberto Sánchez',
+    clientId: 'CLI-006',
+    project: 'Desarrollo App',
+    invoice: 'INV-2024-006',
+    attachments: 0,
+    recurring: false,
+    tax: 0.21,
+    tags: ['servicios', 'pendiente']
+  },
+  {
+    id: 'INC-007',
+    description: 'Membresía Premium',
+    amount: 1250.00,
+    category: 'Suscripciones',
+    subcategory: 'Membresía anual',
+    date: '2024-03-15',
+    paymentMethod: 'tarjeta',
+    status: 'programado',
+    client: 'Laura Torres',
+    clientId: 'CLI-007',
+    invoice: 'INV-2024-007',
+    attachments: 0,
+    recurring: true,
+    recurringFrequency: 'anual',
+    tax: 0.21,
+    tags: ['suscripción']
+  },
+  {
+    id: 'INC-008',
+    description: 'Venta en efectivo',
+    amount: 500.00,
+    category: 'Ventas',
+    date: '2024-02-18',
+    paymentMethod: 'efectivo',
+    status: 'completado',
+    client: 'Cliente Anónimo',
+    invoice: 'INV-2024-008',
+    attachments: 0,
+    recurring: false,
+    tax: 0.21,
+    tags: ['ventas', 'efectivo']
+  },
+  {
+    id: 'INC-009',
+    description: 'Pago con cheque - Atrasado',
+    amount: 750.00,
+    category: 'Servicios profesionales',
+    date: '2024-02-17',
+    paymentMethod: 'cheque',
+    status: 'pendiente',
+    client: 'Empresa XYZ',
+    clientId: 'CLI-009',
+    invoice: 'INV-2024-009',
+    attachments: 1,
+    recurring: false,
+    tax: 0.21,
+    tags: ['servicios', 'cheque']
+  },
+  {
+    id: 'INC-010',
+    description: 'Bono anual',
+    amount: 3000.00,
+    category: 'Salario',
+    date: '2024-02-16',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'Tech Solutions S.L.',
+    clientId: 'CLI-001',
+    invoice: 'INV-2024-010',
+    attachments: 0,
+    recurring: false,
+    tax: 0.15,
+    tags: ['salario', 'bono']
+  },
+  {
+    id: 'INC-011',
+    description: 'Pago de nómina - Marzo',
+    amount: 2500.00,
+    category: 'Salario',
+    date: '2024-03-25',
+    paymentMethod: 'transferencia',
+    status: 'programado',
+    client: 'Tech Solutions S.L.',
+    invoice: 'INV-2024-011',
+    attachments: 0,
+    recurring: true,
+    tax: 0.15,
+    tags: ['salario']
+  },
+  {
+    id: 'INC-012',
+    description: 'Dividendos',
+    amount: 500.00,
+    category: 'Ingresos pasivos',
+    date: '2023-12-15',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: 'Inversiones',
+    invoice: 'INV-2023-012',
+    attachments: 0,
+    recurring: false,
+    tax: 0.19,
+    tags: ['dividendos']
+  }
+];
+
 export const IncomesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,224 +308,40 @@ export const IncomesPage = () => {
 
   const itemsPerPage = 6;
 
-  // Datos de ejemplo - 12 ingresos
-  const [incomes, setIncomes] = useState<Income[]>([
-    {
-      id: 'INC-001',
-      description: 'Pago de nómina - Febrero',
-      amount: 2500.00,
-      category: 'Salario',
-      subcategory: 'Salario mensual',
-      date: '2024-02-23',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Tech Solutions S.L.',
-      clientId: 'CLI-001',
-      project: 'Desarrollo Web',
-      invoice: 'INV-2024-001',
-      notes: 'Pago correspondiente a nómina de febrero',
-      attachments: 2,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.15,
-      tags: ['salario', 'mensual', 'fijo']
-    },
-    {
-      id: 'INC-002',
-      description: 'Pago de cliente - Proyecto Web',
-      amount: 3500.00,
-      category: 'Servicios profesionales',
-      subcategory: 'Desarrollo web',
-      date: '2024-02-22',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'María González',
-      clientId: 'CLI-002',
-      project: 'Rediseño Web',
-      invoice: 'INV-2024-002',
-      attachments: 3,
-      recurring: false,
-      tax: 0.21,
-      tags: ['servicios', 'proyecto']
-    },
-    {
-      id: 'INC-003',
-      description: 'Venta de productos',
-      amount: 1250.50,
-      category: 'Ventas',
-      subcategory: 'Productos digitales',
-      date: '2024-02-21',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      client: 'Juan Pérez',
-      clientId: 'CLI-003',
-      invoice: 'INV-2024-003',
-      attachments: 1,
-      recurring: false,
-      tax: 0.21,
-      tags: ['ventas', 'digital']
-    },
-    {
-      id: 'INC-004',
-      description: 'Pago de alquiler oficina',
-      amount: 1200.00,
-      category: 'Ingresos pasivos',
-      subcategory: 'Alquiler',
-      date: '2024-02-20',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Empresa ABC',
-      clientId: 'CLI-004',
-      invoice: 'INV-2024-004',
-      attachments: 0,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.15,
-      tags: ['alquiler', 'pasivo']
-    },
-    {
-      id: 'INC-005',
-      description: 'Consultoría empresarial',
-      amount: 850.00,
-      category: 'Consultoría',
-      subcategory: 'Consultoría financiera',
-      date: '2024-02-19',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Ana Martínez',
-      clientId: 'CLI-005',
-      invoice: 'INV-2024-005',
-      attachments: 1,
-      recurring: false,
-      tax: 0.21,
-      tags: ['consultoría']
-    },
-    {
-      id: 'INC-006',
-      description: 'Pago pendiente - Proyecto App',
-      amount: 2340.00,
-      category: 'Servicios profesionales',
-      date: '2024-03-01',
-      paymentMethod: 'transferencia',
-      status: 'pendiente',
-      client: 'Roberto Sánchez',
-      clientId: 'CLI-006',
-      project: 'Desarrollo App',
-      invoice: 'INV-2024-006',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      tags: ['servicios', 'pendiente']
-    },
-    {
-      id: 'INC-007',
-      description: 'Membresía Premium',
-      amount: 1250.00,
-      category: 'Suscripciones',
-      subcategory: 'Membresía anual',
-      date: '2024-03-15',
-      paymentMethod: 'tarjeta',
-      status: 'programado',
-      client: 'Laura Torres',
-      clientId: 'CLI-007',
-      invoice: 'INV-2024-007',
-      attachments: 0,
-      recurring: true,
-      recurringFrequency: 'anual',
-      tax: 0.21,
-      tags: ['suscripción']
-    },
-    {
-      id: 'INC-008',
-      description: 'Venta en efectivo',
-      amount: 500.00,
-      category: 'Ventas',
-      date: '2024-02-18',
-      paymentMethod: 'efectivo',
-      status: 'completado',
-      client: 'Cliente Anónimo',
-      invoice: 'INV-2024-008',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      tags: ['ventas', 'efectivo']
-    },
-    {
-      id: 'INC-009',
-      description: 'Pago con cheque - Atrasado',
-      amount: 750.00,
-      category: 'Servicios profesionales',
-      date: '2024-02-17',
-      paymentMethod: 'cheque',
-      status: 'pendiente',
-      client: 'Empresa XYZ',
-      clientId: 'CLI-009',
-      invoice: 'INV-2024-009',
-      attachments: 1,
-      recurring: false,
-      tax: 0.21,
-      tags: ['servicios', 'cheque']
-    },
-    {
-      id: 'INC-010',
-      description: 'Bono anual',
-      amount: 3000.00,
-      category: 'Salario',
-      date: '2024-02-16',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Tech Solutions S.L.',
-      clientId: 'CLI-001',
-      invoice: 'INV-2024-010',
-      attachments: 0,
-      recurring: false,
-      tax: 0.15,
-      tags: ['salario', 'bono']
-    },
-    {
-      id: 'INC-011',
-      description: 'Pago de nómina - Marzo',
-      amount: 2500.00,
-      category: 'Salario',
-      date: '2024-03-25',
-      paymentMethod: 'transferencia',
-      status: 'programado',
-      client: 'Tech Solutions S.L.',
-      invoice: 'INV-2024-011',
-      attachments: 0,
-      recurring: true,
-      tax: 0.15,
-      tags: ['salario']
-    },
-    {
-      id: 'INC-012',
-      description: 'Dividendos',
-      amount: 500.00,
-      category: 'Ingresos pasivos',
-      date: '2023-12-15',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Inversiones',
-      invoice: 'INV-2023-012',
-      attachments: 0,
-      recurring: false,
-      tax: 0.19,
-      tags: ['dividendos']
+  // Cargar datos desde localStorage o usar datos por defecto
+  const [incomes, setIncomes] = useState<Income[]>(() => {
+    try {
+      const saved = localStorage.getItem('incomes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return defaultIncomes;
+    } catch (error) {
+      console.error('Error loading incomes:', error);
+      return defaultIncomes;
     }
-  ]);
+  });
 
-  // Calcular estadísticas reales
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
+  // Guardar en localStorage cuando cambien los ingresos
+  useEffect(() => {
+    localStorage.setItem('incomes', JSON.stringify(incomes));
+  }, [incomes]);
+
+  // Obtener la fecha actual
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
   
-  // Ingresos del año actual (solo completados)
+  // Calcular estadísticas en tiempo real basadas en la fecha actual
   const yearlyIncomes = incomes.filter(inc => {
     const incDate = new Date(inc.date);
     return inc.status === 'completado' && incDate.getFullYear() === currentYear;
   });
   const totalYearlyIncome = yearlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
 
-  // Ingresos del mes actual (solo completados)
   const monthlyIncomes = incomes.filter(inc => {
     const incDate = new Date(inc.date);
     return inc.status === 'completado' && 
@@ -328,16 +350,17 @@ export const IncomesPage = () => {
   });
   const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
 
-  // Ingresos pendientes (solo estado pendiente)
   const pendingIncomes = incomes.filter(inc => inc.status === 'pendiente');
   const totalPending = pendingIncomes.reduce((sum, inc) => sum + inc.amount, 0);
 
-  // Meta mensual (ejemplo: $5,000)
   const monthlyGoal = 5000;
   const monthlyProgress = (totalMonthlyIncome / monthlyGoal) * 100;
 
-  // Calcular categorías reales
   const completedIncomes = incomes.filter(inc => inc.status === 'completado');
+  const totalCompletedAmount = completedIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+  const averageTicket = completedIncomes.length > 0 ? totalCompletedAmount / completedIncomes.length : 0;
+
+  // Calcular categorías en tiempo real
   const categoryMap = new Map<string, { amount: number; count: number }>();
   
   completedIncomes.forEach(inc => {
@@ -349,8 +372,6 @@ export const IncomesPage = () => {
       categoryMap.set(inc.category, { amount: inc.amount, count: 1 });
     }
   });
-
-  const totalCompletedAmount = completedIncomes.reduce((sum, inc) => sum + inc.amount, 0);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -379,7 +400,7 @@ export const IncomesPage = () => {
   const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data]) => ({
     name,
     amount: data.amount,
-    percentage: (data.amount / totalCompletedAmount) * 100,
+    percentage: totalCompletedAmount > 0 ? (data.amount / totalCompletedAmount) * 100 : 0,
     color: getCategoryColor(name),
     icon: getCategoryIcon(name),
     count: data.count
@@ -466,9 +487,10 @@ export const IncomesPage = () => {
 
   const handleUpdateStatus = () => {
     if (selectedIncome && newStatus) {
-      setIncomes(incomes.map(inc => 
+      const updatedIncomes = incomes.map(inc => 
         inc.id === selectedIncome.id ? { ...inc, status: newStatus as any } : inc
-      ));
+      );
+      setIncomes(updatedIncomes);
       setShowEditStatusModal(false);
       setSelectedIncome(null);
       setNewStatus('');
@@ -487,7 +509,6 @@ export const IncomesPage = () => {
     return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod && matchesPeriod;
   });
 
-  // Ordenar ingresos
   const sortedIncomes = [...filteredIncomes].sort((a, b) => {
     if (sortBy === 'date') {
       return sortOrder === 'desc' 
@@ -502,7 +523,6 @@ export const IncomesPage = () => {
     }
   });
 
-  // Paginación
   const totalPages = Math.ceil(sortedIncomes.length / itemsPerPage);
   const paginatedIncomes = sortedIncomes.slice(
     (currentPage - 1) * itemsPerPage,
@@ -683,9 +703,7 @@ export const IncomesPage = () => {
             <p className="text-white/60 text-sm">Ticket Promedio</p>
             <Target size={18} className="text-blue-400" />
           </div>
-          <p className="text-2xl font-bold text-white mt-1">
-            {formatCurrency(completedIncomes.length > 0 ? totalCompletedAmount / completedIncomes.length : 0)}
-          </p>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
           <p className="text-white/40 text-xs mt-1">{completedIncomes.length} transacciones completadas</p>
         </div>
       </div>
@@ -774,7 +792,6 @@ export const IncomesPage = () => {
             </div>
           </div>
 
-          {/* Advanced Filters */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -881,7 +898,7 @@ export const IncomesPage = () => {
           </span>
         </div>
 
-        {/* Table View - Con acciones */}
+        {/* Table View */}
         {viewMode === 'table' && (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -978,7 +995,7 @@ export const IncomesPage = () => {
           </div>
         )}
 
-        {/* Grid View - Con acciones */}
+        {/* Grid View */}
         {viewMode === 'grid' && (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedIncomes.map((income) => (
@@ -1278,7 +1295,7 @@ export const IncomesPage = () => {
         </div>
       )}
 
-      {/* Modal para editar estado */}
+      {/* Modal para editar estado - Sin emojis */}
       {showEditStatusModal && selectedIncome && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
@@ -1316,9 +1333,9 @@ export const IncomesPage = () => {
                     className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>✅ Completado</option>
-                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>⏳ Pendiente</option>
-                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📅 Programado</option>
+                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
                   </select>
                 </div>
 
