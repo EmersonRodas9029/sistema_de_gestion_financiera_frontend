@@ -6,10 +6,6 @@ import {
   Download,
   Filter,
   Search,
-  MoreVertical,
-  Eye,
-  Edit,
-  Trash2,
   Plus,
   RefreshCw,
   ArrowUp,
@@ -18,7 +14,6 @@ import {
   CreditCard,
   Wallet,
   BarChart3,
-  PieChart,
   ChevronRight,
   ChevronLeft,
   FileText,
@@ -35,7 +30,13 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  XCircle as XCircleIcon
+  XCircle as XCircleIcon,
+  X,
+  Save,
+  User,
+  Building2,
+  Hash,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 
 interface Income {
@@ -90,8 +91,20 @@ export const IncomesPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    category: '',
+    date: new Date().toISOString().split('T')[0],
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    client: '',
+    invoice: '',
+    notes: ''
+  });
 
   const itemsPerPage = 10;
 
@@ -108,7 +121,7 @@ export const IncomesPage = () => {
   };
 
   // Datos de ejemplo - Ingresos
-  const incomes: Income[] = [
+  const [incomes, setIncomes] = useState<Income[]>([
     {
       id: 'INC-001',
       description: 'Pago de nómina - Febrero',
@@ -163,111 +176,8 @@ export const IncomesPage = () => {
       recurring: false,
       tax: 0.21,
       tags: ['ventas', 'digital']
-    },
-    {
-      id: 'INC-004',
-      description: 'Pago de alquiler',
-      amount: 1200.00,
-      category: 'Ingresos pasivos',
-      subcategory: 'Alquiler',
-      date: '2024-02-20',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Carlos Rodríguez',
-      clientId: 'CLI-004',
-      invoice: 'INV-2024-004',
-      attachments: 2,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.15,
-      tags: ['alquiler', 'pasivo', 'mensual']
-    },
-    {
-      id: 'INC-005',
-      description: 'Pago de cliente - Consultoría',
-      amount: 850.00,
-      category: 'Consultoría',
-      subcategory: 'Consultoría financiera',
-      date: '2024-02-19',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: 'Ana Martínez',
-      clientId: 'CLI-005',
-      project: 'Asesoría financiera',
-      invoice: 'INV-2024-005',
-      attachments: 1,
-      recurring: false,
-      tax: 0.21,
-      tags: ['consultoría', 'servicios']
-    },
-    {
-      id: 'INC-006',
-      description: 'Pago pendiente - Proyecto',
-      amount: 2340.00,
-      category: 'Servicios profesionales',
-      date: '2024-03-01',
-      paymentMethod: 'transferencia',
-      status: 'pendiente',
-      client: 'Roberto Sánchez',
-      clientId: 'CLI-006',
-      project: 'Desarrollo App',
-      invoice: 'INV-2024-006',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      tags: ['servicios', 'pendiente']
-    },
-    {
-      id: 'INC-007',
-      description: 'Pago programado - Membresía',
-      amount: 1250.00,
-      category: 'Suscripciones',
-      subcategory: 'Membresía anual',
-      date: '2024-03-15',
-      paymentMethod: 'tarjeta',
-      status: 'programado',
-      client: 'Laura Torres',
-      clientId: 'CLI-007',
-      invoice: 'INV-2024-007',
-      attachments: 0,
-      recurring: true,
-      recurringFrequency: 'anual',
-      tax: 0.21,
-      tags: ['suscripción', 'recurrente']
-    },
-    {
-      id: 'INC-008',
-      description: 'Pago en efectivo - Venta directa',
-      amount: 500.00,
-      category: 'Ventas',
-      subcategory: 'Venta directa',
-      date: '2024-02-18',
-      paymentMethod: 'efectivo',
-      status: 'completado',
-      client: 'Cliente Anónimo',
-      invoice: 'INV-2024-008',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      tags: ['ventas', 'efectivo']
-    },
-    {
-      id: 'INC-009',
-      description: 'Cheque - Pago atrasado',
-      amount: 750.00,
-      category: 'Servicios profesionales',
-      date: '2024-02-17',
-      paymentMethod: 'cheque',
-      status: 'pendiente',
-      client: 'Empresa XYZ',
-      clientId: 'CLI-009',
-      invoice: 'INV-2024-009',
-      attachments: 1,
-      recurring: false,
-      tax: 0.21,
-      tags: ['servicios', 'cheque']
     }
-  ];
+  ]);
 
   // Categorías con resumen
   const categories: CategorySummary[] = [
@@ -281,11 +191,11 @@ export const IncomesPage = () => {
     },
     {
       name: 'Servicios profesionales',
-      amount: 4340.00,
+      amount: 3500.00,
       percentage: 28,
       color: 'from-blue-500 to-blue-600',
       icon: <Laptop size={16} />,
-      count: 2
+      count: 1
     },
     {
       name: 'Ventas',
@@ -293,30 +203,6 @@ export const IncomesPage = () => {
       percentage: 16,
       color: 'from-purple-500 to-purple-600',
       icon: <ShoppingBag size={16} />,
-      count: 1
-    },
-    {
-      name: 'Ingresos pasivos',
-      amount: 1200.00,
-      percentage: 15,
-      color: 'from-orange-500 to-orange-600',
-      icon: <HomeIcon size={16} />,
-      count: 1
-    },
-    {
-      name: 'Consultoría',
-      amount: 850.00,
-      percentage: 11,
-      color: 'from-pink-500 to-pink-600',
-      icon: <Users size={16} />,
-      count: 1
-    },
-    {
-      name: 'Suscripciones',
-      amount: 1250.00,
-      percentage: 8,
-      color: 'from-indigo-500 to-indigo-600',
-      icon: <CreditCard size={16} />,
       count: 1
     }
   ];
@@ -328,6 +214,39 @@ export const IncomesPage = () => {
     setSelectedPaymentMethod('todos');
     setSelectedPeriod('este-mes');
     setCurrentPage(1);
+  };
+
+  const handleCreateIncome = () => {
+    const newId = `INC-${String(incomes.length + 1).padStart(3, '0')}`;
+    const newIncome: Income = {
+      id: newId,
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      category: formData.category,
+      date: formData.date,
+      paymentMethod: formData.paymentMethod as any,
+      status: formData.status as any,
+      client: formData.client || undefined,
+      invoice: formData.invoice || undefined,
+      notes: formData.notes || undefined,
+      recurring: false,
+      tax: 0.21,
+      tags: []
+    };
+
+    setIncomes([newIncome, ...incomes]);
+    setShowCreateModal(false);
+    setFormData({
+      description: '',
+      amount: '',
+      category: '',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'transferencia',
+      status: 'completado',
+      client: '',
+      invoice: '',
+      notes: ''
+    });
   };
 
   const filteredIncomes = incomes.filter(income => {
@@ -446,7 +365,6 @@ export const IncomesPage = () => {
     }
   };
 
-  // Verificar si hay filtros activos
   const hasActiveFilters = searchTerm !== '' || 
     selectedCategory !== 'todas' || 
     selectedStatus !== 'todos' || 
@@ -490,7 +408,10 @@ export const IncomesPage = () => {
           >
             <BarChart3 size={20} />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
             <Plus size={20} />
             <span className="hidden sm:inline">Nuevo Ingreso</span>
           </button>
@@ -528,7 +449,7 @@ export const IncomesPage = () => {
       {/* Categories Summary */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
         <h3 className="text-white font-semibold mb-3">Ingresos por categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
           {categories.map((cat, index) => (
             <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-2 mb-2">
@@ -619,9 +540,6 @@ export const IncomesPage = () => {
                     <option value="Salario">Salario</option>
                     <option value="Servicios profesionales">Servicios profesionales</option>
                     <option value="Ventas">Ventas</option>
-                    <option value="Ingresos pasivos">Ingresos pasivos</option>
-                    <option value="Consultoría">Consultoría</option>
-                    <option value="Suscripciones">Suscripciones</option>
                   </select>
                 </div>
                 <div>
@@ -635,7 +553,6 @@ export const IncomesPage = () => {
                     <option value="completado">Completado</option>
                     <option value="pendiente">Pendiente</option>
                     <option value="programado">Programado</option>
-                    <option value="cancelado">Cancelado</option>
                   </select>
                 </div>
                 <div>
@@ -650,7 +567,6 @@ export const IncomesPage = () => {
                     <option value="tarjeta">Tarjeta</option>
                     <option value="transferencia">Transferencia</option>
                     <option value="cheque">Cheque</option>
-                    <option value="otro">Otro</option>
                   </select>
                 </div>
               </div>
@@ -713,7 +629,7 @@ export const IncomesPage = () => {
           </span>
         </div>
 
-        {/* Table View - Sin columna de acciones */}
+        {/* Table View */}
         {viewMode === 'table' && (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -791,7 +707,7 @@ export const IncomesPage = () => {
           </div>
         )}
 
-        {/* Grid View - Sin botones de acción */}
+        {/* Grid View */}
         {viewMode === 'grid' && (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedIncomes.map((income) => (
@@ -895,6 +811,191 @@ export const IncomesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal mejorado para crear nuevo ingreso - Más ancho y con dos columnas */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
+                  <TrendingUp size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Nuevo Ingreso</h2>
+                  <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo ingreso</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
+                {/* Primera fila - 2 columnas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
+                    <div className="relative">
+                      <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="Ej: Pago de nómina"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                    <div className="relative">
+                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Segunda fila - 2 columnas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      required
+                    >
+                      <option value="">Seleccionar categoría</option>
+                      <option value="Salario">Salario</option>
+                      <option value="Servicios profesionales">Servicios profesionales</option>
+                      <option value="Ventas">Ventas</option>
+                      <option value="Ingresos pasivos">Ingresos pasivos</option>
+                      <option value="Consultoría">Consultoría</option>
+                      <option value="Suscripciones">Suscripciones</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
+                    <div className="relative">
+                      <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tercera fila - 2 columnas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                    <select
+                      value={formData.paymentMethod}
+                      onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    >
+                      <option value="efectivo">💰 Efectivo</option>
+                      <option value="tarjeta">💳 Tarjeta</option>
+                      <option value="transferencia">🏦 Transferencia</option>
+                      <option value="cheque">📄 Cheque</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    >
+                      <option value="completado">✅ Completado</option>
+                      <option value="pendiente">⏳ Pendiente</option>
+                      <option value="programado">📅 Programado</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Cuarta fila - 2 columnas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.client}
+                        onChange={(e) => setFormData({...formData, client: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="Nombre del cliente"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.invoice}
+                        onChange={(e) => setFormData({...formData, invoice: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="INV-2024-001"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quinta fila - 1 columna (notas) */}
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    placeholder="Notas adicionales sobre este ingreso..."
+                  />
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                  >
+                    <Save size={18} />
+                    <span>Guardar Ingreso</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
