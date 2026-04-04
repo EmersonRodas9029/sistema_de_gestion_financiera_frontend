@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -35,7 +35,9 @@ import {
   Save,
   User,
   Hash,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Target,
+  TrendingDown as TrendingDownIcon
 } from 'lucide-react';
 
 interface Income {
@@ -57,17 +59,6 @@ interface Income {
   recurringFrequency?: 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'anual';
   tax: number;
   tags: string[];
-}
-
-interface IncomeSummary {
-  total: number;
-  monthly: number;
-  weekly: number;
-  daily: number;
-  pending: number;
-  scheduled: number;
-  average: number;
-  growth: number;
 }
 
 interface CategorySummary {
@@ -105,44 +96,7 @@ export const IncomesPage = () => {
     notes: ''
   });
 
-  const itemsPerPage = 6; // Cambiado a 6 elementos por página
-
-  // Función para filtrar por período
-  const filterByPeriod = (date: string, period: string): boolean => {
-    const incomeDate = new Date(date);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    switch(period) {
-      case 'este-mes':
-        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
-      case 'este-semana':
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(today);
-        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
-        return incomeDate >= startOfWeek && incomeDate <= endOfWeek;
-      case 'este-ano':
-        return incomeDate.getFullYear() === currentYear;
-      case 'personalizado':
-        return true;
-      default:
-        return true;
-    }
-  };
-
-  // Resumen de ingresos
-  const summary: IncomeSummary = {
-    total: 45250.75,
-    monthly: 3250.50,
-    weekly: 812.50,
-    daily: 162.50,
-    pending: 2340.00,
-    scheduled: 1250.00,
-    average: 108.50,
-    growth: 12.5
-  };
+  const itemsPerPage = 6;
 
   // Datos de ejemplo - 10 ingresos para probar filtros
   const [incomes, setIncomes] = useState<Income[]>([
@@ -317,60 +271,140 @@ export const IncomesPage = () => {
       recurring: false,
       tax: 0.15,
       tags: ['salario', 'bono']
+    },
+    {
+      id: 'INC-011',
+      description: 'Pago de nómina - Marzo',
+      amount: 2500.00,
+      category: 'Salario',
+      date: '2024-03-25',
+      paymentMethod: 'transferencia',
+      status: 'programado',
+      client: 'Tech Solutions S.L.',
+      invoice: 'INV-2024-011',
+      attachments: 0,
+      recurring: true,
+      tax: 0.15,
+      tags: ['salario']
+    },
+    {
+      id: 'INC-012',
+      description: 'Dividendos',
+      amount: 500.00,
+      category: 'Ingresos pasivos',
+      date: '2023-12-15',
+      paymentMethod: 'transferencia',
+      status: 'completado',
+      client: 'Inversiones',
+      invoice: 'INV-2023-012',
+      attachments: 0,
+      recurring: false,
+      tax: 0.19,
+      tags: ['dividendos']
     }
   ]);
 
-  // Categorías con resumen
-  const categories: CategorySummary[] = [
-    {
-      name: 'Salario',
-      amount: 5500.00,
-      percentage: 32,
-      color: 'from-green-500 to-green-600',
-      icon: <Briefcase size={16} />,
-      count: 2
-    },
-    {
-      name: 'Servicios profesionales',
-      amount: 6590.00,
-      percentage: 38,
-      color: 'from-blue-500 to-blue-600',
-      icon: <Laptop size={16} />,
-      count: 3
-    },
-    {
-      name: 'Ventas',
-      amount: 1750.50,
-      percentage: 10,
-      color: 'from-purple-500 to-purple-600',
-      icon: <ShoppingBag size={16} />,
-      count: 2
-    },
-    {
-      name: 'Ingresos pasivos',
-      amount: 1200.00,
-      percentage: 7,
-      color: 'from-orange-500 to-orange-600',
-      icon: <HomeIcon size={16} />,
-      count: 1
-    },
-    {
-      name: 'Consultoría',
-      amount: 850.00,
-      percentage: 5,
-      color: 'from-pink-500 to-pink-600',
-      icon: <Users size={16} />,
-      count: 1
-    },
-    {
-      name: 'Suscripciones',
-      amount: 1250.00,
-      percentage: 7,
-      color: 'from-indigo-500 to-indigo-600',
-      icon: <CreditCard size={16} />,
-      count: 1
+  // Calcular estadísticas reales
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  
+  // Ingresos del año actual (solo completados)
+  const yearlyIncomes = incomes.filter(inc => {
+    const incDate = new Date(inc.date);
+    return inc.status === 'completado' && incDate.getFullYear() === currentYear;
+  });
+  const totalYearlyIncome = yearlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+
+  // Ingresos del mes actual (solo completados)
+  const monthlyIncomes = incomes.filter(inc => {
+    const incDate = new Date(inc.date);
+    return inc.status === 'completado' && 
+           incDate.getMonth() === currentMonth && 
+           incDate.getFullYear() === currentYear;
+  });
+  const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+
+  // Ingresos pendientes (solo estado pendiente)
+  const pendingIncomes = incomes.filter(inc => inc.status === 'pendiente');
+  const totalPending = pendingIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+
+  // Meta mensual (ejemplo: $5,000)
+  const monthlyGoal = 5000;
+  const monthlyProgress = (totalMonthlyIncome / monthlyGoal) * 100;
+
+  // Calcular categorías reales
+  const completedIncomes = incomes.filter(inc => inc.status === 'completado');
+  const categoryMap = new Map<string, { amount: number; count: number }>();
+  
+  completedIncomes.forEach(inc => {
+    const existing = categoryMap.get(inc.category);
+    if (existing) {
+      existing.amount += inc.amount;
+      existing.count += 1;
+    } else {
+      categoryMap.set(inc.category, { amount: inc.amount, count: 1 });
     }
-  ];
+  });
+
+  const totalCompletedAmount = completedIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'Salario': 'from-green-500 to-green-600',
+      'Servicios profesionales': 'from-blue-500 to-blue-600',
+      'Ventas': 'from-purple-500 to-purple-600',
+      'Ingresos pasivos': 'from-orange-500 to-orange-600',
+      'Consultoría': 'from-pink-500 to-pink-600',
+      'Suscripciones': 'from-indigo-500 to-indigo-600'
+    };
+    return colors[category] || 'from-gray-500 to-gray-600';
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      'Salario': <Briefcase size={16} />,
+      'Servicios profesionales': <Laptop size={16} />,
+      'Ventas': <ShoppingBag size={16} />,
+      'Ingresos pasivos': <HomeIcon size={16} />,
+      'Consultoría': <Users size={16} />,
+      'Suscripciones': <CreditCard size={16} />
+    };
+    return icons[category] || <Tag size={16} />;
+  };
+
+  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data]) => ({
+    name,
+    amount: data.amount,
+    percentage: (data.amount / totalCompletedAmount) * 100,
+    color: getCategoryColor(name),
+    icon: getCategoryIcon(name),
+    count: data.count
+  })).sort((a, b) => b.amount - a.amount);
+
+  // Función para filtrar por período
+  const filterByPeriod = (date: string, period: string): boolean => {
+    const incomeDate = new Date(date);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    
+    switch(period) {
+      case 'este-mes':
+        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+      case 'este-semana':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+        return incomeDate >= startOfWeek && incomeDate <= endOfWeek;
+      case 'este-ano':
+        return incomeDate.getFullYear() === currentYear;
+      case 'personalizado':
+        return true;
+      default:
+        return true;
+    }
+  };
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -585,60 +619,80 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Totalmente funcionales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Total Ingresos</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(summary.total)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <ArrowUp size={14} className="text-green-400" />
-            <span className="text-green-400 text-xs">+{summary.growth}%</span>
-            <span className="text-white/40 text-xs ml-1">vs mes anterior</span>
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Ingresos del Año</p>
+            <Calendar size={18} className="text-[#F05984]" />
           </div>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalYearlyIncome)}</p>
+          <p className="text-white/40 text-xs mt-1">{currentYear}</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Este mes</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(summary.monthly)}</p>
-          <p className="text-white/40 text-xs mt-1">Promedio: {formatCurrency(summary.average)}/día</p>
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Este mes</p>
+            <TrendingUp size={18} className="text-green-400" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalMonthlyIncome)}</p>
+          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
+              style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
+            />
+          </div>
+          <p className="text-white/40 text-xs mt-1">{monthlyProgress.toFixed(0)}% de meta mensual</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Pendiente</p>
-          <p className="text-xl font-bold text-yellow-400">{formatCurrency(summary.pending)}</p>
-          <p className="text-white/40 text-xs mt-1">Programado: {formatCurrency(summary.scheduled)}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Pendiente por cobrar</p>
+            <Clock size={18} className="text-yellow-400" />
+          </div>
+          <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
+          <p className="text-white/40 text-xs mt-1">{pendingIncomes.length} facturas pendientes</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Proyección</p>
-          <p className="text-xl font-bold text-green-400">{formatCurrency(summary.monthly * 1.12)}</p>
-          <p className="text-white/40 text-xs mt-1">+12% estimado</p>
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Ticket Promedio</p>
+            <Target size={18} className="text-blue-400" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">
+            {formatCurrency(completedIncomes.length > 0 ? totalCompletedAmount / completedIncomes.length : 0)}
+          </p>
+          <p className="text-white/40 text-xs mt-1">{completedIncomes.length} transacciones completadas</p>
         </div>
       </div>
 
-      {/* Categories Summary */}
+      {/* Categories Summary - Totalmente funcional */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
         <h3 className="text-white font-semibold mb-3">Ingresos por categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {categories.map((cat, index) => (
-            <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                  {cat.icon}
+        {categories.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {categories.map((cat, index) => (
+              <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
+                    {cat.icon}
+                  </div>
+                  <span className="text-white text-sm truncate">{cat.name}</span>
                 </div>
-                <span className="text-white text-sm">{cat.name}</span>
+                <p className="text-white font-semibold text-sm">{formatCurrency(cat.amount)}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-white/40 text-xs">{cat.percentage.toFixed(1)}%</span>
+                  <span className="text-white/40 text-xs">{cat.count} ops</span>
+                </div>
+                <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+                    style={{ width: `${cat.percentage}%` }}
+                  />
+                </div>
               </div>
-              <p className="text-white font-semibold text-sm">{formatCurrency(cat.amount)}</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-white/40 text-xs">{cat.percentage}%</span>
-                <span className="text-white/40 text-xs">{cat.count} ops</span>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                  style={{ width: `${cat.percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-white/40 text-center py-4">No hay datos de ingresos completados</p>
+        )}
       </div>
 
       {/* Filters and Search */}
@@ -706,12 +760,9 @@ export const IncomesPage = () => {
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
                     <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                    <option value="Salario" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salario</option>
-                    <option value="Servicios profesionales" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios profesionales</option>
-                    <option value="Ventas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ventas</option>
-                    <option value="Ingresos pasivos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ingresos pasivos</option>
-                    <option value="Consultoría" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Consultoría</option>
-                    <option value="Suscripciones" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Suscripciones</option>
+                    {categories.map(cat => (
+                      <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1010,7 +1061,7 @@ export const IncomesPage = () => {
 
             <div className="p-6">
               <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
-                {/* Formulario... (igual que antes) */}
+                {/* Formulario... */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
@@ -1054,12 +1105,9 @@ export const IncomesPage = () => {
                       required
                     >
                       <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                      <option value="Salario" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salario</option>
-                      <option value="Servicios profesionales" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios profesionales</option>
-                      <option value="Ventas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ventas</option>
-                      <option value="Ingresos pasivos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ingresos pasivos</option>
-                      <option value="Consultoría" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Consultoría</option>
-                      <option value="Suscripciones" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Suscripciones</option>
+                      {categories.map(cat => (
+                        <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
