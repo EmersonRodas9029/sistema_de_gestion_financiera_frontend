@@ -37,7 +37,8 @@ import {
   Hash,
   Calendar as CalendarIcon,
   Target,
-  TrendingDown as TrendingDownIcon
+  Trash2,
+  Edit
 } from 'lucide-react';
 
 interface Income {
@@ -82,6 +83,9 @@ export const IncomesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
+  const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [formData, setFormData] = useState({
@@ -98,7 +102,7 @@ export const IncomesPage = () => {
 
   const itemsPerPage = 6;
 
-  // Datos de ejemplo - 10 ingresos para probar filtros
+  // Datos de ejemplo - 12 ingresos
   const [incomes, setIncomes] = useState<Income[]>([
     {
       id: 'INC-001',
@@ -448,6 +452,29 @@ export const IncomesPage = () => {
     });
   };
 
+  const handleDeleteIncome = (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
+      setIncomes(incomes.filter(inc => inc.id !== id));
+    }
+  };
+
+  const handleEditStatus = (income: Income) => {
+    setSelectedIncome(income);
+    setNewStatus(income.status);
+    setShowEditStatusModal(true);
+  };
+
+  const handleUpdateStatus = () => {
+    if (selectedIncome && newStatus) {
+      setIncomes(incomes.map(inc => 
+        inc.id === selectedIncome.id ? { ...inc, status: newStatus as any } : inc
+      ));
+      setShowEditStatusModal(false);
+      setSelectedIncome(null);
+      setNewStatus('');
+    }
+  };
+
   const filteredIncomes = incomes.filter(income => {
     const matchesSearch = income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          income.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -619,7 +646,7 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Summary Cards - Totalmente funcionales */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
           <div className="flex items-center justify-between">
@@ -663,7 +690,7 @@ export const IncomesPage = () => {
         </div>
       </div>
 
-      {/* Categories Summary - Totalmente funcional */}
+      {/* Categories Summary */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
         <h3 className="text-white font-semibold mb-3">Ingresos por categoría</h3>
         {categories.length > 0 ? (
@@ -854,7 +881,7 @@ export const IncomesPage = () => {
           </span>
         </div>
 
-        {/* Table View */}
+        {/* Table View - Con acciones */}
         {viewMode === 'table' && (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -868,6 +895,7 @@ export const IncomesPage = () => {
                   <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
                   <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
                   <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
+                  <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -925,6 +953,24 @@ export const IncomesPage = () => {
                     <td className="py-3 px-4 text-right">
                       <span className="text-white font-medium">{formatCurrency(income.amount)}</span>
                     </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditStatus(income)}
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                          title="Editar estado"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteIncome(income.id)}
+                          className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400 hover:text-red-300"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -932,7 +978,7 @@ export const IncomesPage = () => {
           </div>
         )}
 
-        {/* Grid View */}
+        {/* Grid View - Con acciones */}
         {viewMode === 'grid' && (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedIncomes.map((income) => (
@@ -971,6 +1017,22 @@ export const IncomesPage = () => {
 
                 <div className="flex items-center justify-between pt-3 border-t border-white/10">
                   <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditStatus(income)}
+                      className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                      title="Editar estado"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteIncome(income.id)}
+                      className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400 hover:text-red-300"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {income.tags && income.tags.length > 0 && (
@@ -1061,7 +1123,6 @@ export const IncomesPage = () => {
 
             <div className="p-6">
               <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
-                {/* Formulario... */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
@@ -1212,6 +1273,70 @@ export const IncomesPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar estado */}
+      {showEditStatusModal && selectedIncome && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Edit size={20} className="text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Editar Estado</h2>
+                  <p className="text-white/40 text-sm">Cambia el estado del ingreso</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditStatusModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Ingreso</label>
+                  <p className="text-white font-medium">{selectedIncome.description}</p>
+                  <p className="text-white/40 text-sm">{formatCurrency(selectedIncome.amount)}</p>
+                </div>
+
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  >
+                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>✅ Completado</option>
+                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>⏳ Pendiente</option>
+                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>📅 Programado</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    onClick={() => setShowEditStatusModal(false)}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleUpdateStatus}
+                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Actualizar Estado
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
