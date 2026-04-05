@@ -71,10 +71,15 @@ interface CategorySummary {
   count: number;
 }
 
-// Datos iniciales por defecto
-const defaultIncomes: Income[] = [
+// Función para generar ID único
+const generateUniqueId = () => {
+  return `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Datos iniciales por defecto con IDs únicos
+const getDefaultIncomes = (): Income[] => [
   {
-    id: 'INC-001',
+    id: generateUniqueId(),
     description: 'Pago de nómina - Febrero',
     amount: 2500.00,
     category: 'Salario',
@@ -94,7 +99,7 @@ const defaultIncomes: Income[] = [
     tags: ['salario', 'mensual', 'fijo']
   },
   {
-    id: 'INC-002',
+    id: generateUniqueId(),
     description: 'Pago de cliente - Proyecto Web',
     amount: 3500.00,
     category: 'Servicios profesionales',
@@ -112,7 +117,7 @@ const defaultIncomes: Income[] = [
     tags: ['servicios', 'proyecto']
   },
   {
-    id: 'INC-003',
+    id: generateUniqueId(),
     description: 'Venta de productos',
     amount: 1250.50,
     category: 'Ventas',
@@ -129,7 +134,7 @@ const defaultIncomes: Income[] = [
     tags: ['ventas', 'digital']
   },
   {
-    id: 'INC-004',
+    id: generateUniqueId(),
     description: 'Pago de alquiler oficina',
     amount: 1200.00,
     category: 'Ingresos pasivos',
@@ -147,7 +152,7 @@ const defaultIncomes: Income[] = [
     tags: ['alquiler', 'pasivo']
   },
   {
-    id: 'INC-005',
+    id: generateUniqueId(),
     description: 'Consultoría empresarial',
     amount: 850.00,
     category: 'Consultoría',
@@ -164,7 +169,7 @@ const defaultIncomes: Income[] = [
     tags: ['consultoría']
   },
   {
-    id: 'INC-006',
+    id: generateUniqueId(),
     description: 'Pago pendiente - Proyecto App',
     amount: 2340.00,
     category: 'Servicios profesionales',
@@ -181,7 +186,7 @@ const defaultIncomes: Income[] = [
     tags: ['servicios', 'pendiente']
   },
   {
-    id: 'INC-007',
+    id: generateUniqueId(),
     description: 'Membresía Premium',
     amount: 1250.00,
     category: 'Suscripciones',
@@ -199,7 +204,7 @@ const defaultIncomes: Income[] = [
     tags: ['suscripción']
   },
   {
-    id: 'INC-008',
+    id: generateUniqueId(),
     description: 'Venta en efectivo',
     amount: 500.00,
     category: 'Ventas',
@@ -214,7 +219,7 @@ const defaultIncomes: Income[] = [
     tags: ['ventas', 'efectivo']
   },
   {
-    id: 'INC-009',
+    id: generateUniqueId(),
     description: 'Pago con cheque - Atrasado',
     amount: 750.00,
     category: 'Servicios profesionales',
@@ -230,7 +235,7 @@ const defaultIncomes: Income[] = [
     tags: ['servicios', 'cheque']
   },
   {
-    id: 'INC-010',
+    id: generateUniqueId(),
     description: 'Bono anual',
     amount: 3000.00,
     category: 'Salario',
@@ -246,7 +251,7 @@ const defaultIncomes: Income[] = [
     tags: ['salario', 'bono']
   },
   {
-    id: 'INC-011',
+    id: generateUniqueId(),
     description: 'Pago de nómina - Marzo',
     amount: 2500.00,
     category: 'Salario',
@@ -261,7 +266,7 @@ const defaultIncomes: Income[] = [
     tags: ['salario']
   },
   {
-    id: 'INC-012',
+    id: generateUniqueId(),
     description: 'Dividendos',
     amount: 500.00,
     category: 'Ingresos pasivos',
@@ -314,14 +319,15 @@ export const IncomesPage = () => {
       const saved = localStorage.getItem('incomes');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.length > 0) {
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          // Verificar que todos los elementos tengan un ID único
           return parsed;
         }
       }
-      return defaultIncomes;
+      return getDefaultIncomes();
     } catch (error) {
       console.error('Error loading incomes:', error);
-      return defaultIncomes;
+      return getDefaultIncomes();
     }
   });
 
@@ -441,9 +447,8 @@ export const IncomesPage = () => {
   };
 
   const handleCreateIncome = () => {
-    const newId = `INC-${String(incomes.length + 1).padStart(3, '0')}`;
     const newIncome: Income = {
-      id: newId,
+      id: generateUniqueId(),
       description: formData.description,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -458,7 +463,7 @@ export const IncomesPage = () => {
       tags: []
     };
 
-    setIncomes([newIncome, ...incomes]);
+    setIncomes(prevIncomes => [newIncome, ...prevIncomes]);
     setShowCreateModal(false);
     setFormData({
       description: '',
@@ -475,7 +480,7 @@ export const IncomesPage = () => {
 
   const handleDeleteIncome = (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
-      setIncomes(incomes.filter(inc => inc.id !== id));
+      setIncomes(prevIncomes => prevIncomes.filter(inc => inc.id !== id));
     }
   };
 
@@ -486,15 +491,16 @@ export const IncomesPage = () => {
   };
 
   const handleUpdateStatus = () => {
-    if (selectedIncome && newStatus) {
-      const updatedIncomes = incomes.map(inc => 
-        inc.id === selectedIncome.id ? { ...inc, status: newStatus as any } : inc
+    if (selectedIncome && newStatus && newStatus !== selectedIncome.status) {
+      setIncomes(prevIncomes => 
+        prevIncomes.map(inc => 
+          inc.id === selectedIncome.id ? { ...inc, status: newStatus as any } : inc
+        )
       );
-      setIncomes(updatedIncomes);
-      setShowEditStatusModal(false);
-      setSelectedIncome(null);
-      setNewStatus('');
     }
+    setShowEditStatusModal(false);
+    setSelectedIncome(null);
+    setNewStatus('');
   };
 
   const filteredIncomes = incomes.filter(income => {
@@ -618,6 +624,14 @@ export const IncomesPage = () => {
     selectedPaymentMethod !== 'todos' ||
     selectedPeriod !== 'este-mes';
 
+  // Limpiar localStorage corrupto si es necesario (solo para debugging)
+  const resetData = () => {
+    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
+      localStorage.removeItem('incomes');
+      setIncomes(getDefaultIncomes());
+    }
+  };
+
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
       {/* Header */}
@@ -662,6 +676,13 @@ export const IncomesPage = () => {
           >
             <Plus size={20} />
             <span className="hidden sm:inline">Nuevo Ingreso</span>
+          </button>
+          <button
+            onClick={resetData}
+            className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300"
+            title="Restaurar datos por defecto"
+          >
+            <RefreshCw size={20} />
           </button>
         </div>
       </div>
