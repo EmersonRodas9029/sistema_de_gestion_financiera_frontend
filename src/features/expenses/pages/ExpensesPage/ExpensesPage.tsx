@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingDown, 
@@ -6,10 +6,6 @@ import {
   Download,
   Filter,
   Search,
-  MoreVertical,
-  Eye,
-  Edit,
-  Trash2,
   Plus,
   RefreshCw,
   ArrowUp,
@@ -18,7 +14,6 @@ import {
   CreditCard,
   Wallet,
   BarChart3,
-  PieChart,
   ChevronRight,
   ChevronLeft,
   FileText,
@@ -37,17 +32,20 @@ import {
   Heart,
   ShoppingBag,
   Shield,
-  Fuel,
+  Trash2,
+  Edit,
+  X,
+  Save,
+  User,
+  Hash,
+  Calendar as CalendarIcon,
+  Target,
+  Briefcase,
+  Laptop,
+  Users,
+  Home,
   Film,
-  Shirt,
-  Dumbbell,
-  Plane,
-  Hotel,
-  Wrench,
-  Stethoscope,
-  GraduationCap,
-  Dog,
-  Sparkles
+  Activity
 } from 'lucide-react';
 
 interface Expense {
@@ -74,19 +72,6 @@ interface Expense {
   receipt?: boolean;
 }
 
-interface ExpenseSummary {
-  total: number;
-  monthly: number;
-  weekly: number;
-  daily: number;
-  pending: number;
-  scheduled: number;
-  average: number;
-  growth: number;
-  deductible: number;
-  nonDeductible: number;
-}
-
 interface CategorySummary {
   name: string;
   amount: number;
@@ -97,317 +82,454 @@ interface CategorySummary {
   deductible: boolean;
 }
 
+// Función para generar ID único
+const generateUniqueId = () => {
+  return `EXP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Datos iniciales por defecto
+const getDefaultExpenses = (): Expense[] => [
+  {
+    id: generateUniqueId(),
+    description: 'Supermercado Mensual',
+    amount: 350.75,
+    category: 'Alimentación',
+    subcategory: 'Supermercado',
+    date: '2024-02-23',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'Mercadona',
+    vendorId: 'VEN-001',
+    invoice: 'FAC-2024-001',
+    notes: 'Compra mensual de alimentos',
+    attachments: 1,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.10,
+    deductible: false,
+    tags: ['alimentación', 'hogar', 'mensual'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Pago de alquiler',
+    amount: 1200.00,
+    category: 'Vivienda',
+    subcategory: 'Alquiler',
+    date: '2024-02-22',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    vendor: 'Inmobiliaria Pérez',
+    vendorId: 'VEN-002',
+    invoice: 'FAC-2024-002',
+    notes: 'Alquiler del mes de febrero',
+    attachments: 2,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.21,
+    deductible: true,
+    tags: ['vivienda', 'alquiler', 'fijo'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Electricidad',
+    amount: 85.50,
+    category: 'Servicios',
+    subcategory: 'Electricidad',
+    date: '2024-02-21',
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    vendor: 'Endesa',
+    vendorId: 'VEN-003',
+    invoice: 'FAC-2024-003',
+    notes: 'Factura de luz febrero',
+    attachments: 1,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.21,
+    deductible: true,
+    tags: ['servicios', 'electricidad', 'hogar'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Internet y telefonía',
+    amount: 65.99,
+    category: 'Servicios',
+    subcategory: 'Internet',
+    date: '2024-02-20',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'Movistar',
+    vendorId: 'VEN-004',
+    invoice: 'FAC-2024-004',
+    notes: 'Fibra + móvil',
+    attachments: 1,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.21,
+    deductible: true,
+    tags: ['internet', 'telefonía', 'hogar'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Gasolina',
+    amount: 65.00,
+    category: 'Transporte',
+    subcategory: 'Combustible',
+    date: '2024-02-19',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'Repsol',
+    vendorId: 'VEN-005',
+    notes: 'Llenar depósito',
+    attachments: 0,
+    recurring: false,
+    tax: 0.21,
+    deductible: false,
+    tags: ['transporte', 'combustible', 'coche'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Cena restaurante',
+    amount: 45.80,
+    category: 'Ocio',
+    subcategory: 'Restaurantes',
+    date: '2024-02-18',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'La Tagliatella',
+    notes: 'Cena familiar',
+    attachments: 0,
+    recurring: false,
+    tax: 0.10,
+    deductible: false,
+    tags: ['ocio', 'restaurante', 'familia'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Gimnasio',
+    amount: 45.00,
+    category: 'Salud',
+    subcategory: 'Deporte',
+    date: '2024-02-17',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'Basic Fit',
+    vendorId: 'VEN-006',
+    notes: 'Cuota mensual gimnasio',
+    attachments: 0,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.10,
+    deductible: false,
+    tags: ['salud', 'deporte', 'suscripción'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Ropa',
+    amount: 120.50,
+    category: 'Compras',
+    subcategory: 'Ropa',
+    date: '2024-02-16',
+    paymentMethod: 'tarjeta',
+    status: 'completado',
+    vendor: 'Zara',
+    vendorId: 'VEN-007',
+    notes: 'Compra de ropa',
+    attachments: 0,
+    recurring: false,
+    tax: 0.21,
+    deductible: false,
+    tags: ['compras', 'ropa', 'personal'],
+    receipt: true
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Factura pendiente - Agua',
+    amount: 45.30,
+    category: 'Servicios',
+    subcategory: 'Agua',
+    date: '2024-03-05',
+    paymentMethod: 'transferencia',
+    status: 'pendiente',
+    vendor: 'Aguas de Barcelona',
+    vendorId: 'VEN-008',
+    invoice: 'FAC-2024-009',
+    notes: 'Factura de agua pendiente',
+    attachments: 0,
+    recurring: true,
+    recurringFrequency: 'mensual',
+    tax: 0.10,
+    deductible: true,
+    tags: ['servicios', 'agua', 'pendiente'],
+    receipt: false
+  },
+  {
+    id: generateUniqueId(),
+    description: 'Seguro de coche',
+    amount: 450.00,
+    category: 'Seguros',
+    subcategory: 'Coche',
+    date: '2024-03-15',
+    paymentMethod: 'tarjeta',
+    status: 'programado',
+    vendor: 'Mapfre',
+    vendorId: 'VEN-009',
+    invoice: 'FAC-2024-010',
+    notes: 'Seguro anual programado',
+    attachments: 2,
+    recurring: true,
+    recurringFrequency: 'anual',
+    tax: 0.21,
+    deductible: true,
+    tags: ['seguros', 'coche', 'anual'],
+    receipt: false
+  }
+];
+
 export const ExpensesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('este-mes');
-  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'calendar'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showDeductibleOnly, setShowDeductibleOnly] = useState(false);
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    category: '',
+    date: new Date().toISOString().split('T')[0],
+    paymentMethod: 'transferencia',
+    status: 'completado',
+    vendor: '',
+    invoice: '',
+    notes: '',
+    deductible: false
+  });
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 6;
 
-  // Resumen de gastos
-  const summary: ExpenseSummary = {
-    total: 32450.50,
-    monthly: 2840.75,
-    weekly: 710.25,
-    daily: 142.05,
-    pending: 1850.00,
-    scheduled: 920.00,
-    average: 94.50,
-    growth: -5.2,
-    deductible: 12580.30,
-    nonDeductible: 19870.20
+  // Cargar datos desde localStorage o usar datos por defecto
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    try {
+      const saved = localStorage.getItem('expenses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return getDefaultExpenses();
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+      return getDefaultExpenses();
+    }
+  });
+
+  // Guardar en localStorage cuando cambien los gastos
+  useEffect(() => {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+  }, [expenses]);
+
+  // Obtener la fecha actual
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Calcular estadísticas en tiempo real
+  const yearlyExpenses = expenses.filter(exp => {
+    const expDate = new Date(exp.date);
+    return exp.status === 'completado' && expDate.getFullYear() === currentYear;
+  });
+  const totalYearlyExpense = yearlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  const monthlyExpenses = expenses.filter(exp => {
+    const expDate = new Date(exp.date);
+    return exp.status === 'completado' && 
+           expDate.getMonth() === currentMonth && 
+           expDate.getFullYear() === currentYear;
+  });
+  const totalMonthlyExpense = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  const pendingExpenses = expenses.filter(exp => exp.status === 'pendiente');
+  const totalPending = pendingExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  const completedExpenses = expenses.filter(exp => exp.status === 'completado');
+  const totalCompletedAmount = completedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const averageTicket = completedExpenses.length > 0 ? totalCompletedAmount / completedExpenses.length : 0;
+
+  const deductibleExpenses = expenses.filter(exp => exp.deductible && exp.status === 'completado');
+  const totalDeductible = deductibleExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalNonDeductible = totalYearlyExpense - totalDeductible;
+
+  // Calcular categorías en tiempo real
+  const categoryMap = new Map<string, { amount: number; count: number; deductible: boolean }>();
+  
+  completedExpenses.forEach(exp => {
+    const existing = categoryMap.get(exp.category);
+    if (existing) {
+      existing.amount += exp.amount;
+      existing.count += 1;
+    } else {
+      categoryMap.set(exp.category, { amount: exp.amount, count: 1, deductible: exp.deductible });
+    }
+  });
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'Alimentación': 'from-yellow-500 to-yellow-600',
+      'Vivienda': 'from-blue-500 to-blue-600',
+      'Servicios': 'from-cyan-500 to-cyan-600',
+      'Transporte': 'from-green-500 to-green-600',
+      'Ocio': 'from-purple-500 to-purple-600',
+      'Salud': 'from-red-500 to-red-600',
+      'Compras': 'from-pink-500 to-pink-600',
+      'Seguros': 'from-indigo-500 to-indigo-600'
+    };
+    return colors[category] || 'from-gray-500 to-gray-600';
   };
 
-  // Datos de ejemplo - Gastos
-  const expenses: Expense[] = [
-    {
-      id: 'EXP-001',
-      description: 'Supermercado Mensual',
-      amount: 350.75,
-      category: 'Alimentación',
-      subcategory: 'Supermercado',
-      date: '2024-02-23',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'Mercadona',
-      vendorId: 'VEN-001',
-      invoice: 'FAC-2024-001',
-      notes: 'Compra mensual de alimentos',
-      attachments: 1,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.10,
-      deductible: false,
-      tags: ['alimentación', 'hogar', 'mensual'],
-      receipt: true
-    },
-    {
-      id: 'EXP-002',
-      description: 'Pago de alquiler',
-      amount: 1200.00,
-      category: 'Vivienda',
-      subcategory: 'Alquiler',
-      date: '2024-02-22',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      vendor: 'Inmobiliaria Pérez',
-      vendorId: 'VEN-002',
-      invoice: 'FAC-2024-002',
-      notes: 'Alquiler del mes de febrero',
-      attachments: 2,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.21,
-      deductible: true,
-      tags: ['vivienda', 'alquiler', 'fijo'],
-      receipt: true
-    },
-    {
-      id: 'EXP-003',
-      description: 'Electricidad',
-      amount: 85.50,
-      category: 'Servicios',
-      subcategory: 'Electricidad',
-      date: '2024-02-21',
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      vendor: 'Endesa',
-      vendorId: 'VEN-003',
-      invoice: 'FAC-2024-003',
-      notes: 'Factura de luz febrero',
-      attachments: 1,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.21,
-      deductible: true,
-      tags: ['servicios', 'electricidad', 'hogar'],
-      receipt: true
-    },
-    {
-      id: 'EXP-004',
-      description: 'Internet y telefonía',
-      amount: 65.99,
-      category: 'Servicios',
-      subcategory: 'Internet',
-      date: '2024-02-20',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'Movistar',
-      vendorId: 'VEN-004',
-      invoice: 'FAC-2024-004',
-      notes: 'Fibra + móvil',
-      attachments: 1,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.21,
-      deductible: true,
-      tags: ['internet', 'telefonía', 'hogar'],
-      receipt: true
-    },
-    {
-      id: 'EXP-005',
-      description: 'Gasolina',
-      amount: 65.00,
-      category: 'Transporte',
-      subcategory: 'Combustible',
-      date: '2024-02-19',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'Repsol',
-      vendorId: 'VEN-005',
-      notes: 'Llenar depósito',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      deductible: false,
-      tags: ['transporte', 'combustible', 'coche'],
-      receipt: true
-    },
-    {
-      id: 'EXP-006',
-      description: 'Cena restaurante',
-      amount: 45.80,
-      category: 'Ocio',
-      subcategory: 'Restaurantes',
-      date: '2024-02-18',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'La Tagliatella',
-      notes: 'Cena familiar',
-      attachments: 0,
-      recurring: false,
-      tax: 0.10,
-      deductible: false,
-      tags: ['ocio', 'restaurante', 'familia'],
-      receipt: true
-    },
-    {
-      id: 'EXP-007',
-      description: 'Gimnasio',
-      amount: 45.00,
-      category: 'Salud',
-      subcategory: 'Deporte',
-      date: '2024-02-17',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'Basic Fit',
-      vendorId: 'VEN-006',
-      notes: 'Cuota mensual gimnasio',
-      attachments: 0,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.10,
-      deductible: false,
-      tags: ['salud', 'deporte', 'suscripción'],
-      receipt: true
-    },
-    {
-      id: 'EXP-008',
-      description: 'Ropa',
-      amount: 120.50,
-      category: 'Compras',
-      subcategory: 'Ropa',
-      date: '2024-02-16',
-      paymentMethod: 'tarjeta',
-      status: 'completado',
-      vendor: 'Zara',
-      vendorId: 'VEN-007',
-      notes: 'Compra de ropa',
-      attachments: 0,
-      recurring: false,
-      tax: 0.21,
-      deductible: false,
-      tags: ['compras', 'ropa', 'personal'],
-      receipt: true
-    },
-    {
-      id: 'EXP-009',
-      description: 'Factura pendiente - Agua',
-      amount: 45.30,
-      category: 'Servicios',
-      subcategory: 'Agua',
-      date: '2024-03-05',
-      paymentMethod: 'transferencia',
-      status: 'pendiente',
-      vendor: 'Aguas de Barcelona',
-      vendorId: 'VEN-008',
-      invoice: 'FAC-2024-009',
-      notes: 'Factura de agua pendiente',
-      attachments: 0,
-      recurring: true,
-      recurringFrequency: 'mensual',
-      tax: 0.10,
-      deductible: true,
-      tags: ['servicios', 'agua', 'pendiente'],
-      receipt: false
-    },
-    {
-      id: 'EXP-010',
-      description: 'Seguro de coche',
-      amount: 450.00,
-      category: 'Seguros',
-      subcategory: 'Coche',
-      date: '2024-03-15',
-      paymentMethod: 'tarjeta',
-      status: 'programado',
-      vendor: 'Mapfre',
-      vendorId: 'VEN-009',
-      invoice: 'FAC-2024-010',
-      notes: 'Seguro anual programado',
-      attachments: 2,
-      recurring: true,
-      recurringFrequency: 'anual',
-      tax: 0.21,
-      deductible: true,
-      tags: ['seguros', 'coche', 'anual'],
-      receipt: false
-    }
-  ];
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      'Alimentación': <Utensils size={16} />,
+      'Vivienda': <HomeIcon size={16} />,
+      'Servicios': <Zap size={16} />,
+      'Transporte': <Car size={16} />,
+      'Ocio': <Film size={16} />,
+      'Salud': <Heart size={16} />,
+      'Compras': <ShoppingBag size={16} />,
+      'Seguros': <Shield size={16} />
+    };
+    return icons[category] || <Tag size={16} />;
+  };
 
-  // Categorías con resumen
-  const categories: CategorySummary[] = [
-    {
-      name: 'Alimentación',
-      amount: 350.75,
-      percentage: 12,
-      color: 'from-yellow-500 to-yellow-600',
-      icon: <Utensils size={16} />,
-      count: 1,
-      deductible: false
-    },
-    {
-      name: 'Vivienda',
-      amount: 1200.00,
-      percentage: 42,
-      color: 'from-blue-500 to-blue-600',
-      icon: <HomeIcon size={16} />,
-      count: 1,
-      deductible: true
-    },
-    {
-      name: 'Servicios',
-      amount: 196.79,
-      percentage: 7,
-      color: 'from-cyan-500 to-cyan-600',
-      icon: <Zap size={16} />,
-      count: 3,
-      deductible: true
-    },
-    {
-      name: 'Transporte',
-      amount: 65.00,
-      percentage: 2,
-      color: 'from-green-500 to-green-600',
-      icon: <Car size={16} />,
-      count: 1,
-      deductible: false
-    },
-    {
-      name: 'Ocio',
-      amount: 45.80,
-      percentage: 1.6,
-      color: 'from-purple-500 to-purple-600',
-      icon: <Film size={16} />,
-      count: 1,
-      deductible: false
-    },
-    {
-      name: 'Salud',
-      amount: 45.00,
-      percentage: 1.6,
-      color: 'from-red-500 to-red-600',
-      icon: <Heart size={16} />,
-      count: 1,
-      deductible: false
-    },
-    {
-      name: 'Compras',
-      amount: 120.50,
-      percentage: 4,
-      color: 'from-pink-500 to-pink-600',
-      icon: <ShoppingBag size={16} />,
-      count: 1,
-      deductible: false
-    },
-    {
-      name: 'Seguros',
-      amount: 450.00,
-      percentage: 16,
-      color: 'from-indigo-500 to-indigo-600',
-      icon: <Shield size={16} />,
-      count: 1,
-      deductible: true
+  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data]) => ({
+    name,
+    amount: data.amount,
+    percentage: totalCompletedAmount > 0 ? (data.amount / totalCompletedAmount) * 100 : 0,
+    color: getCategoryColor(name),
+    icon: getCategoryIcon(name),
+    count: data.count,
+    deductible: data.deductible
+  })).sort((a, b) => b.amount - a.amount);
+
+  // Función para filtrar por período
+  const filterByPeriod = (date: string, period: string): boolean => {
+    const expenseDate = new Date(date);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    
+    switch(period) {
+      case 'este-mes':
+        return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      case 'este-semana':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+        return expenseDate >= startOfWeek && expenseDate <= endOfWeek;
+      case 'este-ano':
+        return expenseDate.getFullYear() === currentYear;
+      case 'personalizado':
+        return true;
+      default:
+        return true;
     }
-  ];
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('todas');
+    setSelectedStatus('todos');
+    setSelectedPaymentMethod('todos');
+    setSelectedPeriod('este-mes');
+    setCurrentPage(1);
+    setShowDeductibleOnly(false);
+  };
+
+  const handleCreateExpense = () => {
+    const newExpense: Expense = {
+      id: generateUniqueId(),
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      category: formData.category,
+      date: formData.date,
+      paymentMethod: formData.paymentMethod as any,
+      status: formData.status as any,
+      vendor: formData.vendor || undefined,
+      invoice: formData.invoice || undefined,
+      notes: formData.notes || undefined,
+      deductible: formData.deductible,
+      recurring: false,
+      tax: 0.21,
+      tags: []
+    };
+
+    setExpenses(prevExpenses => [newExpense, ...prevExpenses]);
+    setShowCreateModal(false);
+    setFormData({
+      description: '',
+      amount: '',
+      category: '',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'transferencia',
+      status: 'completado',
+      vendor: '',
+      invoice: '',
+      notes: '',
+      deductible: false
+    });
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+      setExpenses(prevExpenses => prevExpenses.filter(exp => exp.id !== id));
+    }
+  };
+
+  const handleEditStatus = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setNewStatus(expense.status);
+    setShowEditStatusModal(true);
+  };
+
+  const handleUpdateStatus = () => {
+    if (selectedExpense && newStatus && newStatus !== selectedExpense.status) {
+      setExpenses(prevExpenses => 
+        prevExpenses.map(exp => 
+          exp.id === selectedExpense.id ? { ...exp, status: newStatus as any } : exp
+        )
+      );
+    }
+    setShowEditStatusModal(false);
+    setSelectedExpense(null);
+    setNewStatus('');
+  };
+
+  const resetData = () => {
+    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
+      localStorage.removeItem('expenses');
+      setExpenses(getDefaultExpenses());
+    }
+  };
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -415,12 +537,13 @@ export const ExpensesPage = () => {
                          expense.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'todas' || expense.category === selectedCategory;
     const matchesStatus = selectedStatus === 'todos' || expense.status === selectedStatus;
+    const matchesPaymentMethod = selectedPaymentMethod === 'todos' || expense.paymentMethod === selectedPaymentMethod;
+    const matchesPeriod = filterByPeriod(expense.date, selectedPeriod);
     const matchesDeductible = showDeductibleOnly ? expense.deductible : true;
     
-    return matchesSearch && matchesCategory && matchesStatus && matchesDeductible;
+    return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod && matchesPeriod && matchesDeductible;
   });
 
-  // Ordenar gastos
   const sortedExpenses = [...filteredExpenses].sort((a, b) => {
     if (sortBy === 'date') {
       return sortOrder === 'desc' 
@@ -435,7 +558,6 @@ export const ExpensesPage = () => {
     }
   });
 
-  // Paginación
   const totalPages = Math.ceil(sortedExpenses.length / itemsPerPage);
   const paginatedExpenses = sortedExpenses.slice(
     (currentPage - 1) * itemsPerPage,
@@ -501,10 +623,36 @@ export const ExpensesPage = () => {
         return <CreditCard size={14} />;
       case 'transferencia':
         return <Wallet size={14} />;
+      case 'cheque':
+        return <FileText size={14} />;
       default:
         return <CreditCard size={14} />;
     }
   };
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch(method) {
+      case 'efectivo':
+        return 'Efectivo';
+      case 'tarjeta':
+        return 'Tarjeta';
+      case 'transferencia':
+        return 'Transferencia';
+      case 'cheque':
+        return 'Cheque';
+      case 'otro':
+        return 'Otro';
+      default:
+        return method;
+    }
+  };
+
+  const hasActiveFilters = searchTerm !== '' || 
+    selectedCategory !== 'todas' || 
+    selectedStatus !== 'todos' || 
+    selectedPaymentMethod !== 'todos' ||
+    selectedPeriod !== 'este-mes' ||
+    showDeductibleOnly;
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -544,9 +692,19 @@ export const ExpensesPage = () => {
           >
             <BarChart3 size={20} />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
             <Plus size={20} />
             <span className="hidden sm:inline">Nuevo Gasto</span>
+          </button>
+          <button
+            onClick={resetData}
+            className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300"
+            title="Restaurar datos por defecto"
+          >
+            <RefreshCw size={20} />
           </button>
         </div>
       </div>
@@ -554,29 +712,56 @@ export const ExpensesPage = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Total Gastos</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(summary.total)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <ArrowDown size={14} className="text-red-400" />
-            <span className="text-red-400 text-xs">{Math.abs(summary.growth)}%</span>
-            <span className="text-white/40 text-xs ml-1">vs mes anterior</span>
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Gastos del Año</p>
+            <Calendar size={18} className="text-[#F05984]" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalYearlyExpense)}</p>
+          <p className="text-white/40 text-xs mt-1">{currentYear}</p>
+        </div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Este mes</p>
+            <TrendingDown size={18} className="text-red-400" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalMonthlyExpense)}</p>
+        </div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Pendiente por pagar</p>
+            <Clock size={18} className="text-yellow-400" />
+          </div>
+          <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
+          <p className="text-white/40 text-xs mt-1">{pendingExpenses.length} facturas pendientes</p>
+        </div>
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between">
+            <p className="text-white/60 text-sm">Ticket Promedio</p>
+            <Target size={18} className="text-blue-400" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
+          <p className="text-white/40 text-xs mt-1">{completedExpenses.length} transacciones</p>
+        </div>
+      </div>
+
+      {/* Deducible Summary */}
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-semibold">Gastos Deducibles</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-white/40 text-sm">Deducible: {formatCurrency(totalDeductible)}</span>
+            <span className="text-white/40 text-sm">No deducible: {formatCurrency(totalNonDeductible)}</span>
           </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Este mes</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(summary.monthly)}</p>
-          <p className="text-white/40 text-xs mt-1">Promedio: {formatCurrency(summary.average)}/día</p>
+        <div className="w-full h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full"
+            style={{ width: `${totalYearlyExpense > 0 ? (totalDeductible / totalYearlyExpense) * 100 : 0}%` }}
+          />
         </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Pendiente</p>
-          <p className="text-xl font-bold text-yellow-400">{formatCurrency(summary.pending)}</p>
-          <p className="text-white/40 text-xs mt-1">Programado: {formatCurrency(summary.scheduled)}</p>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Deducible</p>
-          <p className="text-xl font-bold text-green-400">{formatCurrency(summary.deductible)}</p>
-          <p className="text-white/40 text-xs mt-1">No deducible: {formatCurrency(summary.nonDeductible)}</p>
-        </div>
+        <p className="text-white/40 text-xs mt-2">
+          {((totalDeductible / totalYearlyExpense) * 100).toFixed(1)}% de tus gastos son deducibles
+        </p>
       </div>
 
       {/* Categories Summary */}
@@ -595,36 +780,40 @@ export const ExpensesPage = () => {
             </label>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
-          {categories.map((cat, index) => (
-            <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                  {cat.icon}
+        {categories.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {categories.map((cat, index) => (
+              <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
+                    {cat.icon}
+                  </div>
+                  <span className="text-white text-sm truncate">{cat.name}</span>
                 </div>
-                <span className="text-white text-sm">{cat.name}</span>
-              </div>
-              <p className="text-white font-semibold text-sm">{formatCurrency(cat.amount)}</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-white/40 text-xs">{cat.percentage}%</span>
-                <span className="text-white/40 text-xs">{cat.count} ops</span>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                  style={{ width: `${cat.percentage}%` }}
-                />
-              </div>
-              {cat.deductible && (
-                <div className="mt-1">
-                  <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">
-                    deducible
-                  </span>
+                <p className="text-white font-semibold text-sm">{formatCurrency(cat.amount)}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-white/40 text-xs">{cat.percentage.toFixed(1)}%</span>
+                  <span className="text-white/40 text-xs">{cat.count} ops</span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+                    style={{ width: `${cat.percentage}%` }}
+                  />
+                </div>
+                {cat.deductible && (
+                  <div className="mt-1">
+                    <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">
+                      deducible
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-white/40 text-center py-4">No hay datos de gastos completados</p>
+        )}
       </div>
 
       {/* Filters and Search */}
@@ -645,12 +834,13 @@ export const ExpensesPage = () => {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
-                <option value="este-mes">Este mes</option>
-                <option value="este-semana">Esta semana</option>
-                <option value="este-ano">Este año</option>
-                <option value="personalizado">Personalizado</option>
+                <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
+                <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
+                <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
+                <option value="personalizado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Personalizado</option>
               </select>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -666,10 +856,18 @@ export const ExpensesPage = () => {
               <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
                 <Printer size={20} />
               </button>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
+                >
+                  <XCircle size={16} />
+                  <span>Limpiar filtros</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Advanced Filters */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -678,17 +876,13 @@ export const ExpensesPage = () => {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="todas">Todas las categorías</option>
-                    <option value="Alimentación">Alimentación</option>
-                    <option value="Vivienda">Vivienda</option>
-                    <option value="Servicios">Servicios</option>
-                    <option value="Transporte">Transporte</option>
-                    <option value="Ocio">Ocio</option>
-                    <option value="Salud">Salud</option>
-                    <option value="Compras">Compras</option>
-                    <option value="Seguros">Seguros</option>
+                    <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                    {categories.map(cat => (
+                      <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -696,23 +890,28 @@ export const ExpensesPage = () => {
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                   >
-                    <option value="todos">Todos los estados</option>
-                    <option value="completado">Completado</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="programado">Programado</option>
-                    <option value="cancelado">Cancelado</option>
+                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
-                  <select className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm">
-                    <option>Todos los métodos</option>
-                    <option>Efectivo</option>
-                    <option>Tarjeta</option>
-                    <option>Transferencia</option>
-                    <option>Cheque</option>
+                  <select
+                    value={selectedPaymentMethod}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  >
+                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
+                    <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                    <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                    <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                    <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
                   </select>
                 </div>
               </div>
@@ -836,7 +1035,7 @@ export const ExpensesPage = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         {getPaymentMethodIcon(expense.paymentMethod)}
-                        <span className="text-white text-sm capitalize">{expense.paymentMethod}</span>
+                        <span className="text-white text-sm capitalize">{getPaymentMethodLabel(expense.paymentMethod)}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -856,18 +1055,20 @@ export const ExpensesPage = () => {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
-                          <Eye size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditStatus(expense)}
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                          title="Editar estado"
+                        >
                           <Edit size={16} />
                         </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-red-400">
+                        <button
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400 hover:text-red-300"
+                          title="Eliminar"
+                        >
                           <Trash2 size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
-                          <MoreVertical size={16} />
                         </button>
                       </div>
                     </td>
@@ -911,7 +1112,7 @@ export const ExpensesPage = () => {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-white/60">Método:</span>
-                    <span className="text-white capitalize">{expense.paymentMethod}</span>
+                    <span className="text-white capitalize">{getPaymentMethodLabel(expense.paymentMethod)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-white/60">Deducible:</span>
@@ -923,12 +1124,20 @@ export const ExpensesPage = () => {
 
                 <div className="flex items-center justify-between pt-3 border-t border-white/10">
                   <span className="text-lg font-bold text-white">{formatCurrency(expense.amount)}</span>
-                  <div className="flex gap-1">
-                    <button className="p-1.5 hover:bg-white/10 rounded transition-colors">
-                      <Eye size={16} className="text-white/60" />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditStatus(expense)}
+                      className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400 hover:text-blue-300"
+                      title="Editar estado"
+                    >
+                      <Edit size={16} />
                     </button>
-                    <button className="p-1.5 hover:bg-white/10 rounded transition-colors">
-                      <Edit size={16} className="text-white/60" />
+                    <button
+                      onClick={() => handleDeleteExpense(expense.id)}
+                      className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400 hover:text-red-300"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -996,6 +1205,267 @@ export const ExpensesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal para crear nuevo gasto */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
+                  <TrendingDown size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Nuevo Gasto</h2>
+                  <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo gasto</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
+                    <div className="relative">
+                      <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="Ej: Supermercado"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                    <div className="relative">
+                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                      required
+                    >
+                      <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
+                      <option value="Alimentación" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alimentación</option>
+                      <option value="Vivienda" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Vivienda</option>
+                      <option value="Servicios" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios</option>
+                      <option value="Transporte" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transporte</option>
+                      <option value="Ocio" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ocio</option>
+                      <option value="Salud" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salud</option>
+                      <option value="Compras" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Compras</option>
+                      <option value="Seguros" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seguros</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
+                    <div className="relative">
+                      <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({...formData, date: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                    <select
+                      value={formData.paymentMethod}
+                      onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                    >
+                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                    >
+                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Proveedor</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.vendor}
+                        onChange={(e) => setFormData({...formData, vendor: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="Nombre del proveedor"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input
+                        type="text"
+                        value={formData.invoice}
+                        onChange={(e) => setFormData({...formData, invoice: e.target.value})}
+                        className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        placeholder="FAC-2024-001"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    placeholder="Notas adicionales sobre este gasto..."
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="deductible"
+                    checked={formData.deductible}
+                    onChange={(e) => setFormData({...formData, deductible: e.target.checked})}
+                    className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+                  />
+                  <label htmlFor="deductible" className="text-white text-sm">
+                    Gasto deducible de impuestos
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                  >
+                    <Save size={18} />
+                    <span>Guardar Gasto</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar estado */}
+      {showEditStatusModal && selectedExpense && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Edit size={20} className="text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Editar Estado</h2>
+                  <p className="text-white/40 text-sm">Cambia el estado del gasto</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditStatusModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-white/60" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Gasto</label>
+                  <p className="text-white font-medium">{selectedExpense.description}</p>
+                  <p className="text-white/40 text-sm">{formatCurrency(selectedExpense.amount)}</p>
+                </div>
+
+                <div>
+                  <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  >
+                    <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                    <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                    <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    onClick={() => setShowEditStatusModal(false)}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleUpdateStatus}
+                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Actualizar Estado
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
