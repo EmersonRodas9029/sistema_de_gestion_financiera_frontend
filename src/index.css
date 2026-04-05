@@ -146,3 +146,77 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* Estilos mejorados para selects */
+select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+select:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(240, 89, 132, 0.5);
+}
+
+select:focus {
+  outline: none;
+  border-color: #F05984;
+  box-shadow: 0 0 0 2px rgba(240, 89, 132, 0.2);
+}
+
+select option {
+  background-color: #1a0f14;
+  color: white;
+  padding: 0.5rem;
+}
+
+/* Estilos para inputs */
+input, textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+input:hover, textarea:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(240, 89, 132, 0.5);
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #F05984;
+  box-shadow: 0 0 0 2px rgba(240, 89, 132, 0.2);
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Estilos para los selects dentro del modal y formularios */
+.modal-select,
+.modal-select option {
+  background-color: #2a1a22 !important;
+  color: white !important;
+}
+
+/* Estilos para los botones de filtro */
+.filter-select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.filter-select option {
+  background-color: #1a0f14;
+  color: white;
+}
