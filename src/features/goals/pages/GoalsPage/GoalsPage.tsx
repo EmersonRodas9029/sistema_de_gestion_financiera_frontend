@@ -1,66 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Target,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  MoreVertical,
-  Eye,
-  ChevronRight,
-  ChevronLeft,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  PieChart,
-  BarChart3,
-  RefreshCw,
-  Download,
-  Filter,
-  Home,
-  Utensils,
-  Car,
-  Heart,
-  ShoppingBag,
-  Film,
-  Zap,
-  Wifi,
-  Droplet,
-  Home as HomeIcon,
-  Briefcase,
-  Gift,
-  Award,
-  Smartphone,
-  Laptop,
-  Plane,
-  Hotel,
-  Shirt,
-  Dumbbell,
-  BookOpen,
-  Coffee,
-  Dog,
-  Sparkles,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  Settings,
-  Save,
-  X,
-  Flag,
-  Trophy,
-  Rocket,
-  Star,
-  Crown,
-  Gem,
-  Wallet,
-  CreditCard,
-  DollarSign,
-  Percent,
-  LineChart,
-  Activity
+  Target, Plus, Search, Edit, Trash2, Eye, ChevronRight, ChevronLeft,
+  Calendar, TrendingUp, TrendingDown, PieChart, BarChart3, RefreshCw,
+  Download, Filter, Home as HomeIcon, Briefcase, Gift, Award, Smartphone,
+  Laptop, Plane, Hotel, Shirt, Dumbbell, BookOpen, Coffee, Dog, Sparkles,
+  AlertCircle, CheckCircle, Clock, ArrowUp, ArrowDown, X, Save, Flag,
+  Trophy, Rocket, Star, Crown, Gem, Wallet, CreditCard, DollarSign, Percent,
+  LineChart, Activity, XCircle, User, Hash, Calendar as CalendarIcon,
+  Car, Heart, ShoppingBag, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 interface Goal {
@@ -79,7 +27,6 @@ interface Goal {
   monthlyContribution?: number;
   autoContribute?: boolean;
   contributionFrequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annual';
-  contributors?: Contributor[];
   linkedAccounts?: string[];
   notes?: string;
   attachments?: number;
@@ -88,35 +35,240 @@ interface Goal {
   updatedAt: string;
 }
 
-interface Contributor {
-  id: string;
-  name: string;
-  amount: number;
-  date: string;
-}
+// Función para generar ID único
+const generateUniqueId = () => {
+  return `GOAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
-interface GoalSummary {
-  totalGoals: number;
-  activeGoals: number;
-  completedGoals: number;
-  totalTarget: number;
-  totalCurrent: number;
-  overallProgress: number;
-  monthlyContribution: number;
-  estimatedCompletion: string;
-  onTrackGoals: number;
-  atRiskGoals: number;
-}
-
-interface CategoryGoal {
-  name: string;
-  count: number;
-  totalTarget: number;
-  totalCurrent: number;
-  progress: number;
-  color: string;
-  icon: React.ReactNode;
-}
+// Datos iniciales por defecto
+const getDefaultGoals = (): Goal[] => [
+  {
+    id: generateUniqueId(),
+    name: 'Fondo de Emergencia',
+    description: 'Ahorrar para imprevistos y emergencias',
+    type: 'emergency',
+    category: 'Ahorro',
+    targetAmount: 10000,
+    currentAmount: 6500,
+    startDate: '2024-01-15',
+    targetDate: '2024-12-31',
+    status: 'active',
+    priority: 'critical',
+    progress: 65,
+    monthlyContribution: 500,
+    autoContribute: true,
+    contributionFrequency: 'monthly',
+    linkedAccounts: ['ACC-001', 'ACC-002'],
+    notes: 'Fondo para 6 meses de gastos',
+    attachments: 0,
+    tags: ['emergencia', 'seguridad', 'fondo'],
+    createdAt: '2024-01-15',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Vacaciones a Europa',
+    description: 'Viaje de 15 días por Europa',
+    type: 'travel',
+    category: 'Viajes',
+    targetAmount: 5000,
+    currentAmount: 2350,
+    startDate: '2024-02-01',
+    targetDate: '2024-08-31',
+    status: 'active',
+    priority: 'high',
+    progress: 47,
+    monthlyContribution: 400,
+    autoContribute: false,
+    linkedAccounts: ['ACC-003'],
+    notes: 'Destinos: París, Roma, Barcelona',
+    attachments: 3,
+    tags: ['viajes', 'vacaciones', 'europa'],
+    createdAt: '2024-02-01',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Compra de Auto',
+    description: 'Ahorrar para un auto nuevo',
+    type: 'purchase',
+    category: 'Vehículo',
+    targetAmount: 15000,
+    currentAmount: 5200,
+    startDate: '2024-01-01',
+    targetDate: '2025-06-30',
+    status: 'active',
+    priority: 'high',
+    progress: 35,
+    monthlyContribution: 600,
+    autoContribute: true,
+    contributionFrequency: 'monthly',
+    linkedAccounts: ['ACC-001'],
+    notes: 'Auto seminuevo, presupuesto máximo $15,000',
+    attachments: 1,
+    tags: ['auto', 'vehículo', 'compra'],
+    createdAt: '2024-01-01',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Inversión en CETES',
+    description: 'Inversión en instrumentos de deuda',
+    type: 'investment',
+    category: 'Inversiones',
+    targetAmount: 20000,
+    currentAmount: 8500,
+    startDate: '2024-01-10',
+    targetDate: '2024-12-31',
+    status: 'active',
+    priority: 'medium',
+    progress: 43,
+    monthlyContribution: 1000,
+    autoContribute: true,
+    contributionFrequency: 'monthly',
+    linkedAccounts: ['ACC-004'],
+    notes: 'Portafolio diversificado',
+    attachments: 0,
+    tags: ['inversión', 'cetes', 'rendimiento'],
+    createdAt: '2024-01-10',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Pago de Deuda TC',
+    description: 'Liquidar deuda de tarjeta de crédito',
+    type: 'debt',
+    category: 'Deudas',
+    targetAmount: 3500,
+    currentAmount: 1800,
+    startDate: '2024-02-01',
+    targetDate: '2024-05-31',
+    status: 'active',
+    priority: 'critical',
+    progress: 51,
+    monthlyContribution: 900,
+    autoContribute: true,
+    contributionFrequency: 'biweekly',
+    linkedAccounts: ['ACC-005'],
+    notes: 'Tarjeta con interés del 30% anual',
+    attachments: 2,
+    tags: ['deuda', 'tarjeta', 'interés'],
+    createdAt: '2024-02-01',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Maestría',
+    description: 'Ahorrar para una maestría en el extranjero',
+    type: 'education',
+    category: 'Educación',
+    targetAmount: 15000,
+    currentAmount: 3200,
+    startDate: '2024-01-15',
+    targetDate: '2025-08-31',
+    status: 'active',
+    priority: 'high',
+    progress: 21,
+    monthlyContribution: 500,
+    autoContribute: false,
+    linkedAccounts: ['ACC-003'],
+    notes: 'Maestría en Data Science',
+    attachments: 4,
+    tags: ['educación', 'maestría', 'estudio'],
+    createdAt: '2024-01-15',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Fondo para Casa',
+    description: 'Enganche para comprar una casa',
+    type: 'purchase',
+    category: 'Vivienda',
+    targetAmount: 50000,
+    currentAmount: 4500,
+    startDate: '2024-01-01',
+    targetDate: '2026-12-31',
+    status: 'paused',
+    priority: 'medium',
+    progress: 9,
+    monthlyContribution: 800,
+    autoContribute: true,
+    contributionFrequency: 'monthly',
+    linkedAccounts: ['ACC-001'],
+    notes: 'Meta a largo plazo',
+    attachments: 0,
+    tags: ['casa', 'vivienda', 'largo plazo'],
+    createdAt: '2024-01-01',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Ahorro para Bodas',
+    description: 'Ahorrar para la boda',
+    type: 'savings',
+    category: 'Eventos',
+    targetAmount: 8000,
+    currentAmount: 8000,
+    startDate: '2024-01-01',
+    targetDate: '2024-03-15',
+    status: 'completed',
+    priority: 'high',
+    progress: 100,
+    monthlyContribution: 2000,
+    autoContribute: false,
+    linkedAccounts: ['ACC-002'],
+    notes: '¡Meta cumplida!',
+    attachments: 5,
+    tags: ['boda', 'evento', 'celebración'],
+    createdAt: '2024-01-01',
+    updatedAt: '2024-03-15'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Jubilación',
+    description: 'Fondo para el retiro',
+    type: 'retirement',
+    category: 'Jubilación',
+    targetAmount: 200000,
+    currentAmount: 12500,
+    startDate: '2024-01-01',
+    targetDate: '2045-12-31',
+    status: 'active',
+    priority: 'medium',
+    progress: 6,
+    monthlyContribution: 500,
+    autoContribute: true,
+    contributionFrequency: 'monthly',
+    linkedAccounts: ['ACC-006'],
+    notes: 'Fondo de retiro a largo plazo',
+    attachments: 0,
+    tags: ['jubilación', 'retiro', 'largo plazo'],
+    createdAt: '2024-01-01',
+    updatedAt: '2024-02-23'
+  },
+  {
+    id: generateUniqueId(),
+    name: 'Comprar iPhone',
+    description: 'Ahorrar para un iPhone nuevo',
+    type: 'purchase',
+    category: 'Tecnología',
+    targetAmount: 1200,
+    currentAmount: 400,
+    startDate: '2024-02-15',
+    targetDate: '2024-04-30',
+    status: 'active',
+    priority: 'low',
+    progress: 33,
+    monthlyContribution: 200,
+    autoContribute: false,
+    linkedAccounts: ['ACC-003'],
+    notes: 'iPhone 15 Pro',
+    attachments: 0,
+    tags: ['tecnología', 'iphone', 'compra'],
+    createdAt: '2024-02-15',
+    updatedAt: '2024-02-23'
+  }
+];
 
 export const GoalsPage = () => {
   const navigate = useNavigate();
@@ -124,407 +276,134 @@ export const GoalsPage = () => {
   const [selectedType, setSelectedType] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPriority, setSelectedPriority] = useState<string>('todas');
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'timeline'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'target' | 'date'>('progress');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    targetAmount: '',
+    monthlyContribution: '',
+    priority: 'medium'
+  });
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'savings',
+    category: '',
+    targetAmount: '',
+    monthlyContribution: '',
+    targetDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+    priority: 'medium',
+    autoContribute: false,
+    notes: ''
+  });
 
-  // Resumen de metas
-  const summary: GoalSummary = {
-    totalGoals: 12,
-    activeGoals: 8,
-    completedGoals: 4,
-    totalTarget: 78500,
-    totalCurrent: 32450,
-    overallProgress: 41,
-    monthlyContribution: 1250,
-    estimatedCompletion: '18 meses',
-    onTrackGoals: 6,
-    atRiskGoals: 2
+  const itemsPerPage = 6;
+
+  // Cargar datos desde localStorage o usar datos por defecto
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    try {
+      const saved = localStorage.getItem('goals');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return getDefaultGoals();
+    } catch (error) {
+      console.error('Error loading goals:', error);
+      return getDefaultGoals();
+    }
+  });
+
+  // Guardar en localStorage cuando cambien las metas
+  useEffect(() => {
+    localStorage.setItem('goals', JSON.stringify(goals));
+  }, [goals]);
+
+  // Calcular estadísticas en tiempo real
+  const totalGoals = goals.length;
+  const activeGoals = goals.filter(g => g.status === 'active').length;
+  const completedGoals = goals.filter(g => g.status === 'completed').length;
+  const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+  const totalCurrent = goals.reduce((sum, g) => sum + g.currentAmount, 0);
+  const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+  const monthlyContribution = goals.reduce((sum, g) => sum + (g.monthlyContribution || 0), 0);
+  
+  const onTrackGoals = goals.filter(g => {
+    if (g.status !== 'active') return false;
+    const daysRemaining = Math.ceil((new Date(g.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const expectedProgress = daysRemaining > 0 ? (g.currentAmount / g.targetAmount) * 100 : 100;
+    return expectedProgress >= (g.progress || 0);
+  }).length;
+  
+  const atRiskGoals = activeGoals - onTrackGoals;
+
+  // Calcular categorías
+  const categoryMap = new Map<string, { count: number; totalTarget: number; totalCurrent: number }>();
+  goals.forEach(g => {
+    const existing = categoryMap.get(g.category);
+    if (existing) {
+      existing.count += 1;
+      existing.totalTarget += g.targetAmount;
+      existing.totalCurrent += g.currentAmount;
+    } else {
+      categoryMap.set(g.category, { count: 1, totalTarget: g.targetAmount, totalCurrent: g.currentAmount });
+    }
+  });
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'Ahorro': 'from-green-500 to-green-600',
+      'Viajes': 'from-blue-500 to-blue-600',
+      'Vehículo': 'from-orange-500 to-orange-600',
+      'Inversiones': 'from-purple-500 to-purple-600',
+      'Deudas': 'from-red-500 to-red-600',
+      'Educación': 'from-indigo-500 to-indigo-600',
+      'Vivienda': 'from-cyan-500 to-cyan-600',
+      'Eventos': 'from-pink-500 to-pink-600',
+      'Jubilación': 'from-teal-500 to-teal-600',
+      'Tecnología': 'from-gray-500 to-gray-600',
+      'Salud': 'from-amber-500 to-amber-600'
+    };
+    return colors[category] || 'from-gray-500 to-gray-600';
   };
 
-  // Datos de ejemplo - Metas
-  const goals: Goal[] = [
-    {
-      id: 'GOAL-001',
-      name: 'Fondo de Emergencia',
-      description: 'Ahorrar para imprevistos y emergencias',
-      type: 'emergency',
-      category: 'Ahorro',
-      targetAmount: 10000,
-      currentAmount: 6500,
-      startDate: '2024-01-15',
-      targetDate: '2024-12-31',
-      status: 'active',
-      priority: 'critical',
-      progress: 65,
-      monthlyContribution: 500,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-001', 'ACC-002'],
-      notes: 'Fondo para 6 meses de gastos',
-      attachments: 0,
-      tags: ['emergencia', 'seguridad', 'fondo'],
-      createdAt: '2024-01-15',
-      updatedAt: '2024-02-23',
-      contributors: [
-        { id: 'CON-001', name: 'Ahorro automático', amount: 500, date: '2024-02-23' }
-      ]
-    },
-    {
-      id: 'GOAL-002',
-      name: 'Vacaciones a Europa',
-      description: 'Viaje de 15 días por Europa',
-      type: 'travel',
-      category: 'Viajes',
-      targetAmount: 5000,
-      currentAmount: 2350,
-      startDate: '2024-02-01',
-      targetDate: '2024-08-31',
-      status: 'active',
-      priority: 'high',
-      progress: 47,
-      monthlyContribution: 400,
-      autoContribute: false,
-      linkedAccounts: ['ACC-003'],
-      notes: 'Destinos: París, Roma, Barcelona',
-      attachments: 3,
-      tags: ['viajes', 'vacaciones', 'europa'],
-      createdAt: '2024-02-01',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-003',
-      name: 'Compra de Auto',
-      description: 'Ahorrar para un auto nuevo',
-      type: 'purchase',
-      category: 'Vehículo',
-      targetAmount: 15000,
-      currentAmount: 5200,
-      startDate: '2024-01-01',
-      targetDate: '2025-06-30',
-      status: 'active',
-      priority: 'high',
-      progress: 35,
-      monthlyContribution: 600,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-001'],
-      notes: 'Auto seminuevo, presupuesto máximo $15,000',
-      attachments: 1,
-      tags: ['auto', 'vehículo', 'compra'],
-      createdAt: '2024-01-01',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-004',
-      name: 'Inversión en CETES',
-      description: 'Inversión en instrumentos de deuda',
-      type: 'investment',
-      category: 'Inversiones',
-      targetAmount: 20000,
-      currentAmount: 8500,
-      startDate: '2024-01-10',
-      targetDate: '2024-12-31',
-      status: 'active',
-      priority: 'medium',
-      progress: 43,
-      monthlyContribution: 1000,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-004'],
-      notes: 'Portafolio diversificado',
-      attachments: 0,
-      tags: ['inversión', 'cetes', 'rendimiento'],
-      createdAt: '2024-01-10',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-005',
-      name: 'Pago de Deuda TC',
-      description: 'Liquidar deuda de tarjeta de crédito',
-      type: 'debt',
-      category: 'Deudas',
-      targetAmount: 3500,
-      currentAmount: 1800,
-      startDate: '2024-02-01',
-      targetDate: '2024-05-31',
-      status: 'active',
-      priority: 'critical',
-      progress: 51,
-      monthlyContribution: 900,
-      autoContribute: true,
-      contributionFrequency: 'biweekly',
-      linkedAccounts: ['ACC-005'],
-      notes: 'Tarjeta con interés del 30% anual',
-      attachments: 2,
-      tags: ['deuda', 'tarjeta', 'interés'],
-      createdAt: '2024-02-01',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-006',
-      name: 'Maestría',
-      description: 'Ahorrar para una maestría en el extranjero',
-      type: 'education',
-      category: 'Educación',
-      targetAmount: 15000,
-      currentAmount: 3200,
-      startDate: '2024-01-15',
-      targetDate: '2025-08-31',
-      status: 'active',
-      priority: 'high',
-      progress: 21,
-      monthlyContribution: 500,
-      autoContribute: false,
-      linkedAccounts: ['ACC-003'],
-      notes: 'Maestría en Data Science',
-      attachments: 4,
-      tags: ['educación', 'maestría', 'estudio'],
-      createdAt: '2024-01-15',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-007',
-      name: 'Fondo para Casa',
-      description: 'Enganche para comprar una casa',
-      type: 'purchase',
-      category: 'Vivienda',
-      targetAmount: 50000,
-      currentAmount: 4500,
-      startDate: '2024-01-01',
-      targetDate: '2026-12-31',
-      status: 'paused',
-      priority: 'medium',
-      progress: 9,
-      monthlyContribution: 800,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-001'],
-      notes: 'Meta a largo plazo',
-      attachments: 0,
-      tags: ['casa', 'vivienda', 'largo plazo'],
-      createdAt: '2024-01-01',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-008',
-      name: 'Ahorro para Bodas',
-      description: 'Ahorrar para la boda',
-      type: 'savings',
-      category: 'Eventos',
-      targetAmount: 8000,
-      currentAmount: 8000,
-      startDate: '2024-01-01',
-      targetDate: '2024-03-15',
-      status: 'completed',
-      priority: 'high',
-      progress: 100,
-      monthlyContribution: 2000,
-      autoContribute: false,
-      linkedAccounts: ['ACC-002'],
-      notes: '¡Meta cumplida!',
-      attachments: 5,
-      tags: ['boda', 'evento', 'celebración'],
-      createdAt: '2024-01-01',
-      updatedAt: '2024-03-15'
-    },
-    {
-      id: 'GOAL-009',
-      name: 'Jubilación',
-      description: 'Fondo para el retiro',
-      type: 'retirement',
-      category: 'Jubilación',
-      targetAmount: 200000,
-      currentAmount: 12500,
-      startDate: '2024-01-01',
-      targetDate: '2045-12-31',
-      status: 'active',
-      priority: 'medium',
-      progress: 6,
-      monthlyContribution: 500,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-006'],
-      notes: 'Fondo de retiro a largo plazo',
-      attachments: 0,
-      tags: ['jubilación', 'retiro', 'largo plazo'],
-      createdAt: '2024-01-01',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-010',
-      name: 'Comprar iPhone',
-      description: 'Ahorrar para un iPhone nuevo',
-      type: 'purchase',
-      category: 'Tecnología',
-      targetAmount: 1200,
-      currentAmount: 400,
-      startDate: '2024-02-15',
-      targetDate: '2024-04-30',
-      status: 'active',
-      priority: 'low',
-      progress: 33,
-      monthlyContribution: 200,
-      autoContribute: false,
-      linkedAccounts: ['ACC-003'],
-      notes: 'iPhone 15 Pro',
-      attachments: 0,
-      tags: ['tecnología', 'iphone', 'compra'],
-      createdAt: '2024-02-15',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-011',
-      name: 'Gimnasio anual',
-      description: 'Pagar membresía anual del gimnasio',
-      type: 'savings',
-      category: 'Salud',
-      targetAmount: 600,
-      currentAmount: 0,
-      startDate: '2024-03-01',
-      targetDate: '2024-12-31',
-      status: 'active',
-      priority: 'low',
-      progress: 0,
-      monthlyContribution: 50,
-      autoContribute: true,
-      contributionFrequency: 'monthly',
-      linkedAccounts: ['ACC-001'],
-      notes: 'Membresía Basic Fit',
-      attachments: 0,
-      tags: ['salud', 'gimnasio', 'suscripción'],
-      createdAt: '2024-02-20',
-      updatedAt: '2024-02-23'
-    },
-    {
-      id: 'GOAL-012',
-      name: 'Curso de Inglés',
-      description: 'Financiar curso intensivo de inglés',
-      type: 'education',
-      category: 'Educación',
-      targetAmount: 1500,
-      currentAmount: 0,
-      startDate: '2024-03-15',
-      targetDate: '2024-06-30',
-      status: 'paused',
-      priority: 'medium',
-      progress: 0,
-      monthlyContribution: 300,
-      autoContribute: false,
-      linkedAccounts: [],
-      notes: 'Esperando fecha de inicio',
-      attachments: 0,
-      tags: ['inglés', 'curso', 'educación'],
-      createdAt: '2024-02-10',
-      updatedAt: '2024-02-23'
-    }
-  ];
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      'Ahorro': <Wallet size={16} />,
+      'Viajes': <Plane size={16} />,
+      'Vehículo': <Car size={16} />,
+      'Inversiones': <TrendingUp size={16} />,
+      'Deudas': <CreditCard size={16} />,
+      'Educación': <BookOpen size={16} />,
+      'Vivienda': <HomeIcon size={16} />,
+      'Eventos': <Gift size={16} />,
+      'Jubilación': <Crown size={16} />,
+      'Tecnología': <Laptop size={16} />,
+      'Salud': <Heart size={16} />
+    };
+    return icons[category] || <Target size={16} />;
+  };
 
-  // Resumen por categoría
-  const categorySummary: CategoryGoal[] = [
-    {
-      name: 'Ahorro',
-      count: 2,
-      totalTarget: 18000,
-      totalCurrent: 10500,
-      progress: 58,
-      color: 'from-green-500 to-green-600',
-      icon: <Wallet size={16} />
-    },
-    {
-      name: 'Viajes',
-      count: 1,
-      totalTarget: 5000,
-      totalCurrent: 2350,
-      progress: 47,
-      color: 'from-blue-500 to-blue-600',
-      icon: <Plane size={16} />
-    },
-    {
-      name: 'Vehículo',
-      count: 1,
-      totalTarget: 15000,
-      totalCurrent: 5200,
-      progress: 35,
-      color: 'from-orange-500 to-orange-600',
-      icon: <Car size={16} />
-    },
-    {
-      name: 'Inversiones',
-      count: 1,
-      totalTarget: 20000,
-      totalCurrent: 8500,
-      progress: 43,
-      color: 'from-purple-500 to-purple-600',
-      icon: <TrendingUp size={16} />
-    },
-    {
-      name: 'Deudas',
-      count: 1,
-      totalTarget: 3500,
-      totalCurrent: 1800,
-      progress: 51,
-      color: 'from-red-500 to-red-600',
-      icon: <CreditCard size={16} />
-    },
-    {
-      name: 'Educación',
-      count: 2,
-      totalTarget: 16500,
-      totalCurrent: 3200,
-      progress: 19,
-      color: 'from-indigo-500 to-indigo-600',
-      icon: <BookOpen size={16} />
-    },
-    {
-      name: 'Vivienda',
-      count: 1,
-      totalTarget: 50000,
-      totalCurrent: 4500,
-      progress: 9,
-      color: 'from-cyan-500 to-cyan-600',
-      icon: <HomeIcon size={16} />
-    },
-    {
-      name: 'Eventos',
-      count: 1,
-      totalTarget: 8000,
-      totalCurrent: 8000,
-      progress: 100,
-      color: 'from-pink-500 to-pink-600',
-      icon: <Gift size={16} />
-    },
-    {
-      name: 'Jubilación',
-      count: 1,
-      totalTarget: 200000,
-      totalCurrent: 12500,
-      progress: 6,
-      color: 'from-teal-500 to-teal-600',
-      icon: <Crown size={16} />
-    },
-    {
-      name: 'Tecnología',
-      count: 1,
-      totalTarget: 1200,
-      totalCurrent: 400,
-      progress: 33,
-      color: 'from-gray-500 to-gray-600',
-      icon: <Laptop size={16} />
-    },
-    {
-      name: 'Salud',
-      count: 1,
-      totalTarget: 600,
-      totalCurrent: 0,
-      progress: 0,
-      color: 'from-amber-500 to-amber-600',
-      icon: <Heart size={16} />
-    }
-  ];
+  const categorySummary = Array.from(categoryMap.entries()).map(([name, data]) => ({
+    name,
+    count: data.count,
+    totalTarget: data.totalTarget,
+    totalCurrent: data.totalCurrent,
+    progress: data.totalTarget > 0 ? (data.totalCurrent / data.totalTarget) * 100 : 0,
+    color: getCategoryColor(name),
+    icon: getCategoryIcon(name)
+  })).sort((a, b) => b.totalTarget - a.totalTarget);
 
   const filteredGoals = goals.filter(goal => {
     const matchesSearch = goal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -537,9 +416,128 @@ export const GoalsPage = () => {
     return matchesSearch && matchesType && matchesStatus && matchesPriority;
   });
 
+  const sortedGoals = [...filteredGoals].sort((a, b) => {
+    if (sortBy === 'name') {
+      return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+    } else if (sortBy === 'progress') {
+      return sortOrder === 'asc' ? a.progress - b.progress : b.progress - a.progress;
+    } else if (sortBy === 'target') {
+      return sortOrder === 'asc' ? a.targetAmount - b.targetAmount : b.targetAmount - a.targetAmount;
+    } else {
+      return sortOrder === 'asc'
+        ? new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime()
+        : new Date(b.targetDate).getTime() - new Date(a.targetDate).getTime();
+    }
+  });
+
+  const totalPages = Math.ceil(sortedGoals.length / itemsPerPage);
+  const paginatedGoals = sortedGoals.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const handleCreateGoal = () => {
+    const newGoal: Goal = {
+      id: generateUniqueId(),
+      name: formData.name,
+      description: formData.description || undefined,
+      type: formData.type as any,
+      category: formData.category,
+      targetAmount: parseFloat(formData.targetAmount),
+      currentAmount: 0,
+      startDate: new Date().toISOString().split('T')[0],
+      targetDate: formData.targetDate,
+      status: 'active',
+      priority: formData.priority as any,
+      progress: 0,
+      monthlyContribution: parseFloat(formData.monthlyContribution) || undefined,
+      autoContribute: formData.autoContribute,
+      notes: formData.notes || undefined,
+      tags: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setGoals(prev => [newGoal, ...prev]);
+    setShowCreateModal(false);
+    setFormData({
+      name: '',
+      description: '',
+      type: 'savings',
+      category: '',
+      targetAmount: '',
+      monthlyContribution: '',
+      targetDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
+      priority: 'medium',
+      autoContribute: false,
+      notes: ''
+    });
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setEditFormData({
+      name: goal.name,
+      targetAmount: goal.targetAmount.toString(),
+      monthlyContribution: goal.monthlyContribution?.toString() || '',
+      priority: goal.priority
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateGoal = () => {
+    if (selectedGoal) {
+      const updatedGoals = goals.map(g => 
+        g.id === selectedGoal.id ? {
+          ...g,
+          name: editFormData.name,
+          targetAmount: parseFloat(editFormData.targetAmount),
+          monthlyContribution: editFormData.monthlyContribution ? parseFloat(editFormData.monthlyContribution) : undefined,
+          priority: editFormData.priority as any,
+          updatedAt: new Date().toISOString()
+        } : g
+      );
+      setGoals(updatedGoals);
+      setShowEditModal(false);
+      setSelectedGoal(null);
+    }
+  };
+
+  const handleEditStatus = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setNewStatus(goal.status);
+    setShowEditStatusModal(true);
+  };
+
+  const handleUpdateStatus = () => {
+    if (selectedGoal && newStatus && newStatus !== selectedGoal.status) {
+      setGoals(prev => 
+        prev.map(g => 
+          g.id === selectedGoal.id ? { ...g, status: newStatus as any, updatedAt: new Date().toISOString() } : g
+        )
+      );
+    }
+    setShowEditStatusModal(false);
+    setSelectedGoal(null);
+    setNewStatus('');
+  };
+
+  const handleDeleteGoal = (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta meta?')) {
+      setGoals(prev => prev.filter(g => g.id !== id));
+    }
+  };
+
+  const resetData = () => {
+    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
+      localStorage.removeItem('goals');
+      setGoals(getDefaultGoals());
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -560,54 +558,35 @@ export const GoalsPage = () => {
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case 'active':
-        return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Activity size={12} /> Activa</span>;
-      case 'completed':
-        return <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><CheckCircle size={12} /> Completada</span>;
-      case 'paused':
-        return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Clock size={12} /> En pausa</span>;
-      case 'cancelled':
-        return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><XCircle size={12} /> Cancelada</span>;
-      default:
-        return null;
+      case 'active': return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Activity size={12} /> Activa</span>;
+      case 'completed': return <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><CheckCircle size={12} /> Completada</span>;
+      case 'paused': return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Clock size={12} /> En pausa</span>;
+      case 'cancelled': return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><XCircle size={12} /> Cancelada</span>;
+      default: return null;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch(priority) {
-      case 'critical':
-        return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs">Crítica</span>;
-      case 'high':
-        return <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs">Alta</span>;
-      case 'medium':
-        return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs">Media</span>;
-      case 'low':
-        return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">Baja</span>;
-      default:
-        return null;
+      case 'critical': return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs">Crítica</span>;
+      case 'high': return <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs">Alta</span>;
+      case 'medium': return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs">Media</span>;
+      case 'low': return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">Baja</span>;
+      default: return null;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch(type) {
-      case 'savings':
-        return <Wallet size={16} className="text-white" />;
-      case 'investment':
-        return <TrendingUp size={16} className="text-white" />;
-      case 'debt':
-        return <CreditCard size={16} className="text-white" />;
-      case 'purchase':
-        return <ShoppingBag size={16} className="text-white" />;
-      case 'travel':
-        return <Plane size={16} className="text-white" />;
-      case 'education':
-        return <BookOpen size={16} className="text-white" />;
-      case 'emergency':
-        return <AlertCircle size={16} className="text-white" />;
-      case 'retirement':
-        return <Crown size={16} className="text-white" />;
-      default:
-        return <Target size={16} className="text-white" />;
+      case 'savings': return <Wallet size={16} className="text-white" />;
+      case 'investment': return <TrendingUp size={16} className="text-white" />;
+      case 'debt': return <CreditCard size={16} className="text-white" />;
+      case 'purchase': return <ShoppingBag size={16} className="text-white" />;
+      case 'travel': return <Plane size={16} className="text-white" />;
+      case 'education': return <BookOpen size={16} className="text-white" />;
+      case 'emergency': return <AlertCircle size={16} className="text-white" />;
+      case 'retirement': return <Crown size={16} className="text-white" />;
+      default: return <Target size={16} className="text-white" />;
     }
   };
 
@@ -615,9 +594,10 @@ export const GoalsPage = () => {
     const today = new Date();
     const target = new Date(targetDate);
     const diffTime = target.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
+
+  const hasActiveFilters = searchTerm !== '' || selectedType !== 'todas' || selectedStatus !== 'todos' || selectedPriority !== 'todas';
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -626,52 +606,16 @@ export const GoalsPage = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-white">Metas Financieras</h1>
-            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {goals.length} metas
-            </span>
+            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">{goals.length} metas</span>
           </div>
-          <p className="text-white/60 text-sm mt-1">
-            Define y da seguimiento a tus objetivos financieros
-          </p>
+          <p className="text-white/60 text-sm mt-1">Define y da seguimiento a tus objetivos financieros</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleRefresh}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-          >
-            <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <BarChart3 size={20} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'list' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <Target size={20} />
-          </button>
-          <button
-            onClick={() => setViewMode('timeline')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'timeline' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <Calendar size={20} />
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Nueva Meta</span>
-          </button>
+          <button onClick={handleRefresh} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"><RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} /></button>
+          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}><BarChart3 size={20} /></button>
+          <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}><Target size={20} /></button>
+          <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"><Plus size={20} /><span className="hidden sm:inline">Nueva Meta</span></button>
+          <button onClick={resetData} className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300" title="Restaurar datos por defecto"><RefreshCw size={20} /></button>
         </div>
       </div>
 
@@ -679,57 +623,35 @@ export const GoalsPage = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Progreso General</p>
-          <p className="text-2xl font-bold text-white">{summary.overallProgress}%</p>
-          <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
-              style={{ width: `${summary.overallProgress}%` }}
-            />
-          </div>
+          <p className="text-2xl font-bold text-white">{overallProgress.toFixed(0)}%</p>
+          <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden"><div className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full" style={{ width: `${overallProgress}%` }} /></div>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Total Ahorrado</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(summary.totalCurrent)}</p>
-          <p className="text-white/40 text-xs mt-1">de {formatCurrency(summary.totalTarget)}</p>
+          <p className="text-xl font-bold text-white">{formatCurrency(totalCurrent)}</p>
+          <p className="text-white/40 text-xs mt-1">de {formatCurrency(totalTarget)}</p>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Metas Activas</p>
-          <p className="text-xl font-bold text-white">{summary.activeGoals}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-green-400 text-xs">{summary.onTrackGoals} en camino</span>
-            <span className="text-red-400 text-xs">{summary.atRiskGoals} en riesgo</span>
-          </div>
+          <p className="text-xl font-bold text-white">{activeGoals}</p>
+          <div className="flex items-center gap-2 mt-1"><span className="text-green-400 text-xs">{onTrackGoals} en camino</span><span className="text-red-400 text-xs">{atRiskGoals} en riesgo</span></div>
         </div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
           <p className="text-white/60 text-sm">Aportación Mensual</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(summary.monthlyContribution)}</p>
-          <p className="text-white/40 text-xs mt-1">Completas en {summary.estimatedCompletion}</p>
+          <p className="text-xl font-bold text-white">{formatCurrency(monthlyContribution)}</p>
         </div>
       </div>
 
       {/* Category Summary */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
         <h3 className="text-white font-semibold mb-3">Metas por Categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {categorySummary.map((cat, index) => (
             <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                  {cat.icon}
-                </div>
-                <span className="text-white text-sm">{cat.name}</span>
-              </div>
+              <div className="flex items-center gap-2 mb-2"><div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>{cat.icon}</div><span className="text-white text-sm">{cat.name}</span></div>
               <p className="text-white font-semibold text-sm">{cat.count} metas</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-white/40 text-xs">{cat.progress}%</span>
-                <span className="text-white/40 text-xs">{formatCurrency(cat.totalCurrent)}</span>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                  style={{ width: `${cat.progress}%` }}
-                />
-              </div>
+              <div className="flex items-center justify-between mt-1"><span className="text-white/40 text-xs">{cat.progress.toFixed(0)}%</span><span className="text-white/40 text-xs">{formatCurrency(cat.totalCurrent)}</span></div>
+              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden"><div className={`h-full bg-gradient-to-r ${cat.color} rounded-full`} style={{ width: `${cat.progress}%` }} /></div>
             </div>
           ))}
         </div>
@@ -739,662 +661,201 @@ export const GoalsPage = () => {
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar metas por nombre, descripción o categoría..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="active">Activas</option>
-                <option value="completed">Completadas</option>
-                <option value="paused">En pausa</option>
-                <option value="cancelled">Canceladas</option>
+            <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} /><input type="text" placeholder="Buscar metas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors" /></div>
+            <div className="flex flex-wrap gap-2">
+              <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                <option value="active" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activas</option>
+                <option value="completed" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completadas</option>
+                <option value="paused" style={{ backgroundColor: '#1a0f14', color: 'white' }}>En pausa</option>
               </select>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
-              >
-                <Filter size={20} />
-              </button>
-              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
-                <Download size={20} />
-              </button>
+              <button onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}><Filter size={20} /></button>
+              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"><Download size={20} /></button>
+              {hasActiveFilters && (<button onClick={() => { setSearchTerm(''); setSelectedType('todas'); setSelectedStatus('todos'); setSelectedPriority('todas'); setCurrentPage(1); }} className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"><XCircle size={16} /><span>Limpiar filtros</span></button>)}
             </div>
           </div>
-
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-white/60 text-xs mb-1 block">Tipo de Meta</label>
-                  <select
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                  >
-                    <option value="todas">Todos los tipos</option>
-                    <option value="savings">Ahorro</option>
-                    <option value="investment">Inversión</option>
-                    <option value="debt">Deuda</option>
-                    <option value="purchase">Compra</option>
-                    <option value="travel">Viaje</option>
-                    <option value="education">Educación</option>
-                    <option value="emergency">Emergencia</option>
-                    <option value="retirement">Jubilación</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-white/60 text-xs mb-1 block">Prioridad</label>
-                  <select
-                    value={selectedPriority}
-                    onChange={(e) => setSelectedPriority(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                  >
-                    <option value="todas">Todas las prioridades</option>
-                    <option value="critical">Crítica</option>
-                    <option value="high">Alta</option>
-                    <option value="medium">Media</option>
-                    <option value="low">Baja</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-white/60 text-xs mb-1 block">Rango de fechas</label>
-                  <select className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm">
-                    <option>Último mes</option>
-                    <option>Últimos 3 meses</option>
-                    <option>Último año</option>
-                    <option>Personalizado</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
+          {showFilters && (<div className="mt-4 pt-4 border-t border-white/10"><div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label className="text-white/60 text-xs mb-1 block">Tipo de Meta</label><select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+              <option value="todas">Todos los tipos</option><option value="savings">Ahorro</option><option value="investment">Inversión</option><option value="debt">Deuda</option><option value="purchase">Compra</option><option value="travel">Viaje</option><option value="education">Educación</option><option value="emergency">Emergencia</option><option value="retirement">Jubilación</option>
+            </select></div>
+            <div><label className="text-white/60 text-xs mb-1 block">Prioridad</label><select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+              <option value="todas">Todas las prioridades</option><option value="critical">Crítica</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option>
+            </select></div>
+          </div></div>)}
         </div>
 
-        {/* Goals Views */}
-        <div className="p-4">
-          {viewMode === 'grid' && (
-            // Grid View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredGoals.map((goal) => {
-                const daysRemaining = getDaysRemaining(goal.targetDate);
-                const isAtRisk = daysRemaining < 30 && goal.progress < 50;
-                
-                return (
-                  <div
-                    key={goal.id}
-                    className={`bg-white/5 rounded-xl p-4 border transition-all cursor-pointer hover:border-[#F05984]/50 ${
-                      isAtRisk ? 'border-red-500/30' : 'border-white/10'
-                    }`}
-                    onClick={() => setSelectedGoal(goal)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-r ${
-                          goal.type === 'emergency' ? 'from-red-500 to-red-600' :
-                          goal.type === 'investment' ? 'from-purple-500 to-purple-600' :
-                          goal.type === 'travel' ? 'from-blue-500 to-blue-600' :
-                          goal.type === 'education' ? 'from-indigo-500 to-indigo-600' :
-                          goal.type === 'debt' ? 'from-orange-500 to-orange-600' :
-                          goal.type === 'retirement' ? 'from-teal-500 to-teal-600' :
-                          'from-green-500 to-green-600'
-                        } bg-opacity-20`}>
-                          {getTypeIcon(goal.type)}
-                        </div>
-                        <div>
-                          <h3 className="text-white font-medium">{goal.name}</h3>
-                          <p className="text-white/40 text-xs">{goal.category}</p>
-                        </div>
-                      </div>
+        {/* Sort Bar */}
+        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-4"><span className="text-white/40 text-sm">Ordenar por:</span>
+            <button onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }} className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'name' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}><span>Nombre</span>{sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button>
+            <button onClick={() => { setSortBy('progress'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }} className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'progress' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}><Activity size={14} /><span>Progreso</span>{sortBy === 'progress' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button>
+            <button onClick={() => { setSortBy('target'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }} className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'target' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}><DollarSign size={14} /><span>Monto</span>{sortBy === 'target' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button>
+            <button onClick={() => { setSortBy('date'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }} className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'date' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}><Calendar size={14} /><span>Fecha</span>{sortBy === 'date' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button>
+          </div>
+          <span className="text-white/40 text-sm">{filteredGoals.length} resultados</span>
+        </div>
+
+        {/* Grid View */}
+        {viewMode === 'grid' && (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedGoals.map((goal) => {
+              const daysRemaining = getDaysRemaining(goal.targetDate);
+              const isAtRisk = daysRemaining < 30 && goal.progress < 50;
+              return (
+                <div key={goal.id} className={`bg-white/5 rounded-xl p-4 border transition-all cursor-pointer hover:border-[#F05984]/50 ${isAtRisk ? 'border-red-500/30' : 'border-white/10'}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3"><div className={`p-2 rounded-lg bg-gradient-to-r ${goal.type === 'emergency' ? 'from-red-500 to-red-600' : goal.type === 'investment' ? 'from-purple-500 to-purple-600' : goal.type === 'travel' ? 'from-blue-500 to-blue-600' : goal.type === 'education' ? 'from-indigo-500 to-indigo-600' : goal.type === 'debt' ? 'from-orange-500 to-orange-600' : goal.type === 'retirement' ? 'from-teal-500 to-teal-600' : 'from-green-500 to-green-600'} bg-opacity-20`}>{getTypeIcon(goal.type)}</div><div><h3 className="text-white font-medium">{goal.name}</h3><p className="text-white/40 text-xs">{goal.category}</p></div></div>
                       {getStatusBadge(goal.status)}
-                    </div>
-
-                    {goal.description && (
-                      <p className="text-white/60 text-sm mb-3 line-clamp-2">{goal.description}</p>
-                    )}
-
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Progreso:</span>
-                        <span className="text-white">{goal.progress}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${
-                            goal.progress === 100 ? 'bg-green-500' :
-                            isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                          }`}
-                          style={{ width: `${goal.progress}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Actual:</span>
-                        <span className="text-white font-medium">{formatCurrency(goal.currentAmount)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Meta:</span>
-                        <span className="text-white">{formatCurrency(goal.targetAmount)}</span>
-                      </div>
-                      {goal.monthlyContribution && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-white/60">Aportación:</span>
-                          <span className="text-white">{formatCurrency(goal.monthlyContribution)}/mes</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
-                      <div className="flex items-center gap-1 text-white/40">
-                        <Calendar size={12} />
-                        <span>{formatDate(goal.targetDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {daysRemaining > 0 ? (
-                          <span className={isAtRisk ? 'text-red-400' : 'text-white/40'}>
-                            {daysRemaining} días
-                          </span>
-                        ) : (
-                          <span className="text-green-400">¡Completada!</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-white/10">
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Eye size={16} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Edit size={16} className="text-white/60" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <Trash2 size={16} className="text-white/60 hover:text-red-400" />
-                      </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                        <MoreVertical size={16} className="text-white/60" />
-                      </button>
-                    </div>
-
-                    {goal.tags && goal.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {goal.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                        {goal.tags.length > 3 && (
-                          <span className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
-                            +{goal.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  {goal.description && <p className="text-white/60 text-sm mb-3 line-clamp-2">{goal.description}</p>}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-sm"><span className="text-white/60">Progreso:</span><span className="text-white">{goal.progress}%</span></div>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className={`h-full rounded-full ${goal.progress === 100 ? 'bg-green-500' : isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'}`} style={{ width: `${goal.progress}%` }} /></div>
+                    <div className="flex items-center justify-between text-sm"><span className="text-white/60">Actual:</span><span className="text-white font-medium">{formatCurrency(goal.currentAmount)}</span></div>
+                    <div className="flex items-center justify-between text-sm"><span className="text-white/60">Meta:</span><span className="text-white">{formatCurrency(goal.targetAmount)}</span></div>
+                    {goal.monthlyContribution && <div className="flex items-center justify-between text-sm"><span className="text-white/60">Aportación:</span><span className="text-white">{formatCurrency(goal.monthlyContribution)}/mes</span></div>}
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10"><div className="flex items-center gap-1 text-white/40"><Calendar size={12} /><span>{formatDate(goal.targetDate)}</span></div><div>{daysRemaining > 0 ? <span className={isAtRisk ? 'text-red-400' : 'text-white/40'}>{daysRemaining} días</span> : <span className="text-green-400">¡Completada!</span>}</div></div>
+                  {getPriorityBadge(goal.priority)}
+                  <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-white/10">
+                    <button onClick={() => handleEditGoal(goal)} className="p-1 hover:bg-blue-500/20 rounded transition-colors text-blue-400"><Edit size={14} /></button>
+                    <button onClick={() => handleEditStatus(goal)} className="p-1 hover:bg-purple-500/20 rounded transition-colors text-purple-400"><Activity size={14} /></button>
+                    <button onClick={() => handleDeleteGoal(goal.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-          {viewMode === 'list' && (
-            // List View
-            <div className="space-y-2">
-              {filteredGoals.map((goal) => {
-                const daysRemaining = getDaysRemaining(goal.targetDate);
-                const isAtRisk = daysRemaining < 30 && goal.progress < 50;
-                
-                return (
-                  <div
-                    key={goal.id}
-                    className={`bg-white/5 rounded-lg p-3 border transition-all cursor-pointer hover:border-[#F05984]/50 ${
-                      isAtRisk ? 'border-red-500/30' : 'border-white/10'
-                    }`}
-                    onClick={() => setSelectedGoal(goal)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-lg bg-gradient-to-r ${
-                        goal.type === 'emergency' ? 'from-red-500 to-red-600' :
-                        goal.type === 'investment' ? 'from-purple-500 to-purple-600' :
-                        goal.type === 'travel' ? 'from-blue-500 to-blue-600' :
-                        goal.type === 'education' ? 'from-indigo-500 to-indigo-600' :
-                        goal.type === 'debt' ? 'from-orange-500 to-orange-600' :
-                        goal.type === 'retirement' ? 'from-teal-500 to-teal-600' :
-                        'from-green-500 to-green-600'
-                      } bg-opacity-20`}>
-                        {getTypeIcon(goal.type)}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-white font-medium">{goal.name}</h3>
-                          {getStatusBadge(goal.status)}
-                          {getPriorityBadge(goal.priority)}
-                        </div>
-                        <p className="text-white/40 text-sm">{goal.category}</p>
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-white/60 text-xs">Progreso</p>
-                          <p className="text-white text-sm font-medium">{goal.progress}%</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white/60 text-xs">Actual</p>
-                          <p className="text-white text-sm">{formatCurrency(goal.currentAmount)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white/60 text-xs">Meta</p>
-                          <p className="text-white text-sm">{formatCurrency(goal.targetAmount)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white/60 text-xs">Fecha</p>
-                          <p className="text-white text-sm">{formatDate(goal.targetDate)}</p>
-                        </div>
-                        <div className="w-32">
-                          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                goal.progress === 100 ? 'bg-green-500' :
-                                isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                              }`}
-                              style={{ width: `${goal.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                          <Eye size={16} className="text-white/60" />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                          <Edit size={16} className="text-white/60" />
-                        </button>
-                        <button className="p-1 hover:bg-white/10 rounded transition-colors">
-                          <MoreVertical size={16} className="text-white/60" />
-                        </button>
-                      </div>
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="p-4 space-y-2">
+            {paginatedGoals.map((goal) => {
+              const daysRemaining = getDaysRemaining(goal.targetDate);
+              const isAtRisk = daysRemaining < 30 && goal.progress < 50;
+              return (
+                <div key={goal.id} className={`bg-white/5 rounded-lg p-3 border transition-all cursor-pointer hover:border-[#F05984]/50 ${isAtRisk ? 'border-red-500/30' : 'border-white/10'}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-lg bg-gradient-to-r ${goal.type === 'emergency' ? 'from-red-500 to-red-600' : goal.type === 'investment' ? 'from-purple-500 to-purple-600' : goal.type === 'travel' ? 'from-blue-500 to-blue-600' : goal.type === 'education' ? 'from-indigo-500 to-indigo-600' : goal.type === 'debt' ? 'from-orange-500 to-orange-600' : goal.type === 'retirement' ? 'from-teal-500 to-teal-600' : 'from-green-500 to-green-600'} bg-opacity-20`}>{getTypeIcon(goal.type)}</div>
+                    <div className="flex-1"><div className="flex items-center gap-2"><h3 className="text-white font-medium">{goal.name}</h3>{getStatusBadge(goal.status)}{getPriorityBadge(goal.priority)}</div><p className="text-white/40 text-sm">{goal.category}</p></div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right"><p className="text-white/60 text-xs">Progreso</p><p className="text-white text-sm font-medium">{goal.progress}%</p></div>
+                      <div className="text-right"><p className="text-white/60 text-xs">Actual</p><p className="text-white text-sm">{formatCurrency(goal.currentAmount)}</p></div>
+                      <div className="text-right"><p className="text-white/60 text-xs">Meta</p><p className="text-white text-sm">{formatCurrency(goal.targetAmount)}</p></div>
+                      <div className="text-right"><p className="text-white/60 text-xs">Fecha</p><p className="text-white text-sm">{formatDate(goal.targetDate)}</p></div>
+                      <div className="w-32"><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden"><div className={`h-full rounded-full ${goal.progress === 100 ? 'bg-green-500' : isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'}`} style={{ width: `${goal.progress}%` }} /></div></div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => handleEditGoal(goal)} className="p-1 hover:bg-blue-500/20 rounded transition-colors text-blue-400"><Edit size={16} /></button>
+                      <button onClick={() => handleEditStatus(goal)} className="p-1 hover:bg-purple-500/20 rounded transition-colors text-purple-400"><Activity size={16} /></button>
+                      <button onClick={() => handleDeleteGoal(goal.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400"><Trash2 size={16} /></button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {viewMode === 'timeline' && (
-            // Timeline View
-            <div className="space-y-4">
-              {filteredGoals
-                .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())
-                .map((goal) => {
-                  const daysRemaining = getDaysRemaining(goal.targetDate);
-                  const isAtRisk = daysRemaining < 30 && goal.progress < 50;
-                  
-                  return (
-                    <div
-                      key={goal.id}
-                      className="flex items-start gap-4"
-                    >
-                      <div className="flex flex-col items-center">
-                        <div className={`w-3 h-3 rounded-full ${
-                          goal.status === 'completed' ? 'bg-green-500' :
-                          isAtRisk ? 'bg-red-500' : 'bg-[#F05984]'
-                        }`} />
-                        <div className="w-0.5 h-full bg-white/10" />
-                      </div>
-                      
-                      <div className="flex-1 bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg bg-gradient-to-r ${
-                              goal.type === 'emergency' ? 'from-red-500 to-red-600' :
-                              goal.type === 'investment' ? 'from-purple-500 to-purple-600' :
-                              goal.type === 'travel' ? 'from-blue-500 to-blue-600' :
-                              goal.type === 'education' ? 'from-indigo-500 to-indigo-600' :
-                              goal.type === 'debt' ? 'from-orange-500 to-orange-600' :
-                              goal.type === 'retirement' ? 'from-teal-500 to-teal-600' :
-                              'from-green-500 to-green-600'
-                            } bg-opacity-20`}>
-                              {getTypeIcon(goal.type)}
-                            </div>
-                            <div>
-                              <h3 className="text-white font-medium">{goal.name}</h3>
-                              <p className="text-white/40 text-xs">Meta: {formatCurrency(goal.targetAmount)}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <p className="text-white/60 text-xs">Fecha límite</p>
-                              <p className="text-white text-sm">{formatDate(goal.targetDate)}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-white/60 text-xs">Días restantes</p>
-                              <p className={isAtRisk ? 'text-red-400 text-sm' : 'text-white text-sm'}>
-                                {daysRemaining > 0 ? daysRemaining : '0'}
-                              </p>
-                            </div>
-                            <div className="w-32">
-                              <p className="text-white/60 text-xs mb-1">Progreso {goal.progress}%</p>
-                              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full ${
-                                    goal.progress === 100 ? 'bg-green-500' :
-                                    isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                                  }`}
-                                  style={{ width: `${goal.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="p-4 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/40 text-sm">
-            Mostrando {filteredGoals.length} de {goals.length} metas
-          </p>
+          <p className="text-white/40 text-sm">Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredGoals.length)} de {filteredGoals.length} metas</p>
           <div className="flex gap-2">
-            <button className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="w-8 h-8 rounded bg-[#F05984] text-white">1</button>
-            <button className="w-8 h-8 rounded bg-white/5 hover:bg-white/10 text-white/70 hover:text-white">2</button>
-            <button className="w-8 h-8 rounded bg-white/5 hover:bg-white/10 text-white/70 hover:text-white">3</button>
-            <button className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors">
-              <ChevronRight size={16} />
-            </button>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50"><ChevronLeft size={16} /></button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum = totalPages <= 5 ? i + 1 : (currentPage <= 3 ? i + 1 : (currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i));
+              return <button key={i} onClick={() => setCurrentPage(pageNum)} className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${currentPage === pageNum ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>{pageNum}</button>;
+            })}
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50"><ChevronRight size={16} /></button>
           </div>
         </div>
       </div>
 
-      {/* Modal de detalles de meta */}
-      {selectedGoal && (
+      {/* Modal para crear nueva meta */}
+      {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3"><div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg"><Target size={20} className="text-white" /></div><div><h2 className="text-xl font-bold text-white">Nueva Meta Financiera</h2><p className="text-white/40 text-sm">Define un nuevo objetivo financiero</p></div></div>
+              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} className="text-white/60" /></button>
+            </div>
             <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg bg-gradient-to-r ${
-                    selectedGoal.type === 'emergency' ? 'from-red-500 to-red-600' :
-                    selectedGoal.type === 'investment' ? 'from-purple-500 to-purple-600' :
-                    selectedGoal.type === 'travel' ? 'from-blue-500 to-blue-600' :
-                    selectedGoal.type === 'education' ? 'from-indigo-500 to-indigo-600' :
-                    selectedGoal.type === 'debt' ? 'from-orange-500 to-orange-600' :
-                    selectedGoal.type === 'retirement' ? 'from-teal-500 to-teal-600' :
-                    'from-green-500 to-green-600'
-                  } bg-opacity-20`}>
-                    {getTypeIcon(selectedGoal.type)}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">{selectedGoal.name}</h2>
-                    <p className="text-white/40 text-sm">{selectedGoal.id} • {selectedGoal.category}</p>
-                  </div>
+              <form onSubmit={(e) => { e.preventDefault(); handleCreateGoal(); }} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Nombre de la meta *</label><input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Ej: Ahorro para viaje" required /></div>
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Categoría *</label><input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Ej: Viajes, Ahorro, Inversión" required /></div>
                 </div>
-                <button
-                  onClick={() => setSelectedGoal(null)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(selectedGoal.status)}
-                  {getPriorityBadge(selectedGoal.priority)}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Tipo de meta</label><select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <option value="savings">Ahorro</option><option value="investment">Inversión</option><option value="debt">Pago de deuda</option><option value="purchase">Compra</option><option value="travel">Viaje</option><option value="education">Educación</option><option value="emergency">Fondo de emergencia</option><option value="retirement">Jubilación</option>
+                  </select></div>
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Prioridad</label><select value={formData.priority} onChange={(e) => setFormData({...formData, priority: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Crítica</option>
+                  </select></div>
                 </div>
-
-                {selectedGoal.description && (
-                  <div>
-                    <p className="text-white/60 text-sm mb-1">Descripción</p>
-                    <p className="text-white">{selectedGoal.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/60 text-xs">Progreso</p>
-                    <p className="text-white text-lg font-bold">{selectedGoal.progress}%</p>
-                    <div className="w-full h-2 bg-white/10 rounded-full mt-2 overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${
-                          selectedGoal.progress === 100 ? 'bg-green-500' :
-                          getDaysRemaining(selectedGoal.targetDate) < 30 && selectedGoal.progress < 50 ? 'bg-red-500' :
-                          'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                        }`}
-                        style={{ width: `${selectedGoal.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/60 text-xs">Tiempo restante</p>
-                    <p className="text-white text-lg font-bold">{getDaysRemaining(selectedGoal.targetDate)} días</p>
-                    <p className="text-white/40 text-xs mt-1">Meta: {formatDate(selectedGoal.targetDate)}</p>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Monto objetivo *</label><div className="relative"><DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="number" step="0.01" value={formData.targetAmount} onChange={(e) => setFormData({...formData, targetAmount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="0.00" required /></div></div>
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Aportación mensual</label><div className="relative"><DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="number" step="0.01" value={formData.monthlyContribution} onChange={(e) => setFormData({...formData, monthlyContribution: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="0.00" /></div></div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/60 text-xs">Actual</p>
-                    <p className="text-white text-lg font-bold">{formatCurrency(selectedGoal.currentAmount)}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/60 text-xs">Meta</p>
-                    <p className="text-white text-lg font-bold">{formatCurrency(selectedGoal.targetAmount)}</p>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="text-white/60 text-sm mb-1.5 block">Fecha objetivo *</label><div className="relative"><CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="date" value={formData.targetDate} onChange={(e) => setFormData({...formData, targetDate: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" required /></div></div>
+                  <div className="flex items-center pt-6"><label className="flex items-center gap-2"><input type="checkbox" checked={formData.autoContribute} onChange={(e) => setFormData({...formData, autoContribute: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" /><span className="text-white text-sm">Activar aportación automática</span></label></div>
                 </div>
-
-                {selectedGoal.monthlyContribution && (
-                  <div className="bg-white/5 rounded-lg p-3">
-                    <p className="text-white/60 text-xs mb-2">Aportación mensual</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-white">{formatCurrency(selectedGoal.monthlyContribution)}</span>
-                      <span className="text-white/60 text-sm">
-                        {selectedGoal.contributionFrequency || 'mensual'}
-                      </span>
-                    </div>
-                    {selectedGoal.autoContribute && (
-                      <p className="text-green-400 text-xs mt-1">✓ Aportación automática activada</p>
-                    )}
-                  </div>
-                )}
-
-                {selectedGoal.contributors && selectedGoal.contributors.length > 0 && (
-                  <div>
-                    <p className="text-white/60 text-sm mb-2">Aportaciones</p>
-                    <div className="space-y-2">
-                      {selectedGoal.contributors.map((contributor) => (
-                        <div key={contributor.id} className="bg-white/5 rounded-lg p-2 flex items-center justify-between">
-                          <span className="text-white text-sm">{contributor.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-medium">{formatCurrency(contributor.amount)}</span>
-                            <span className="text-white/40 text-xs">{formatDate(contributor.date)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedGoal.linkedAccounts && selectedGoal.linkedAccounts.length > 0 && (
-                  <div>
-                    <p className="text-white/60 text-sm mb-2">Cuentas vinculadas</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedGoal.linkedAccounts.map((account) => (
-                        <span key={account} className="bg-white/10 text-white/60 px-2 py-1 rounded-lg text-sm">
-                          {account}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedGoal.notes && (
-                  <div>
-                    <p className="text-white/60 text-sm mb-1">Notas adicionales</p>
-                    <p className="text-white bg-white/5 rounded-lg p-3">{selectedGoal.notes}</p>
-                  </div>
-                )}
-
-                {selectedGoal.tags && selectedGoal.tags.length > 0 && (
-                  <div>
-                    <p className="text-white/60 text-sm mb-2">Etiquetas</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedGoal.tags.map((tag, index) => (
-                        <span key={index} className="bg-white/10 text-white/60 px-2 py-1 rounded-lg text-sm">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 text-xs text-white/40">
-                  <div>
-                    <p>Creada: {formatDate(selectedGoal.createdAt)}</p>
-                  </div>
-                  <div>
-                    <p>Actualizada: {formatDate(selectedGoal.updatedAt)}</p>
-                  </div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Descripción</label><textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Descripción opcional..." /></div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label><textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Notas adicionales..." /></div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-medium">Cancelar</button>
+                  <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"><Save size={18} /><span>Guardar Meta</span></button>
                 </div>
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
-                  <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors">
-                    Cancelar
-                  </button>
-                  <button className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
-                    Editar Meta
-                  </button>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de creación de meta */}
-      {showCreateModal && (
+      {/* Modal para editar meta */}
+      {showEditModal && selectedGoal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3"><div className="p-2 bg-blue-500/20 rounded-lg"><Edit size={20} className="text-blue-400" /></div><div><h2 className="text-xl font-bold text-white">Editar Meta</h2><p className="text-white/40 text-sm">Modifica los datos de la meta</p></div></div>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} className="text-white/60" /></button>
+            </div>
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Nueva Meta Financiera</h2>
-              
-              <form className="space-y-4">
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Nombre de la meta</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                    placeholder="Ej: Ahorro para viaje"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Tipo de meta</label>
-                  <select className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors">
-                    <option value="savings">Ahorro</option>
-                    <option value="investment">Inversión</option>
-                    <option value="debt">Pago de deuda</option>
-                    <option value="purchase">Compra</option>
-                    <option value="travel">Viaje</option>
-                    <option value="education">Educación</option>
-                    <option value="emergency">Fondo de emergencia</option>
-                    <option value="retirement">Jubilación</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Monto objetivo</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Fecha objetivo</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Prioridad</label>
-                  <select className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors">
-                    <option value="low">Baja</option>
-                    <option value="medium">Media</option>
-                    <option value="high">Alta</option>
-                    <option value="critical">Crítica</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Aportación mensual</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="autoContribute"
-                    className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
-                  />
-                  <label htmlFor="autoContribute" className="text-white/60 text-sm">
-                    Activar aportación automática
-                  </label>
-                </div>
-
-                <div>
-                  <label className="text-white/60 text-sm mb-1 block">Descripción</label>
-                  <textarea
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                    rows={3}
-                    placeholder="Descripción opcional..."
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    Crear Meta
-                  </button>
+              <form onSubmit={(e) => { e.preventDefault(); handleUpdateGoal(); }} className="space-y-4">
+                <div><label className="text-white/60 text-sm mb-1.5 block">Nombre</label><input type="text" value={editFormData.name} onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" required /></div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Monto objetivo</label><div className="relative"><DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="number" step="0.01" value={editFormData.targetAmount} onChange={(e) => setEditFormData({...editFormData, targetAmount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" required /></div></div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Aportación mensual</label><div className="relative"><DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="number" step="0.01" value={editFormData.monthlyContribution} onChange={(e) => setEditFormData({...editFormData, monthlyContribution: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" /></div></div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Prioridad</label><select value={editFormData.priority} onChange={(e) => setEditFormData({...editFormData, priority: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                  <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Crítica</option>
+                </select></div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">Guardar Cambios</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar estado */}
+      {showEditStatusModal && selectedGoal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3"><div className="p-2 bg-purple-500/20 rounded-lg"><Activity size={20} className="text-purple-400" /></div><div><h2 className="text-xl font-bold text-white">Cambiar Estado</h2><p className="text-white/40 text-sm">Actualiza el estado de la meta</p></div></div>
+              <button onClick={() => setShowEditStatusModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} className="text-white/60" /></button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div><label className="text-white/60 text-sm mb-1.5 block">Meta</label><p className="text-white font-medium">{selectedGoal.name}</p><p className="text-white/40 text-sm">{formatCurrency(selectedGoal.targetAmount)}</p></div>
+                <div><label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label><select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                  <option value="active">Activa</option><option value="paused">En pausa</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option>
+                </select></div>
+                <div className="flex justify-end gap-3 pt-4"><button onClick={() => setShowEditStatusModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors">Cancelar</button><button onClick={handleUpdateStatus} className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">Actualizar Estado</button></div>
+              </div>
             </div>
           </div>
         </div>
