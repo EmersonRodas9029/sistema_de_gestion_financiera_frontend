@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { 
   BarChart3,
   PieChart,
@@ -60,7 +59,8 @@ import {
   Copy,
   Share2,
   Printer,
-  X
+  X,
+  Table
 } from 'lucide-react';
 
 interface ChartData {
@@ -161,125 +161,143 @@ const EnhancedBarChart = ({ data, type, maxHeight = 300 }: { data: ChartData[], 
 const EnhancedPieChart = ({ data, total }: { data: CategoryData[], total: number }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
-  let accumulatedAngle = 0;
-  const segments = data.map((item, index) => {
-    const percentage = (item.amount / total) * 100;
-    const angle = (item.amount / total) * 360;
-    const startAngle = accumulatedAngle;
-    const endAngle = accumulatedAngle + angle;
-    accumulatedAngle += angle;
-    
-    return { ...item, percentage, startAngle, endAngle, index };
-  });
+  // Calcular porcentajes
+  const itemsWithPercentage = data.map((item, index) => ({
+    ...item,
+    percentage: (item.amount / total) * 100,
+    index
+  }));
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <div className="flex justify-center mb-6">
-          <div className="relative w-48 h-48">
-            <svg viewBox="0 0 100 100" className="transform -rotate-90">
-              {segments.map((segment) => {
-                const startRad = (segment.startAngle * Math.PI) / 180;
-                const endRad = (segment.endAngle * Math.PI) / 180;
-                const x1 = 50 + 40 * Math.cos(startRad);
-                const y1 = 50 + 40 * Math.sin(startRad);
-                const x2 = 50 + 40 * Math.cos(endRad);
-                const y2 = 50 + 40 * Math.sin(endRad);
-                const largeArc = segment.angle > 180 ? 1 : 0;
-                
-                return (
-                  <path
-                    key={segment.index}
-                    d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                    fill={`url(#gradient-${segment.index})`}
-                    className="transition-all duration-300 cursor-pointer hover:opacity-80"
-                    onMouseEnter={() => setHoveredIndex(segment.index)}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                  />
-                );
-              })}
-              <defs>
-                {segments.map((segment, idx) => (
-                  <linearGradient key={idx} id={`gradient-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" className={segment.color.split(' ')[1]} />
-                    <stop offset="100%" className={segment.color.split(' ')[2]} />
-                  </linearGradient>
-                ))}
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">{total > 0 ? formatCurrency(total) : '$0'}</p>
-                <p className="text-xs text-white/40">Total</p>
-              </div>
+    <div className="space-y-6">
+      <div className="relative flex justify-center">
+        <div className="relative w-48 h-48">
+          <svg viewBox="0 0 100 100" className="transform -rotate-90">
+            {itemsWithPercentage.map((item) => {
+              // Calcular ángulos
+              const startAngle = itemsWithPercentage.slice(0, item.index).reduce((sum, i) => sum + (i.percentage * 3.6), 0);
+              const angle = item.percentage * 3.6;
+              const endAngle = startAngle + angle;
+              
+              const startRad = (startAngle * Math.PI) / 180;
+              const endRad = (endAngle * Math.PI) / 180;
+              const x1 = 50 + 40 * Math.cos(startRad);
+              const y1 = 50 + 40 * Math.sin(startRad);
+              const x2 = 50 + 40 * Math.cos(endRad);
+              const y2 = 50 + 40 * Math.sin(endRad);
+              const largeArc = angle > 180 ? 1 : 0;
+              
+              // Obtener colores del gradiente
+              const colorClass = item.color.split(' ')[1].replace('from-', '');
+              
+              return (
+                <path
+                  key={item.index}
+                  d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                  fill={`url(#gradient-${item.index})`}
+                  className="transition-all duration-300 cursor-pointer hover:opacity-80"
+                  onMouseEnter={() => setHoveredIndex(item.index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  stroke="#1a0f14"
+                  strokeWidth="1"
+                />
+              );
+            })}
+            <defs>
+              {itemsWithPercentage.map((item, idx) => (
+                <linearGradient key={idx} id={`gradient-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" className={item.color.split(' ')[1]} />
+                  <stop offset="100%" className={item.color.split(' ')[2]} />
+                </linearGradient>
+              ))}
+            </defs>
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center bg-[#1a0f14]/80 rounded-full w-24 h-24 flex flex-col items-center justify-center backdrop-blur-sm">
+              <p className="text-xl font-bold text-white">{total > 0 ? formatCurrency(total) : '$0'}</p>
+              <p className="text-xs text-white/40">Total</p>
             </div>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 gap-2">
-          {data.map((item, index) => {
-            const percentage = (item.amount / total) * 100;
-            const isHovered = hoveredIndex === index;
-            
-            return (
-              <div 
-                key={index} 
-                className={`flex items-center justify-between p-2 rounded-lg transition-all duration-300 cursor-pointer ${isHovered ? 'bg-white/10 scale-[1.02]' : 'bg-white/5 hover:bg-white/10'}`}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${item.color}`} />
-                  <div className={`p-1 rounded-lg bg-gradient-to-r ${item.color} bg-opacity-20`}>
-                    {item.icon}
-                  </div>
-                  <span className="text-white text-sm">{item.category}</span>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto pr-2">
+        {itemsWithPercentage.map((item) => {
+          const isHovered = hoveredIndex === item.index;
+          
+          return (
+            <div 
+              key={item.index} 
+              className={`flex items-center justify-between p-2 rounded-lg transition-all duration-300 cursor-pointer ${isHovered ? 'bg-white/10 scale-[1.02]' : 'bg-white/5 hover:bg-white/10'}`}
+              onMouseEnter={() => setHoveredIndex(item.index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${item.color}`} />
+                <div className={`p-1 rounded-lg bg-gradient-to-r ${item.color} bg-opacity-20`}>
+                  {item.icon}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white text-sm font-medium">{formatCurrency(item.amount)}</span>
-                  <span className="text-white/40 text-xs w-12 text-right">{percentage.toFixed(1)}%</span>
-                  {item.trend && (
-                    <div className={`flex items-center gap-0.5 ${item.trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                      <span className="text-xs">{Math.abs(item.trend)}%</span>
-                    </div>
-                  )}
-                </div>
+                <span className="text-white text-sm">{item.category}</span>
               </div>
-            );
-          })}
-        </div>
+              <div className="flex items-center gap-3">
+                <span className="text-white text-sm font-medium">{formatCurrency(item.amount)}</span>
+                <span className="text-white/40 text-xs w-12 text-right">{item.percentage.toFixed(1)}%</span>
+                {item.trend && (
+                  <div className={`flex items-center gap-0.5 ${item.trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                    <span className="text-xs">{Math.abs(item.trend)}%</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-// Componente de gráfico de líneas mejorado
+// Componente de gráfico de líneas mejorado con más separación
 const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const maxValue = Math.max(...data.map(d => Math.max(d.income, d.expense, d.savings)));
+  const minValue = Math.min(...data.map(d => Math.min(d.income, d.expense, d.savings)));
+  const range = maxValue - minValue;
+  const chartHeight = 200;
+  const chartWidth = 100;
+  
+  const getY = (value: number) => {
+    return chartHeight - ((value - minValue) / range) * chartHeight;
+  };
   
   const points = {
-    income: data.map((d, i) => ({ x: i, y: (d.income / maxValue) * 180 })),
-    expense: data.map((d, i) => ({ x: i, y: (d.expense / maxValue) * 180 })),
-    savings: data.map((d, i) => ({ x: i, y: (d.savings / maxValue) * 180 }))
+    income: data.map((d, i) => ({ x: (i / (data.length - 1)) * chartWidth, y: getY(d.income) })),
+    expense: data.map((d, i) => ({ x: (i / (data.length - 1)) * chartWidth, y: getY(d.expense) })),
+    savings: data.map((d, i) => ({ x: (i / (data.length - 1)) * chartWidth, y: getY(d.savings) }))
   };
   
   const linePath = (points: { x: number; y: number }[]) => {
-    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x * (100 / (data.length - 1)) + 10} ${180 - p.y + 20}`).join(' ');
+    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   };
   
   return (
     <div className="relative">
-      <div className="relative h-64 mb-8">
+      <div className="relative h-64 mb-6">
         {/* Grid lines */}
         <div className="absolute inset-0 flex flex-col justify-between">
           {[0, 1, 2, 3, 4].map((i) => (
             <div key={i} className="border-t border-white/10 w-full h-0 relative">
-              <span className="absolute -left-8 -top-2 text-xs text-white/40">
-                {formatCurrency(maxValue - (maxValue / 4) * i)}
+              <span className="absolute -left-16 -top-2 text-xs text-white/40">
+                {formatCurrency(maxValue - (range / 4) * i)}
               </span>
             </div>
+          ))}
+        </div>
+        
+        {/* X-axis labels */}
+        <div className="absolute -bottom-6 left-0 right-0 flex justify-around">
+          {data.map((item, idx) => (
+            <span key={idx} className="text-xs text-white/40">{item.month}</span>
           ))}
         </div>
         
@@ -289,7 +307,7 @@ const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
           <path
             d={linePath(points.income)}
             fill="none"
-            stroke="url(#incomeGradient)"
+            stroke="#22c55e"
             strokeWidth="2.5"
             className="transition-all duration-500"
           />
@@ -297,7 +315,7 @@ const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
           <path
             d={linePath(points.expense)}
             fill="none"
-            stroke="url(#expenseGradient)"
+            stroke="#ef4444"
             strokeWidth="2.5"
             className="transition-all duration-500"
           />
@@ -305,57 +323,75 @@ const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
           <path
             d={linePath(points.savings)}
             fill="none"
-            stroke="url(#savingsGradient)"
+            stroke="#3b82f6"
             strokeWidth="2.5"
             className="transition-all duration-500"
           />
-          
-          <defs>
-            <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#22c55e" />
-              <stop offset="100%" stopColor="#16a34a" />
-            </linearGradient>
-            <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="100%" stopColor="#dc2626" />
-            </linearGradient>
-            <linearGradient id="savingsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#3b82f6" />
-              <stop offset="100%" stopColor="#2563eb" />
-            </linearGradient>
-          </defs>
         </svg>
         
         {/* Points */}
         <div className="absolute inset-0">
-          {data.map((item, idx) => (
-            <div
-              key={idx}
-              className="absolute group"
-              style={{ left: `${(idx / (data.length - 1)) * 100}%`, bottom: `${(item.income / maxValue) * 100}%` }}
-            >
-              <div 
-                className="w-3 h-3 bg-green-500 rounded-full cursor-pointer transition-all duration-300 hover:scale-150"
-                onMouseEnter={() => setHoveredPoint(idx)}
-                onMouseLeave={() => setHoveredPoint(null)}
-              />
-              {hoveredPoint === idx && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black/90 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-10 shadow-lg">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{item.month}</p>
-                    <p className="text-green-400">Ingreso: {formatCurrency(item.income)}</p>
-                    <p className="text-red-400">Gasto: {formatCurrency(item.expense)}</p>
-                    <p className="text-blue-400">Ahorro: {formatCurrency(item.savings)}</p>
-                  </div>
+          {data.map((item, idx) => {
+            const incomeY = getY(item.income);
+            const expenseY = getY(item.expense);
+            const savingsY = getY(item.savings);
+            const x = (idx / (data.length - 1)) * 100;
+            
+            return (
+              <div key={idx}>
+                {/* Income point */}
+                <div
+                  className="absolute group"
+                  style={{ left: `${x}%`, top: `${incomeY}px` }}
+                >
+                  <div 
+                    className="w-3 h-3 bg-green-500 rounded-full cursor-pointer transition-all duration-300 hover:scale-150 shadow-lg"
+                    onMouseEnter={() => setHoveredPoint(idx)}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  />
                 </div>
-              )}
-            </div>
-          ))}
+                {/* Expense point */}
+                <div
+                  className="absolute group"
+                  style={{ left: `${x}%`, top: `${expenseY}px` }}
+                >
+                  <div 
+                    className="w-3 h-3 bg-red-500 rounded-full cursor-pointer transition-all duration-300 hover:scale-150 shadow-lg"
+                    onMouseEnter={() => setHoveredPoint(idx)}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  />
+                </div>
+                {/* Savings point */}
+                <div
+                  className="absolute group"
+                  style={{ left: `${x}%`, top: `${savingsY}px` }}
+                >
+                  <div 
+                    className="w-3 h-3 bg-blue-500 rounded-full cursor-pointer transition-all duration-300 hover:scale-150 shadow-lg"
+                    onMouseEnter={() => setHoveredPoint(idx)}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  />
+                </div>
+                
+                {/* Tooltip */}
+                {hoveredPoint === idx && (
+                  <div className="absolute z-10 bg-black/90 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap" style={{ left: `${x}%`, top: `${Math.min(incomeY, expenseY, savingsY) - 60}px`, transform: 'translateX(-50%)' }}>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-center mb-1">{item.month}</p>
+                      <p className="text-green-400">Ingreso: {formatCurrency(item.income)}</p>
+                      <p className="text-red-400">Gasto: {formatCurrency(item.expense)}</p>
+                      <p className="text-blue-400">Ahorro: {formatCurrency(item.savings)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
       
       {/* Legend */}
-      <div className="flex justify-center gap-6 mt-4">
+      <div className="flex justify-center gap-6 mt-8">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full" />
           <span className="text-white/60 text-sm">Ingresos</span>
@@ -374,15 +410,13 @@ const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
 };
 
 export const ChartsPage = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'comparison'>('comparison');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('6m');
   const [selectedYear, setSelectedYear] = useState<string>('2024');
-  const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Períodos disponibles
   const periods: TimePeriod[] = [
     { value: '1m', label: 'Último mes' },
     { value: '3m', label: 'Últimos 3 meses' },
@@ -391,10 +425,8 @@ export const ChartsPage = () => {
     { value: '2y', label: 'Últimos 2 años' }
   ];
 
-  // Años disponibles
   const years: string[] = ['2024', '2023', '2022', '2021', '2020'];
 
-  // Datos de ejemplo - Evolución mensual
   const monthlyData: ChartData[] = [
     { month: 'Ene', income: 3250, expense: 2100, savings: 1150 },
     { month: 'Feb', income: 3400, expense: 1950, savings: 1450 },
@@ -410,7 +442,6 @@ export const ChartsPage = () => {
     { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
   ];
 
-  // Datos de ejemplo - Categorías de ingresos con tendencias
   const incomeCategories: CategoryData[] = [
     { category: 'Salario', amount: 28500, color: 'from-green-500 to-green-600', icon: <Briefcase size={16} />, trend: 8.5 },
     { category: 'Servicios profesionales', amount: 12500, color: 'from-blue-500 to-blue-600', icon: <Laptop size={16} />, trend: 12.3 },
@@ -419,7 +450,6 @@ export const ChartsPage = () => {
     { category: 'Otros', amount: 3800, color: 'from-gray-500 to-gray-600', icon: <Sparkles size={16} />, trend: 5.2 }
   ];
 
-  // Datos de ejemplo - Categorías de gastos con tendencias
   const expenseCategories: CategoryData[] = [
     { category: 'Vivienda', amount: 14400, color: 'from-blue-500 to-blue-600', icon: <HomeIcon size={16} />, trend: 3.2, budget: 15000 },
     { category: 'Alimentación', amount: 5120, color: 'from-yellow-500 to-yellow-600', icon: <Utensils size={16} />, trend: 5.8, budget: 6000 },
@@ -431,7 +461,6 @@ export const ChartsPage = () => {
     { category: 'Seguros', amount: 1350, color: 'from-indigo-500 to-indigo-600', icon: <Award size={16} />, trend: 2.1, budget: 1500 }
   ];
 
-  // Datos de ejemplo - Trimestres
   const quarterlyData = [
     { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400, incomeGrowth: 5.2, expenseGrowth: 2.1 },
     { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250, incomeGrowth: 7.2, expenseGrowth: -2.4 },
@@ -486,7 +515,7 @@ export const ChartsPage = () => {
         </div>
       </div>
 
-      {/* Summary Cards Mejorados */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 group hover:border-[#F05984]/30 transition-all">
           <div className="flex items-start justify-between">
@@ -555,7 +584,7 @@ export const ChartsPage = () => {
         </div>
       </div>
 
-      {/* Tabs y Controles */}
+      {/* Tabs */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
         <div className="flex border-b border-white/10">
           <button onClick={() => setActiveTab('comparison')} className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${activeTab === 'comparison' ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
@@ -589,7 +618,7 @@ export const ChartsPage = () => {
           <div className="flex items-center gap-2 ml-auto">
             <button onClick={() => setChartType('bar')} className={`p-2 rounded-lg transition-all ${chartType === 'bar' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de barras"><BarChart3 size={18} /></button>
             <button onClick={() => setChartType('line')} className={`p-2 rounded-lg transition-all ${chartType === 'line' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de líneas"><LineChart size={18} /></button>
-            <button onClick={() => setChartType('area')} className={`p-2 rounded-lg transition-all ${chartType === 'area' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de áreas"><AreaChart size={18} /></button>
+            <button onClick={() => setChartType('pie')} className={`p-2 rounded-lg transition-all ${chartType === 'pie' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de pastel"><PieChart size={18} /></button>
           </div>
         </div>
 
@@ -604,10 +633,10 @@ export const ChartsPage = () => {
                 </h3>
                 {chartType === 'bar' && <EnhancedBarChart data={filteredData} type="both" />}
                 {chartType === 'line' && <EnhancedLineChart data={filteredData} />}
-                {chartType === 'area' && <EnhancedBarChart data={filteredData} type="both" />}
+                {chartType === 'pie' && <EnhancedPieChart data={incomeCategories.concat(expenseCategories.map(c => ({ ...c, amount: c.amount / 10 })))} total={(totalIncome + totalExpense) / 10} />}
               </div>
 
-              {/* Resumen trimestral mejorado */}
+              {/* Resumen trimestral */}
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Calendar size={18} className="text-[#F05984]" />
@@ -667,7 +696,7 @@ export const ChartsPage = () => {
                 </div>
               </div>
 
-              {/* Tabla de ingresos mejorada */}
+              {/* Tabla de ingresos */}
               <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Table size={18} className="text-blue-400" />
@@ -682,7 +711,7 @@ export const ChartsPage = () => {
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Porcentaje</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Promedio mensual</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Tendencia</th>
-                       </tr>
+                      </tr>
                     </thead>
                     <tbody>
                       {incomeCategories.map((cat, index) => {
@@ -695,7 +724,7 @@ export const ChartsPage = () => {
                                 <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>{cat.icon}</div>
                                 <span className="text-white">{cat.category}</span>
                               </div>
-                             </td>
+                            </td>
                             <td className="py-3 px-4 text-right text-white font-medium">{formatCurrency(cat.amount)}</td>
                             <td className="py-3 px-4 text-right text-white/60">{percentage.toFixed(1)}%</td>
                             <td className="py-3 px-4 text-right text-white/60">{formatCurrency(monthlyAvg)}</td>
@@ -735,7 +764,7 @@ export const ChartsPage = () => {
                 </div>
               </div>
 
-              {/* Tabla de gastos mejorada */}
+              {/* Tabla de gastos */}
               <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Table size={18} className="text-orange-400" />
@@ -777,13 +806,13 @@ export const ChartsPage = () => {
                                   <span className={`text-xs ${budgetUtilization > 90 ? 'text-red-400' : budgetUtilization > 70 ? 'text-yellow-400' : 'text-green-400'}`}>{budgetUtilization.toFixed(0)}%</span>
                                 </div>
                               )}
-                            </td>
+                             </td>
                             <td className="py-3 px-4 text-right">
                               <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${cat.trend && cat.trend > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
                                 {cat.trend && cat.trend > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                                 <span className="text-xs font-medium">{Math.abs(cat.trend || 0)}%</span>
                               </div>
-                            </td>
+                             </td>
                            </tr>
                         );
                       })}
@@ -792,7 +821,7 @@ export const ChartsPage = () => {
                 </div>
               </div>
 
-              {/* Análisis de gastos fijos vs variables mejorado */}
+              {/* Análisis de gastos fijos vs variables */}
               <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10">
                 <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                   <PieChart size={18} className="text-[#F05984]" />
@@ -857,7 +886,7 @@ export const ChartsPage = () => {
           )}
         </div>
 
-        {/* Insights mejorados */}
+        {/* Insights */}
         <div className="p-5 border-t border-white/10 bg-gradient-to-r from-[#321D28]/30 to-[#6E4068]/30">
           <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Activity size={18} className="text-[#F05984]" />
