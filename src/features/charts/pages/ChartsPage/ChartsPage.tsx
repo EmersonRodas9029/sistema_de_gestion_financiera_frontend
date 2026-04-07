@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   BarChart3,
   PieChart,
@@ -43,7 +44,23 @@ import {
   ArrowDown,
   Activity,
   LineChart,
-  AreaChart
+  AreaChart,
+  XCircle,
+  Percent,
+  Target,
+  Zap as ZapIcon,
+  Shield,
+  Users,
+  Building2,
+  MapPin,
+  Mail,
+  Phone,
+  Globe,
+  Link,
+  Copy,
+  Share2,
+  Printer,
+  X
 } from 'lucide-react';
 
 interface ChartData {
@@ -58,6 +75,8 @@ interface CategoryData {
   amount: number;
   color: string;
   icon: React.ReactNode;
+  trend?: number;
+  budget?: number;
 }
 
 interface TimePeriod {
@@ -65,12 +84,303 @@ interface TimePeriod {
   label: string;
 }
 
+// Función para formatear moneda
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
+// Componente de gráfico de barras mejorado
+const EnhancedBarChart = ({ data, type, maxHeight = 300 }: { data: ChartData[], type: 'income' | 'expense' | 'both', maxHeight?: number }) => {
+  const maxValue = Math.max(...data.map(d => type === 'both' ? Math.max(d.income, d.expense) : type === 'income' ? d.income : d.expense));
+  
+  return (
+    <div className="space-y-4">
+      {data.map((item, index) => {
+        const incomePercent = (item.income / maxValue) * 100;
+        const expensePercent = (item.expense / maxValue) * 100;
+        const showIncome = type === 'income' || type === 'both';
+        const showExpense = type === 'expense' || type === 'both';
+        
+        return (
+          <div key={index} className="group">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white/80">{item.month}</span>
+                {showIncome && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-green-500/10 rounded-full">
+                    <TrendingUp size={10} className="text-green-400" />
+                    <span className="text-xs text-green-400">{formatCurrency(item.income)}</span>
+                  </div>
+                )}
+                {showExpense && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 rounded-full">
+                    <TrendingDown size={10} className="text-red-400" />
+                    <span className="text-xs text-red-400">{formatCurrency(item.expense)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-white/40">
+                {((item.income - item.expense) / item.income * 100).toFixed(0)}% ahorro
+              </div>
+            </div>
+            <div className="flex gap-1 h-12 rounded-lg overflow-hidden bg-white/5">
+              {showIncome && (
+                <div 
+                  className="relative bg-gradient-to-r from-green-500 to-green-600 transition-all duration-700 hover:opacity-90 cursor-pointer group/bar"
+                  style={{ width: `${incomePercent}%` }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-end px-3 opacity-0 group-hover/bar:opacity-100 transition-opacity">
+                    <span className="text-xs text-white font-medium">{formatCurrency(item.income)}</span>
+                  </div>
+                </div>
+              )}
+              {showExpense && (
+                <div 
+                  className="relative bg-gradient-to-r from-red-500 to-red-600 transition-all duration-700 hover:opacity-90 cursor-pointer group/bar"
+                  style={{ width: `${expensePercent}%` }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-end px-3 opacity-0 group-hover/bar:opacity-100 transition-opacity">
+                    <span className="text-xs text-white font-medium">{formatCurrency(item.expense)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Componente de gráfico circular mejorado
+const EnhancedPieChart = ({ data, total }: { data: CategoryData[], total: number }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  
+  let accumulatedAngle = 0;
+  const segments = data.map((item, index) => {
+    const percentage = (item.amount / total) * 100;
+    const angle = (item.amount / total) * 360;
+    const startAngle = accumulatedAngle;
+    const endAngle = accumulatedAngle + angle;
+    accumulatedAngle += angle;
+    
+    return { ...item, percentage, startAngle, endAngle, index };
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <div className="flex justify-center mb-6">
+          <div className="relative w-48 h-48">
+            <svg viewBox="0 0 100 100" className="transform -rotate-90">
+              {segments.map((segment) => {
+                const startRad = (segment.startAngle * Math.PI) / 180;
+                const endRad = (segment.endAngle * Math.PI) / 180;
+                const x1 = 50 + 40 * Math.cos(startRad);
+                const y1 = 50 + 40 * Math.sin(startRad);
+                const x2 = 50 + 40 * Math.cos(endRad);
+                const y2 = 50 + 40 * Math.sin(endRad);
+                const largeArc = segment.angle > 180 ? 1 : 0;
+                
+                return (
+                  <path
+                    key={segment.index}
+                    d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                    fill={`url(#gradient-${segment.index})`}
+                    className="transition-all duration-300 cursor-pointer hover:opacity-80"
+                    onMouseEnter={() => setHoveredIndex(segment.index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                  />
+                );
+              })}
+              <defs>
+                {segments.map((segment, idx) => (
+                  <linearGradient key={idx} id={`gradient-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" className={segment.color.split(' ')[1]} />
+                    <stop offset="100%" className={segment.color.split(' ')[2]} />
+                  </linearGradient>
+                ))}
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{total > 0 ? formatCurrency(total) : '$0'}</p>
+                <p className="text-xs text-white/40">Total</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-2">
+          {data.map((item, index) => {
+            const percentage = (item.amount / total) * 100;
+            const isHovered = hoveredIndex === index;
+            
+            return (
+              <div 
+                key={index} 
+                className={`flex items-center justify-between p-2 rounded-lg transition-all duration-300 cursor-pointer ${isHovered ? 'bg-white/10 scale-[1.02]' : 'bg-white/5 hover:bg-white/10'}`}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${item.color}`} />
+                  <div className={`p-1 rounded-lg bg-gradient-to-r ${item.color} bg-opacity-20`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-white text-sm">{item.category}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-white text-sm font-medium">{formatCurrency(item.amount)}</span>
+                  <span className="text-white/40 text-xs w-12 text-right">{percentage.toFixed(1)}%</span>
+                  {item.trend && (
+                    <div className={`flex items-center gap-0.5 ${item.trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      <span className="text-xs">{Math.abs(item.trend)}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Componente de gráfico de líneas mejorado
+const EnhancedLineChart = ({ data }: { data: ChartData[] }) => {
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const maxValue = Math.max(...data.map(d => Math.max(d.income, d.expense, d.savings)));
+  
+  const points = {
+    income: data.map((d, i) => ({ x: i, y: (d.income / maxValue) * 180 })),
+    expense: data.map((d, i) => ({ x: i, y: (d.expense / maxValue) * 180 })),
+    savings: data.map((d, i) => ({ x: i, y: (d.savings / maxValue) * 180 }))
+  };
+  
+  const linePath = (points: { x: number; y: number }[]) => {
+    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x * (100 / (data.length - 1)) + 10} ${180 - p.y + 20}`).join(' ');
+  };
+  
+  return (
+    <div className="relative">
+      <div className="relative h-64 mb-8">
+        {/* Grid lines */}
+        <div className="absolute inset-0 flex flex-col justify-between">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="border-t border-white/10 w-full h-0 relative">
+              <span className="absolute -left-8 -top-2 text-xs text-white/40">
+                {formatCurrency(maxValue - (maxValue / 4) * i)}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Lines and points */}
+        <svg className="absolute inset-0 w-full h-full">
+          {/* Income line */}
+          <path
+            d={linePath(points.income)}
+            fill="none"
+            stroke="url(#incomeGradient)"
+            strokeWidth="2.5"
+            className="transition-all duration-500"
+          />
+          {/* Expense line */}
+          <path
+            d={linePath(points.expense)}
+            fill="none"
+            stroke="url(#expenseGradient)"
+            strokeWidth="2.5"
+            className="transition-all duration-500"
+          />
+          {/* Savings line */}
+          <path
+            d={linePath(points.savings)}
+            fill="none"
+            stroke="url(#savingsGradient)"
+            strokeWidth="2.5"
+            className="transition-all duration-500"
+          />
+          
+          <defs>
+            <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="100%" stopColor="#16a34a" />
+            </linearGradient>
+            <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#ef4444" />
+              <stop offset="100%" stopColor="#dc2626" />
+            </linearGradient>
+            <linearGradient id="savingsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#3b82f6" />
+              <stop offset="100%" stopColor="#2563eb" />
+            </linearGradient>
+          </defs>
+        </svg>
+        
+        {/* Points */}
+        <div className="absolute inset-0">
+          {data.map((item, idx) => (
+            <div
+              key={idx}
+              className="absolute group"
+              style={{ left: `${(idx / (data.length - 1)) * 100}%`, bottom: `${(item.income / maxValue) * 100}%` }}
+            >
+              <div 
+                className="w-3 h-3 bg-green-500 rounded-full cursor-pointer transition-all duration-300 hover:scale-150"
+                onMouseEnter={() => setHoveredPoint(idx)}
+                onMouseLeave={() => setHoveredPoint(null)}
+              />
+              {hoveredPoint === idx && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black/90 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-10 shadow-lg">
+                  <div className="space-y-1">
+                    <p className="font-semibold">{item.month}</p>
+                    <p className="text-green-400">Ingreso: {formatCurrency(item.income)}</p>
+                    <p className="text-red-400">Gasto: {formatCurrency(item.expense)}</p>
+                    <p className="text-blue-400">Ahorro: {formatCurrency(item.savings)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="flex justify-center gap-6 mt-4">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-green-500 rounded-full" />
+          <span className="text-white/60 text-sm">Ingresos</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-red-500 rounded-full" />
+          <span className="text-white/60 text-sm">Gastos</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-blue-500 rounded-full" />
+          <span className="text-white/60 text-sm">Ahorro</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ChartsPage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'comparison'>('comparison');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('6m');
   const [selectedYear, setSelectedYear] = useState<string>('2024');
   const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Períodos disponibles
   const periods: TimePeriod[] = [
@@ -100,33 +410,33 @@ export const ChartsPage = () => {
     { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
   ];
 
-  // Datos de ejemplo - Categorías de ingresos
+  // Datos de ejemplo - Categorías de ingresos con tendencias
   const incomeCategories: CategoryData[] = [
-    { category: 'Salario', amount: 28500, color: 'from-green-500 to-green-600', icon: <Briefcase size={16} /> },
-    { category: 'Servicios', amount: 12500, color: 'from-blue-500 to-blue-600', icon: <Laptop size={16} /> },
-    { category: 'Ventas', amount: 8500, color: 'from-purple-500 to-purple-600', icon: <ShoppingBag size={16} /> },
-    { category: 'Inversiones', amount: 4200, color: 'from-cyan-500 to-cyan-600', icon: <TrendingUp size={16} /> },
-    { category: 'Otros', amount: 3800, color: 'from-gray-500 to-gray-600', icon: <Sparkles size={16} /> }
+    { category: 'Salario', amount: 28500, color: 'from-green-500 to-green-600', icon: <Briefcase size={16} />, trend: 8.5 },
+    { category: 'Servicios profesionales', amount: 12500, color: 'from-blue-500 to-blue-600', icon: <Laptop size={16} />, trend: 12.3 },
+    { category: 'Ventas', amount: 8500, color: 'from-purple-500 to-purple-600', icon: <ShoppingBag size={16} />, trend: -2.1 },
+    { category: 'Inversiones', amount: 4200, color: 'from-cyan-500 to-cyan-600', icon: <TrendingUp size={16} />, trend: 15.7 },
+    { category: 'Otros', amount: 3800, color: 'from-gray-500 to-gray-600', icon: <Sparkles size={16} />, trend: 5.2 }
   ];
 
-  // Datos de ejemplo - Categorías de gastos
+  // Datos de ejemplo - Categorías de gastos con tendencias
   const expenseCategories: CategoryData[] = [
-    { category: 'Vivienda', amount: 14400, color: 'from-blue-500 to-blue-600', icon: <HomeIcon size={16} /> },
-    { category: 'Alimentación', amount: 5120, color: 'from-yellow-500 to-yellow-600', icon: <Utensils size={16} /> },
-    { category: 'Transporte', amount: 3240, color: 'from-green-500 to-green-600', icon: <Car size={16} /> },
-    { category: 'Servicios', amount: 2840, color: 'from-cyan-500 to-cyan-600', icon: <Zap size={16} /> },
-    { category: 'Ocio', amount: 2150, color: 'from-purple-500 to-purple-600', icon: <Film size={16} /> },
-    { category: 'Salud', amount: 1850, color: 'from-red-500 to-red-600', icon: <Heart size={16} /> },
-    { category: 'Compras', amount: 1650, color: 'from-pink-500 to-pink-600', icon: <ShoppingBag size={16} /> },
-    { category: 'Seguros', amount: 1350, color: 'from-indigo-500 to-indigo-600', icon: <Award size={16} /> }
+    { category: 'Vivienda', amount: 14400, color: 'from-blue-500 to-blue-600', icon: <HomeIcon size={16} />, trend: 3.2, budget: 15000 },
+    { category: 'Alimentación', amount: 5120, color: 'from-yellow-500 to-yellow-600', icon: <Utensils size={16} />, trend: 5.8, budget: 6000 },
+    { category: 'Transporte', amount: 3240, color: 'from-green-500 to-green-600', icon: <Car size={16} />, trend: -1.5, budget: 3500 },
+    { category: 'Servicios', amount: 2840, color: 'from-cyan-500 to-cyan-600', icon: <Zap size={16} />, trend: 4.2, budget: 3000 },
+    { category: 'Ocio', amount: 2150, color: 'from-purple-500 to-purple-600', icon: <Film size={16} />, trend: 8.3, budget: 2500 },
+    { category: 'Salud', amount: 1850, color: 'from-red-500 to-red-600', icon: <Heart size={16} />, trend: -0.5, budget: 2000 },
+    { category: 'Compras', amount: 1650, color: 'from-pink-500 to-pink-600', icon: <ShoppingBag size={16} />, trend: 6.7, budget: 2000 },
+    { category: 'Seguros', amount: 1350, color: 'from-indigo-500 to-indigo-600', icon: <Award size={16} />, trend: 2.1, budget: 1500 }
   ];
 
   // Datos de ejemplo - Trimestres
   const quarterlyData = [
-    { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400 },
-    { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250 },
-    { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
-    { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
+    { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400, incomeGrowth: 5.2, expenseGrowth: 2.1 },
+    { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250, incomeGrowth: 7.2, expenseGrowth: -2.4 },
+    { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500, incomeGrowth: -4.3, expenseGrowth: 4.8 },
+    { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150, incomeGrowth: 9.5, expenseGrowth: 4.6 }
   ];
 
   const handleRefresh = () => {
@@ -134,153 +444,19 @@ export const ChartsPage = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
   const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.amount, 0);
   const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  const savingsRate = ((totalIncome - totalExpense) / totalIncome) * 100;
 
-  // Componente de gráfico de barras
-  const BarChartComponent = ({ data, type }: { data: ChartData[], type: 'income' | 'expense' | 'both' }) => {
-    const maxValue = Math.max(...data.map(d => Math.max(d.income, d.expense)));
-    
-    return (
-      <div className="space-y-4">
-        {data.map((item, index) => (
-          <div key={index} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/60 font-medium">{item.month}</span>
-              <div className="flex items-center gap-4">
-                {(type === 'income' || type === 'both') && (
-                  <span className="text-green-400 font-medium">{formatCurrency(item.income)}</span>
-                )}
-                {(type === 'expense' || type === 'both') && (
-                  <span className="text-red-400 font-medium">{formatCurrency(item.expense)}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-1 h-8">
-              {(type === 'income' || type === 'both') && (
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-green-600 rounded-l-lg transition-all duration-500 hover:opacity-80 cursor-pointer"
-                  style={{ width: `${(item.income / maxValue) * 100}%` }}
-                >
-                  <div className="h-full w-full flex items-center justify-end px-2 text-xs text-white font-medium opacity-0 hover:opacity-100 transition-opacity">
-                    {formatCurrency(item.income)}
-                  </div>
-                </div>
-              )}
-              {(type === 'expense' || type === 'both') && (
-                <div 
-                  className="bg-gradient-to-r from-red-500 to-red-600 rounded-r-lg transition-all duration-500 hover:opacity-80 cursor-pointer"
-                  style={{ width: `${(item.expense / maxValue) * 100}%` }}
-                >
-                  <div className="h-full w-full flex items-center justify-end px-2 text-xs text-white font-medium opacity-0 hover:opacity-100 transition-opacity">
-                    {formatCurrency(item.expense)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  const getFilteredData = () => {
+    let filtered = [...monthlyData];
+    if (selectedPeriod === '3m') filtered = filtered.slice(-3);
+    if (selectedPeriod === '6m') filtered = filtered.slice(-6);
+    if (selectedPeriod === '1y') filtered = filtered.slice(-12);
+    return filtered;
   };
 
-  // Componente de gráfico circular
-  const PieChartComponent = ({ data, total }: { data: CategoryData[], total: number }) => {
-    return (
-      <div className="space-y-4">
-        {data.map((item, index) => {
-          const percentage = (item.amount / total) * 100;
-          return (
-            <div key={index} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg bg-gradient-to-r ${item.color} bg-opacity-20`}>
-                    {item.icon}
-                  </div>
-                  <span className="text-white text-sm">{item.category}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white text-sm font-medium">{formatCurrency(item.amount)}</span>
-                  <span className="text-white/40 text-xs w-12 text-right">{percentage.toFixed(1)}%</span>
-                </div>
-              </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${item.color} rounded-full transition-all duration-500`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Componente de gráfico de líneas simplificado
-  const LineChartComponent = ({ data }: { data: ChartData[] }) => {
-    const maxValue = Math.max(...data.map(d => Math.max(d.income, d.expense, d.savings)));
-    
-    return (
-      <div className="relative h-64">
-        {/* Líneas de fondo */}
-        <div className="absolute inset-0 flex flex-col justify-between">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="border-t border-white/10 w-full h-0" />
-          ))}
-        </div>
-        
-        {/* Puntos y líneas */}
-        <div className="absolute inset-0 flex items-end">
-          <div className="w-full flex justify-around px-2">
-            {data.map((item, index) => (
-              <div key={index} className="flex flex-col items-center w-12">
-                {/* Línea de ingresos */}
-                <div className="relative group cursor-pointer">
-                  <div 
-                    className="w-2 bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg transition-all duration-500"
-                    style={{ height: `${(item.income / maxValue) * 180}px` }}
-                  />
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black/80 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                    Ingreso: {formatCurrency(item.income)}
-                  </div>
-                </div>
-                {/* Línea de gastos */}
-                <div className="relative group cursor-pointer mt-1">
-                  <div 
-                    className="w-2 bg-gradient-to-t from-red-500 to-red-400 rounded-t-lg transition-all duration-500"
-                    style={{ height: `${(item.expense / maxValue) * 180}px` }}
-                  />
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black/80 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                    Gasto: {formatCurrency(item.expense)}
-                  </div>
-                </div>
-                {/* Línea de ahorro */}
-                <div className="relative group cursor-pointer mt-1">
-                  <div 
-                    className="w-2 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-500"
-                    style={{ height: `${(item.savings / maxValue) * 180}px` }}
-                  />
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black/80 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                    Ahorro: {formatCurrency(item.savings)}
-                  </div>
-                </div>
-                <span className="text-white/40 text-xs mt-2">{item.month}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const filteredData = getFilteredData();
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -294,15 +470,15 @@ export const ChartsPage = () => {
             </span>
           </div>
           <p className="text-white/60 text-sm mt-1">
-            Visualiza y analiza tus ingresos y gastos
+            Visualiza y analiza tus finanzas con gráficos interactivos
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleRefresh}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-          >
+          <button onClick={handleRefresh} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
             <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>
+            <Filter size={20} />
           </button>
           <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
             <Download size={20} />
@@ -310,201 +486,193 @@ export const ChartsPage = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards Mejorados */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Ingresos Totales</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(totalIncome)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <ArrowUp size={14} className="text-green-400" />
-            <span className="text-green-400 text-xs">+8.5%</span>
-            <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 group hover:border-[#F05984]/30 transition-all">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-white/60 text-sm mb-1">Ingresos Totales</p>
+              <p className="text-3xl font-bold text-white">{formatCurrency(totalIncome)}</p>
+              <div className="flex items-center gap-1 mt-2">
+                <ArrowUp size={14} className="text-green-400" />
+                <span className="text-green-400 text-sm font-medium">+8.5%</span>
+                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+              </div>
+            </div>
+            <div className="p-3 bg-green-500/20 rounded-xl group-hover:scale-110 transition-transform">
+              <TrendingUp size={24} className="text-green-400" />
+            </div>
+          </div>
+          <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full w-2/3" />
           </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Gastos Totales</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(totalExpense)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <ArrowUp size={14} className="text-red-400" />
-            <span className="text-red-400 text-xs">+3.2%</span>
-            <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+        
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 group hover:border-[#F05984]/30 transition-all">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-white/60 text-sm mb-1">Gastos Totales</p>
+              <p className="text-3xl font-bold text-white">{formatCurrency(totalExpense)}</p>
+              <div className="flex items-center gap-1 mt-2">
+                <ArrowUp size={14} className="text-red-400" />
+                <span className="text-red-400 text-sm font-medium">+3.2%</span>
+                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+              </div>
+            </div>
+            <div className="p-3 bg-red-500/20 rounded-xl group-hover:scale-110 transition-transform">
+              <TrendingDown size={24} className="text-red-400" />
+            </div>
+          </div>
+          <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full w-2/3" />
           </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Ahorro Total</p>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(totalIncome - totalExpense)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <ArrowUp size={14} className="text-green-400" />
-            <span className="text-green-400 text-xs">+12.4%</span>
-            <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+        
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 group hover:border-[#F05984]/30 transition-all">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-white/60 text-sm mb-1">Ahorro Total</p>
+              <p className="text-3xl font-bold text-green-400">{formatCurrency(totalIncome - totalExpense)}</p>
+              <div className="flex items-center gap-1 mt-2">
+                <ArrowUp size={14} className="text-green-400" />
+                <span className="text-green-400 text-sm font-medium">+12.4%</span>
+                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
+              </div>
+            </div>
+            <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform">
+              <Target size={24} className="text-blue-400" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-white/60">Tasa de ahorro</span>
+              <span className="text-white font-medium">{savingsRate.toFixed(1)}%</span>
+            </div>
+            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full" style={{ width: `${savingsRate}%` }} />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs y Controles */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
         <div className="flex border-b border-white/10">
-          <button
-            onClick={() => setActiveTab('comparison')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'comparison'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Comparación General
+          <button onClick={() => setActiveTab('comparison')} className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${activeTab === 'comparison' ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
+            <div className="flex items-center justify-center gap-2"><BarChart3 size={16} /> Comparación General</div>
           </button>
-          <button
-            onClick={() => setActiveTab('income')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'income'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Análisis de Ingresos
+          <button onClick={() => setActiveTab('income')} className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${activeTab === 'income' ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
+            <div className="flex items-center justify-center gap-2"><TrendingUp size={16} /> Análisis de Ingresos</div>
           </button>
-          <button
-            onClick={() => setActiveTab('expense')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'expense'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            Análisis de Gastos
+          <button onClick={() => setActiveTab('expense')} className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${activeTab === 'expense' ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
+            <div className="flex items-center justify-center gap-2"><TrendingDown size={16} /> Análisis de Gastos</div>
           </button>
         </div>
 
         {/* Controls */}
         <div className="p-4 flex flex-wrap gap-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-white/40" />
             <span className="text-white/60 text-sm">Período:</span>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-            >
-              {periods.map((period) => (
-                <option key={period.value} value={period.value}>{period.label}</option>
-              ))}
+            <select value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} className="px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm cursor-pointer">
+              {periods.map((period) => (<option key={period.value} value={period.value}>{period.label}</option>))}
             </select>
           </div>
           
           <div className="flex items-center gap-2">
             <span className="text-white/60 text-sm">Año:</span>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
+            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm cursor-pointer">
+              {years.map((year) => (<option key={year} value={year}>{year}</option>))}
             </select>
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => setChartType('bar')}
-              className={`p-2 rounded-lg transition-colors ${
-                chartType === 'bar' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de barras"
-            >
-              <BarChart3 size={18} />
-            </button>
-            <button
-              onClick={() => setChartType('line')}
-              className={`p-2 rounded-lg transition-colors ${
-                chartType === 'line' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de líneas"
-            >
-              <LineChart size={18} />
-            </button>
-            <button
-              onClick={() => setChartType('area')}
-              className={`p-2 rounded-lg transition-colors ${
-                chartType === 'area' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de áreas"
-            >
-              <AreaChart size={18} />
-            </button>
+            <button onClick={() => setChartType('bar')} className={`p-2 rounded-lg transition-all ${chartType === 'bar' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de barras"><BarChart3 size={18} /></button>
+            <button onClick={() => setChartType('line')} className={`p-2 rounded-lg transition-all ${chartType === 'line' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de líneas"><LineChart size={18} /></button>
+            <button onClick={() => setChartType('area')} className={`p-2 rounded-lg transition-all ${chartType === 'area' ? 'bg-[#F05984] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`} title="Gráfico de áreas"><AreaChart size={18} /></button>
           </div>
         </div>
 
-        {/* Content based on active tab */}
+        {/* Content */}
         <div className="p-6">
           {activeTab === 'comparison' && (
-            <div className="space-y-6">
-              {/* Gráfico de comparación */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Evolución Ingresos vs Gastos</h3>
-                {chartType === 'bar' && <BarChartComponent data={monthlyData} type="both" />}
-                {chartType === 'line' && <LineChartComponent data={monthlyData} />}
-                {chartType === 'area' && <BarChartComponent data={monthlyData} type="both" />}
+            <div className="space-y-8">
+              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                  <BarChart3 size={18} className="text-[#F05984]" />
+                  Evolución Ingresos vs Gastos
+                </h3>
+                {chartType === 'bar' && <EnhancedBarChart data={filteredData} type="both" />}
+                {chartType === 'line' && <EnhancedLineChart data={filteredData} />}
+                {chartType === 'area' && <EnhancedBarChart data={filteredData} type="both" />}
               </div>
 
-              {/* Leyenda */}
-              <div className="flex items-center justify-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full" />
-                  <span className="text-white/60 text-sm">Ingresos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full" />
-                  <span className="text-white/60 text-sm">Gastos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                  <span className="text-white/60 text-sm">Ahorro</span>
-                </div>
-              </div>
-
-              {/* Resumen trimestral */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                {quarterlyData.map((quarter, index) => (
-                  <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-white/40 text-xs mb-2">{quarter.quarter}</p>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-green-400">Ingresos:</span>
-                        <span className="text-white">{formatCurrency(quarter.income)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-red-400">Gastos:</span>
-                        <span className="text-white">{formatCurrency(quarter.expense)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm font-medium pt-1 border-t border-white/10 mt-1">
-                        <span className="text-blue-400">Ahorro:</span>
-                        <span className="text-white">{formatCurrency(quarter.savings)}</span>
+              {/* Resumen trimestral mejorado */}
+              <div>
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Calendar size={18} className="text-[#F05984]" />
+                  Resumen Trimestral
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {quarterlyData.map((quarter, index) => (
+                    <div key={index} className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/30 transition-all group">
+                      <p className="text-white/40 text-xs mb-3">{quarter.quarter}</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-green-400 text-sm">Ingresos:</span>
+                          <span className="text-white font-medium">{formatCurrency(quarter.income)}</span>
+                          <div className={`flex items-center gap-0.5 ${quarter.incomeGrowth > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {quarter.incomeGrowth > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+                            <span className="text-xs">{Math.abs(quarter.incomeGrowth)}%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-red-400 text-sm">Gastos:</span>
+                          <span className="text-white font-medium">{formatCurrency(quarter.expense)}</span>
+                          <div className={`flex items-center gap-0.5 ${quarter.expenseGrowth > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {quarter.expenseGrowth > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+                            <span className="text-xs">{Math.abs(quarter.expenseGrowth)}%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
+                          <span className="text-blue-400 text-sm">Ahorro:</span>
+                          <span className="text-white font-bold">{formatCurrency(quarter.savings)}</span>
+                          <span className="text-white/40 text-xs">{((quarter.savings / quarter.income) * 100).toFixed(0)}%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {activeTab === 'income' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h3 className="text-white font-semibold mb-4">Evolución de Ingresos</h3>
-                  <BarChartComponent data={monthlyData} type="income" />
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                    <TrendingUp size={18} className="text-green-400" />
+                    Evolución de Ingresos
+                  </h3>
+                  <EnhancedBarChart data={filteredData} type="income" />
                 </div>
                 
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h3 className="text-white font-semibold mb-4">Distribución por Categoría</h3>
-                  <PieChartComponent data={incomeCategories} total={totalIncome} />
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                    <PieChart size={18} className="text-purple-400" />
+                    Distribución por Categoría
+                  </h3>
+                  <EnhancedPieChart data={incomeCategories} total={totalIncome} />
                 </div>
               </div>
 
-              {/* Tabla de ingresos */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Detalle por Categoría</h3>
+              {/* Tabla de ingresos mejorada */}
+              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Table size={18} className="text-blue-400" />
+                  Detalle por Categoría
+                </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -513,7 +681,8 @@ export const ChartsPage = () => {
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Porcentaje</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Promedio mensual</th>
-                      </tr>
+                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Tendencia</th>
+                       </tr>
                     </thead>
                     <tbody>
                       {incomeCategories.map((cat, index) => {
@@ -523,42 +692,55 @@ export const ChartsPage = () => {
                           <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                                  {cat.icon}
-                                </div>
+                                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>{cat.icon}</div>
                                 <span className="text-white">{cat.category}</span>
                               </div>
-                            </td>
+                             </td>
                             <td className="py-3 px-4 text-right text-white font-medium">{formatCurrency(cat.amount)}</td>
                             <td className="py-3 px-4 text-right text-white/60">{percentage.toFixed(1)}%</td>
                             <td className="py-3 px-4 text-right text-white/60">{formatCurrency(monthlyAvg)}</td>
-                          </tr>
+                            <td className="py-3 px-4 text-right">
+                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${cat.trend && cat.trend > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                {cat.trend && cat.trend > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                                <span className="text-xs font-medium">{Math.abs(cat.trend || 0)}%</span>
+                              </div>
+                            </td>
+                           </tr>
                         );
                       })}
                     </tbody>
-                  </table>
+                   </table>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === 'expense' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h3 className="text-white font-semibold mb-4">Evolución de Gastos</h3>
-                  <BarChartComponent data={monthlyData} type="expense" />
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                    <TrendingDown size={18} className="text-red-400" />
+                    Evolución de Gastos
+                  </h3>
+                  <EnhancedBarChart data={filteredData} type="expense" />
                 </div>
                 
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <h3 className="text-white font-semibold mb-4">Distribución por Categoría</h3>
-                  <PieChartComponent data={expenseCategories} total={totalExpense} />
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                    <PieChart size={18} className="text-purple-400" />
+                    Distribución por Categoría
+                  </h3>
+                  <EnhancedPieChart data={expenseCategories} total={totalExpense} />
                 </div>
               </div>
 
-              {/* Tabla de gastos */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Detalle por Categoría</h3>
+              {/* Tabla de gastos mejorada */}
+              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                  <Table size={18} className="text-orange-400" />
+                  Detalle por Categoría
+                </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -566,106 +748,107 @@ export const ChartsPage = () => {
                         <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
                         <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Porcentaje</th>
-                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Promedio mensual</th>
-                      </tr>
+                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Presupuesto</th>
+                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Utilización</th>
+                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Tendencia</th>
+                       </tr>
                     </thead>
                     <tbody>
                       {expenseCategories.map((cat, index) => {
                         const percentage = (cat.amount / totalExpense) * 100;
-                        const monthlyAvg = cat.amount / 12;
+                        const budgetUtilization = cat.budget ? (cat.amount / cat.budget) * 100 : 0;
                         return (
                           <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                                  {cat.icon}
-                                </div>
+                                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>{cat.icon}</div>
                                 <span className="text-white">{cat.category}</span>
                               </div>
-                            </td>
+                             </td>
                             <td className="py-3 px-4 text-right text-white font-medium">{formatCurrency(cat.amount)}</td>
                             <td className="py-3 px-4 text-right text-white/60">{percentage.toFixed(1)}%</td>
-                            <td className="py-3 px-4 text-right text-white/60">{formatCurrency(monthlyAvg)}</td>
-                          </tr>
+                            <td className="py-3 px-4 text-right text-white/60">{cat.budget ? formatCurrency(cat.budget) : '-'}</td>
+                            <td className="py-3 px-4 text-right">
+                              {cat.budget && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${budgetUtilization > 90 ? 'bg-red-500' : budgetUtilization > 70 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${Math.min(budgetUtilization, 100)}%` }} />
+                                  </div>
+                                  <span className={`text-xs ${budgetUtilization > 90 ? 'text-red-400' : budgetUtilization > 70 ? 'text-yellow-400' : 'text-green-400'}`}>{budgetUtilization.toFixed(0)}%</span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${cat.trend && cat.trend > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                {cat.trend && cat.trend > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                                <span className="text-xs font-medium">{Math.abs(cat.trend || 0)}%</span>
+                              </div>
+                            </td>
+                           </tr>
                         );
                       })}
                     </tbody>
-                  </table>
+                   </table>
                 </div>
               </div>
 
-              {/* Análisis de gastos fijos vs variables */}
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Gastos Fijos vs Variables</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Análisis de gastos fijos vs variables mejorado */}
+              <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10">
+                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+                  <PieChart size={18} className="text-[#F05984]" />
+                  Análisis de Gastos Fijos vs Variables
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <p className="text-white/60 text-sm mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                      Gastos Fijos
-                    </p>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Vivienda</span>
-                          <span className="text-white">40%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '40%' }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Servicios</span>
-                          <span className="text-white">25%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '25%' }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Seguros</span>
-                          <span className="text-white">15%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '15%' }} />
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-white font-medium flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full" /> Gastos Fijos</p>
+                      <span className="text-white/60 text-sm">{formatCurrency(expenseCategories.filter(c => ['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).reduce((sum, c) => sum + c.amount, 0))}</span>
+                    </div>
+                    <div className="space-y-4">
+                      {expenseCategories.filter(c => ['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).map((cat, idx) => {
+                        const fixedTotal = expenseCategories.filter(c => ['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).reduce((sum, c) => sum + c.amount, 0);
+                        const fixedPercent = (cat.amount / fixedTotal) * 100;
+                        return (
+                          <div key={idx}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="text-white/80">{cat.category}</span>
+                              <div className="flex items-center gap-4">
+                                <span className="text-white">{formatCurrency(cat.amount)}</span>
+                                <span className="text-white/40 w-12 text-right">{fixedPercent.toFixed(0)}%</span>
+                              </div>
+                            </div>
+                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${fixedPercent}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   <div>
-                    <p className="text-white/60 text-sm mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                      Gastos Variables
-                    </p>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Alimentación</span>
-                          <span className="text-white">35%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '35%' }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Transporte</span>
-                          <span className="text-white">25%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '25%' }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-white">Ocio</span>
-                          <span className="text-white">20%</span>
-                        </div>
-                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '20%' }} />
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-white font-medium flex items-center gap-2"><div className="w-2 h-2 bg-orange-500 rounded-full" /> Gastos Variables</p>
+                      <span className="text-white/60 text-sm">{formatCurrency(expenseCategories.filter(c => !['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).reduce((sum, c) => sum + c.amount, 0))}</span>
+                    </div>
+                    <div className="space-y-4">
+                      {expenseCategories.filter(c => !['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).map((cat, idx) => {
+                        const variableTotal = expenseCategories.filter(c => !['Vivienda', 'Servicios', 'Seguros'].includes(c.category)).reduce((sum, c) => sum + c.amount, 0);
+                        const variablePercent = (cat.amount / variableTotal) * 100;
+                        return (
+                          <div key={idx}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="text-white/80">{cat.category}</span>
+                              <div className="flex items-center gap-4">
+                                <span className="text-white">{formatCurrency(cat.amount)}</span>
+                                <span className="text-white/40 w-12 text-right">{variablePercent.toFixed(0)}%</span>
+                              </div>
+                            </div>
+                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-orange-500 rounded-full" style={{ width: `${variablePercent}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -674,30 +857,24 @@ export const ChartsPage = () => {
           )}
         </div>
 
-        {/* Insights */}
-        <div className="p-4 border-t border-white/10 bg-gradient-to-r from-[#321D28]/50 to-[#6E4068]/50">
-          <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+        {/* Insights mejorados */}
+        <div className="p-5 border-t border-white/10 bg-gradient-to-r from-[#321D28]/30 to-[#6E4068]/30">
+          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Activity size={18} className="text-[#F05984]" />
-            Insights
+            Insights y Recomendaciones
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-start gap-3 bg-white/5 rounded-lg p-3">
-              <TrendingUp size={16} className="text-green-400 mt-1 flex-shrink-0" />
-              <p className="text-white/70 text-sm">
-                Tus ingresos han aumentado un <span className="text-green-400 font-medium">8.5%</span> respecto al año anterior
-              </p>
+            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all group">
+              <div className="p-2 bg-green-500/20 rounded-lg group-hover:scale-110 transition-transform"><TrendingUp size={18} className="text-green-400" /></div>
+              <div><p className="text-white/90 text-sm font-medium mb-1">Crecimiento de ingresos</p><p className="text-white/60 text-sm">Tus ingresos han aumentado un <span className="text-green-400 font-medium">8.5%</span> respecto al año anterior</p></div>
             </div>
-            <div className="flex items-start gap-3 bg-white/5 rounded-lg p-3">
-              <TrendingDown size={16} className="text-red-400 mt-1 flex-shrink-0" />
-              <p className="text-white/70 text-sm">
-                Tus gastos en ocio representan el <span className="text-red-400 font-medium">15%</span> del total
-              </p>
+            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all group">
+              <div className="p-2 bg-red-500/20 rounded-lg group-hover:scale-110 transition-transform"><TrendingDown size={18} className="text-red-400" /></div>
+              <div><p className="text-white/90 text-sm font-medium mb-1">Área de oportunidad</p><p className="text-white/60 text-sm">Tus gastos en ocio representan el <span className="text-red-400 font-medium">15%</span> del total</p></div>
             </div>
-            <div className="flex items-start gap-3 bg-white/5 rounded-lg p-3">
-              <Activity size={16} className="text-blue-400 mt-1 flex-shrink-0" />
-              <p className="text-white/70 text-sm">
-                Tu tasa de ahorro actual es del <span className="text-blue-400 font-medium">21%</span>
-              </p>
+            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all group">
+              <div className="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform"><Target size={18} className="text-blue-400" /></div>
+              <div><p className="text-white/90 text-sm font-medium mb-1">Tasa de ahorro</p><p className="text-white/60 text-sm">Tu tasa de ahorro actual es del <span className="text-blue-400 font-medium">21%</span>, por encima del promedio</p></div>
             </div>
           </div>
         </div>
