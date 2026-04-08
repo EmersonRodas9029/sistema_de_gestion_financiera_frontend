@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  AreaChart, Area, ComposedChart, RadialBarChart, RadialBar
+  AreaChart, Area
 } from 'recharts';
 import { 
   TrendingUp, 
@@ -15,14 +15,13 @@ import {
   ArrowDown,
   Activity,
   Target,
-  Wallet,
-  CreditCard,
-  DollarSign,
-  ChevronDown,
-  ChevronUp,
   BarChart3,
   PieChart as PieChartIcon,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  ChevronDown,
+  ChevronUp,
+  XCircle,
+  Star
 } from 'lucide-react';
 
 interface ChartData {
@@ -61,10 +60,62 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+// Componente de gráfico de pastel personalizado
+const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: string, total: number }) => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+  
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
+  
+  return (
+    <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+      <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
+        <PieChartIcon size={18} className="text-purple-400" />
+        {title}
+      </h3>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={100}
+            paddingAngle={5}
+            dataKey="value"
+            onMouseEnter={onPieEnter}
+            onMouseLeave={onPieLeave}
+            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            labelLine={{ stroke: '#ffffff60', strokeWidth: 1 }}
+          >
+            {data.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color}
+                stroke={activeIndex === index ? '#fff' : 'none'}
+                strokeWidth={activeIndex === index ? 2 : 0}
+              />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="mt-4 text-center">
+        <p className="text-white/40 text-sm">Total: {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(total)}</p>
+      </div>
+    </div>
+  );
+};
+
 export const ChartsPage = () => {
   const [activeTab, setActiveTab] = useState<'comparison' | 'income' | 'expense'>('comparison');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('6m');
-  const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -317,15 +368,15 @@ export const ChartsPage = () => {
               <LineChartIcon size={18} />
             </button>
             <button
-              onClick={() => setChartType('area')}
+              onClick={() => setChartType('pie')}
               className={`p-2 rounded-lg transition-all ${
-                chartType === 'area'
+                chartType === 'pie'
                   ? 'bg-[#F05984] text-white shadow-lg'
                   : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
               }`}
-              title="Gráfico de áreas"
+              title="Gráfico de pastel"
             >
-              <Activity size={18} />
+              <PieChartIcon size={18} />
             </button>
           </div>
         </div>
@@ -339,8 +390,8 @@ export const ChartsPage = () => {
                   <BarChart3 size={18} className="text-[#F05984]" />
                   Evolución Ingresos vs Gastos
                 </h3>
-                <ResponsiveContainer width="100%" height={400}>
-                  {chartType === 'bar' && (
+                {chartType === 'bar' && (
+                  <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={filteredData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                       <XAxis dataKey="month" stroke="#ffffff60" />
@@ -350,8 +401,10 @@ export const ChartsPage = () => {
                       <Bar dataKey="income" name="Ingresos" fill="#10b981" radius={[8, 8, 0, 0]} />
                       <Bar dataKey="expense" name="Gastos" fill="#ef4444" radius={[8, 8, 0, 0]} />
                     </BarChart>
-                  )}
-                  {chartType === 'line' && (
+                  </ResponsiveContainer>
+                )}
+                {chartType === 'line' && (
+                  <ResponsiveContainer width="100%" height={400}>
                     <LineChart data={filteredData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                       <XAxis dataKey="month" stroke="#ffffff60" />
@@ -361,19 +414,22 @@ export const ChartsPage = () => {
                       <Line type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
                       <Line type="monotone" dataKey="expense" name="Gastos" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 4 }} />
                     </LineChart>
-                  )}
-                  {chartType === 'area' && (
-                    <AreaChart data={filteredData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff60" />
-                      <YAxis stroke="#ffffff60" tickFormatter={(value) => `$${value}`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-                      <Area type="monotone" dataKey="expense" name="Gastos" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
-                    </AreaChart>
-                  )}
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
+                )}
+                {chartType === 'pie' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <CustomPieChart 
+                      data={incomeCategories} 
+                      title="Distribución de Ingresos" 
+                      total={totalIncome}
+                    />
+                    <CustomPieChart 
+                      data={expenseCategories} 
+                      title="Distribución de Gastos" 
+                      total={totalExpense}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Resumen trimestral */}
@@ -426,65 +482,11 @@ export const ChartsPage = () => {
                   </ResponsiveContainer>
                 </div>
                 
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                    <PieChartIcon size={18} className="text-purple-400" />
-                    Distribución por Categoría
-                  </h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <PieChart>
-                      <Pie
-                        data={incomeCategories}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={{ stroke: '#ffffff60', strokeWidth: 1 }}
-                      >
-                        {incomeCategories.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Tabla de ingresos */}
-              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Detalle por Categoría</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
-                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
-                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Porcentaje</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {incomeCategories.map((cat, index) => {
-                        const percentage = (cat.value / totalIncome) * 100;
-                        return (
-                          <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                                <span className="text-white">{cat.name}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-right text-white font-medium">{formatCurrency(cat.value)}</td>
-                            <td className="py-3 px-4 text-right text-white/60">{percentage.toFixed(1)}%</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <CustomPieChart 
+                  data={incomeCategories} 
+                  title="Distribución por Categoría" 
+                  total={totalIncome}
+                />
               </div>
             </div>
           )}
@@ -508,124 +510,11 @@ export const ChartsPage = () => {
                   </ResponsiveContainer>
                 </div>
                 
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                    <PieChartIcon size={18} className="text-purple-400" />
-                    Distribución por Categoría
-                  </h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <PieChart>
-                      <Pie
-                        data={expenseCategories}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={{ stroke: '#ffffff60', strokeWidth: 1 }}
-                      >
-                        {expenseCategories.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Tabla de gastos */}
-              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-4">Detalle por Categoría</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
-                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
-                        <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Porcentaje</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expenseCategories.map((cat, index) => {
-                        const percentage = (cat.value / totalExpense) * 100;
-                        return (
-                          <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                                <span className="text-white">{cat.name}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-right text-white font-medium">{formatCurrency(cat.value)}</td>
-                            <td className="py-3 px-4 text-right text-white/60">{percentage.toFixed(1)}%</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Análisis de gastos fijos vs variables */}
-              <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-5">Gastos Fijos vs Variables</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-white font-medium mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                      Gastos Fijos
-                    </p>
-                    <div className="space-y-3">
-                      {expenseCategories.filter(c => ['Vivienda', 'Servicios', 'Seguros'].includes(c.name)).map((cat, idx) => {
-                        const fixedTotal = expenseCategories.filter(c => ['Vivienda', 'Servicios', 'Seguros'].includes(c.name)).reduce((sum, c) => sum + c.value, 0);
-                        const fixedPercent = (cat.value / fixedTotal) * 100;
-                        return (
-                          <div key={idx}>
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-white/80">{cat.name}</span>
-                              <div className="flex items-center gap-4">
-                                <span className="text-white">{formatCurrency(cat.value)}</span>
-                                <span className="text-white/40 w-12 text-right">{fixedPercent.toFixed(0)}%</span>
-                              </div>
-                            </div>
-                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${fixedPercent}%` }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                      Gastos Variables
-                    </p>
-                    <div className="space-y-3">
-                      {expenseCategories.filter(c => !['Vivienda', 'Servicios', 'Seguros'].includes(c.name)).map((cat, idx) => {
-                        const variableTotal = expenseCategories.filter(c => !['Vivienda', 'Servicios', 'Seguros'].includes(c.name)).reduce((sum, c) => sum + c.value, 0);
-                        const variablePercent = (cat.value / variableTotal) * 100;
-                        return (
-                          <div key={idx}>
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-white/80">{cat.name}</span>
-                              <div className="flex items-center gap-4">
-                                <span className="text-white">{formatCurrency(cat.value)}</span>
-                                <span className="text-white/40 w-12 text-right">{variablePercent.toFixed(0)}%</span>
-                              </div>
-                            </div>
-                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-orange-500 rounded-full" style={{ width: `${variablePercent}%` }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <CustomPieChart 
+                  data={expenseCategories} 
+                  title="Distribución por Categoría" 
+                  total={totalExpense}
+                />
               </div>
             </div>
           )}
