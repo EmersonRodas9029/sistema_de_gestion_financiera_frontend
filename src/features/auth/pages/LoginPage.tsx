@@ -55,7 +55,7 @@ export const LoginPage = () => {
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
                 <TrendingUp size={24} className="text-white" />
               </div>
-              <span className="text-2xl font-bold">FinanSys</span>
+              <span className="text-2xl font-bold">BudgEase</span>
             </div>
           </div>
 
@@ -165,7 +165,7 @@ export const LoginPage = () => {
                   <Star size={16} fill="currentColor" />
                 </div>
                 <p className="text-gray-600 italic">
-                  "Desde que uso FinanSys, el control de mis finanzas nunca fue tan fácil"
+                  "Desde que uso BudgEase, el control de mis finanzas nunca fue tan fácil"
                 </p>
                 <p className="text-sm font-semibold text-gray-900 mt-2">
                   — María González, Contadora
