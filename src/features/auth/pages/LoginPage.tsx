@@ -90,22 +90,6 @@ export const LoginPage = () => {
               </div>
             </div>
           </div>
-
-          {/* Estadísticas */}
-          <div className="grid grid-cols-3 gap-4 mt-12">
-            <div>
-              <div className="text-3xl font-bold">+10k</div>
-              <div className="text-sm text-white/70">Usuarios activos</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">$2.5M</div>
-              <div className="text-sm text-white/70">Transacciones</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">99.9%</div>
-              <div className="text-sm text-white/70">Uptime</div>
-            </div>
-          </div>
         </div>
       </div>
 
