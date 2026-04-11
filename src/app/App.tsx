@@ -19,16 +19,10 @@ import { ReportsPage } from '../features/reports/pages/ReportsPage';
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
 // =====================================================
-const REQUIRE_AUTH = false;
+const REQUIRE_AUTH = true;
 // =====================================================
 
 // Páginas de ejemplo
-const Dashboard = () => (
-  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-    <h1 className="text-white text-2xl font-bold">Dashboard Content</h1>
-  </div>
-);
-
 const Wallet = () => (
   <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
     <h1 className="text-white text-2xl font-bold">Wallet Page</h1>
@@ -49,7 +43,7 @@ const ProtectedRoutes = () => {
     <MainLayout userRole={userRole} userName={userName}>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<HomePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/clients" element={<ClientsPage />} />
         <Route path="/admin/reports" element={<ReportsPage />} />

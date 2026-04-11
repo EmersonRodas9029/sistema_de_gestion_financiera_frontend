@@ -12,44 +12,71 @@ import {
   Target
 } from 'lucide-react';
 
+// Credenciales de prueba
+const TEST_CREDENTIALS = {
+  admin: {
+    email: 'admin@budgease.com',
+    password: 'admin123',
+    role: 'admin',
+    name: 'Admin'
+  },
+  client: {
+    email: 'cliente@budgease.com',
+    password: 'cliente123',
+    role: 'client',
+    name: 'Cliente'
+  }
+};
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = (email: string, password: string) => {
-    // Aquí irá la lógica real de autenticación
-    console.log('Login attempt:', { email, password });
+    // Limpiar error anterior
+    setError('');
     
-    // Por ahora, simulamos un login exitoso y redirigimos
-    // En un caso real, verificarías las credenciales y obtendrías el rol
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('userRole', email.includes('admin') ? 'admin' : 'client');
-    localStorage.setItem('userName', email.split('@')[0]);
-    
-    navigate('/');
+    // Validar credenciales
+    if (email === TEST_CREDENTIALS.admin.email && password === TEST_CREDENTIALS.admin.password) {
+      // Login como admin
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userRole', TEST_CREDENTIALS.admin.role);
+      localStorage.setItem('userName', TEST_CREDENTIALS.admin.name);
+      localStorage.setItem('userEmail', TEST_CREDENTIALS.admin.email);
+      navigate('/');
+    } 
+    else if (email === TEST_CREDENTIALS.client.email && password === TEST_CREDENTIALS.client.password) {
+      // Login como cliente
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userRole', TEST_CREDENTIALS.client.role);
+      localStorage.setItem('userName', TEST_CREDENTIALS.client.name);
+      localStorage.setItem('userEmail', TEST_CREDENTIALS.client.email);
+      navigate('/');
+    }
+    else {
+      // Credenciales inválidas
+      setError('Credenciales incorrectas. Por favor, intenta de nuevo.');
+    }
   };
 
   return (
     <div className="min-h-screen flex">
       {/* Left side - Hero section with gradient */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Fondo con gradiente usando los colores de la paleta */}
         <div 
           className="absolute inset-0"
           style={{ 
             background: 'linear-gradient(135deg, #321D28 0%, #6E4068 50%, #BC455F 100%)'
           }}
         >
-          {/* Patrón de fondo */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
             <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#F05984] rounded-full mix-blend-overlay filter blur-3xl"></div>
           </div>
         </div>
 
-        {/* Contenido del hero - centrado verticalmente */}
         <div className="relative z-10 flex flex-col w-full">
-          {/* Logo y marca - siempre en la esquina superior izquierda */}
           <div className="p-12">
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
@@ -59,7 +86,6 @@ export const LoginPage = () => {
             </div>
           </div>
 
-          {/* Contenido centrado verticalmente */}
           <div className="flex-1 flex items-center justify-center px-12">
             <div className="space-y-8 max-w-md">
               <div>
@@ -71,7 +97,6 @@ export const LoginPage = () => {
                 </p>
               </div>
 
-              {/* Características */}
               <div className="space-y-4 pt-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -95,7 +120,6 @@ export const LoginPage = () => {
             </div>
           </div>
           
-          {/* Espacio inferior para equilibrio */}
           <div className="h-12"></div>
         </div>
       </div>
@@ -104,9 +128,7 @@ export const LoginPage = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
         <div className="w-full max-w-md">
           {!showLogin ? (
-            /* Landing/Welcome section */
             <div className="text-center space-y-8">
-              {/* Logo para móvil */}
               <div className="lg:hidden flex justify-center mb-8">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                   style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
@@ -122,7 +144,6 @@ export const LoginPage = () => {
                 </p>
               </div>
 
-              {/* Features grid */}
               <div className="grid grid-cols-2 gap-4 py-8">
                 <div className="p-4 bg-white rounded-xl shadow-sm">
                   <Target className="w-8 h-8 text-[#F05984] mb-2" />
@@ -160,8 +181,14 @@ export const LoginPage = () => {
               </p>
             </div>
           ) : (
-            /* Login Form */
-            <LoginForm onBack={() => setShowLogin(false)} onLogin={handleLogin} />
+            <LoginForm 
+              onBack={() => {
+                setShowLogin(false);
+                setError('');
+              }} 
+              onLogin={handleLogin}
+              error={error}
+            />
           )}
         </div>
       </div>

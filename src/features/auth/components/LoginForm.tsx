@@ -5,15 +5,17 @@ import {
   Eye, 
   EyeOff, 
   ArrowLeft,
-  LogIn
+  LogIn,
+  AlertCircle
 } from 'lucide-react';
 
 interface LoginFormProps {
   onBack: () => void;
   onLogin: (email: string, password: string) => void;
+  error?: string;
 }
 
-export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
+export const LoginForm = ({ onBack, onLogin, error }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -28,7 +30,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Botón de regreso */}
       <button
         onClick={onBack}
         className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -37,7 +38,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
         <span>Volver</span>
       </button>
 
-      {/* Header */}
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-gray-900">Accede a tu cuenta</h2>
         <p className="text-gray-600">
@@ -45,9 +45,15 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
         </p>
       </div>
 
-      {/* Formulario */}
+      {/* Mensaje de error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+          <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Campo Email */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 block">
             Correo electrónico
@@ -65,7 +71,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
           </div>
         </div>
 
-        {/* Campo Password */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 block">
             Contraseña
@@ -90,7 +95,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
           </div>
         </div>
 
-        {/* Opciones adicionales */}
         <div className="flex items-center justify-between">
           <label className="flex items-center space-x-2">
             <input
@@ -109,7 +113,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
           </button>
         </div>
 
-        {/* Botón de login */}
         <button
           type="submit"
           className="w-full py-3 px-4 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02]"
@@ -119,7 +122,6 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
           <span>Iniciar Sesión</span>
         </button>
 
-        {/* Demo credentials */}
         <div className="bg-gray-100 p-4 rounded-xl">
           <p className="text-xs text-gray-600 mb-2">Credenciales de demostración:</p>
           <div className="space-y-1 text-sm">
