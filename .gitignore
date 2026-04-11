@@ -39,3 +39,4 @@ lerna-debug.log*
 .cache
 .temp
 .vite
+.vercel

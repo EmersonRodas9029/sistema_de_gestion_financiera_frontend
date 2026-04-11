@@ -2,221 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos globales mejorados */
 @layer base {
   body {
     @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
   
-  /* Mejora de selección de texto */
   ::selection {
     background-color: #F05984;
     color: white;
   }
-  
-  /* Scrollbar personalizada */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: rgba(240, 89, 132, 0.5);
-    border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(240, 89, 132, 0.8);
-  }
 }
 
-/* Animaciones suaves */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
 
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-
-.animate-pulse-slow {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Gradientes suaves personalizados */
 .bg-gradient-main {
   background: linear-gradient(135deg, #1a0f14 0%, #2a1a22 50%, #1a0f14 100%);
 }
 
-.bg-gradient-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-}
-
-/* Efectos de vidrio esmerilado */
 .glass-effect {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glass-effect-hover:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(240, 89, 132, 0.3);
-}
-
-/* Sombras suaves */
-.shadow-soft {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-medium {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-strong {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Transiciones suaves */
-.transition-smooth {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Efecto de brillo en hover */
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(240, 89, 132, 0.3);
-  transform: translateY(-2px);
-}
-
-/* Esqueletos de carga */
-.skeleton {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Estilos mejorados para selects */
-select {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-select:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(240, 89, 132, 0.5);
-}
-
-select:focus {
-  outline: none;
-  border-color: #F05984;
-  box-shadow: 0 0 0 2px rgba(240, 89, 132, 0.2);
-}
-
-select option {
-  background-color: #1a0f14;
-  color: white;
-  padding: 0.5rem;
-}
-
-/* Estilos para inputs */
-input, textarea {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-input:hover, textarea:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(240, 89, 132, 0.5);
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-color: #F05984;
-  box-shadow: 0 0 0 2px rgba(240, 89, 132, 0.2);
-}
-
-input::placeholder, textarea::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-/* Estilos para los selects dentro del modal y formularios */
-.modal-select,
-.modal-select option {
-  background-color: #2a1a22 !important;
-  color: white !important;
-}
-
-/* Estilos para los botones de filtro */
-.filter-select {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-}
-
-.filter-select option {
-  background-color: #1a0f14;
-  color: white;
 }
