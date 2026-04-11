@@ -47,65 +47,56 @@ export const LoginPage = () => {
           </div>
         </div>
 
-        {/* Contenido del hero */}
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          {/* Logo y marca */}
-          <div>
-            <div className="flex items-center space-x-2 mb-12">
+        {/* Contenido del hero - centrado verticalmente */}
+        <div className="relative z-10 flex flex-col w-full">
+          {/* Logo y marca - siempre en la esquina superior izquierda */}
+          <div className="p-12">
+            <div className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
                 <TrendingUp size={24} className="text-white" />
               </div>
-              <span className="text-2xl font-bold">FinanSys</span>
+              <span className="text-2xl font-bold">BudgEase</span>
             </div>
           </div>
 
-          {/* Texto principal */}
-          <div className="space-y-6">
-            <h1 className="text-5xl font-bold leading-tight">
-              Gestiona tus<br />finanzas de forma<br />inteligente
-            </h1>
-            <p className="text-xl text-white/80 max-w-md">
-              La plataforma completa para el control financiero de tu negocio y clientes
-            </p>
+          {/* Contenido centrado verticalmente */}
+          <div className="flex-1 flex items-center justify-center px-12">
+            <div className="space-y-8 max-w-md">
+              <div>
+                <h1 className="text-5xl font-bold leading-tight text-white">
+                  Gestiona tus<br />finanzas de forma<br />inteligente
+                </h1>
+                <p className="text-xl text-white/80 mt-4">
+                  La plataforma completa para el control financiero de tu negocio y clientes
+                </p>
+              </div>
 
-            {/* Características */}
-            <div className="space-y-4 pt-8">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Shield size={18} className="text-white" />
+              {/* Características */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Shield size={18} className="text-white" />
+                  </div>
+                  <span className="text-white/90">Seguridad bancaria de nivel empresarial</span>
                 </div>
-                <span className="text-white/90">Seguridad bancaria de nivel empresarial</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <PieChart size={18} className="text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <PieChart size={18} className="text-white" />
+                  </div>
+                  <span className="text-white/90">Reportes y análisis en tiempo real</span>
                 </div>
-                <span className="text-white/90">Reportes y análisis en tiempo real</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Users size={18} className="text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Users size={18} className="text-white" />
+                  </div>
+                  <span className="text-white/90">Gestión multi-cliente y multi-rol</span>
                 </div>
-                <span className="text-white/90">Gestión multi-cliente y multi-rol</span>
               </div>
             </div>
           </div>
-
-          {/* Estadísticas */}
-          <div className="grid grid-cols-3 gap-4 mt-12">
-            <div>
-              <div className="text-3xl font-bold">+10k</div>
-              <div className="text-sm text-white/70">Usuarios activos</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">$2.5M</div>
-              <div className="text-sm text-white/70">Transacciones</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">99.9%</div>
-              <div className="text-sm text-white/70">Uptime</div>
-            </div>
-          </div>
+          
+          {/* Espacio inferior para equilibrio */}
+          <div className="h-12"></div>
         </div>
       </div>
 
@@ -153,23 +144,6 @@ export const LoginPage = () => {
                   <h3 className="font-semibold text-gray-900">Seguro</h3>
                   <p className="text-sm text-gray-600">Datos protegidos</p>
                 </div>
-              </div>
-
-              {/* Testimonios */}
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <div className="flex items-center space-x-1 text-yellow-400 mb-2">
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                </div>
-                <p className="text-gray-600 italic">
-                  "Desde que uso FinanSys, el control de mis finanzas nunca fue tan fácil"
-                </p>
-                <p className="text-sm font-semibold text-gray-900 mt-2">
-                  — María González, Contadora
-                </p>
               </div>
 
               <button
