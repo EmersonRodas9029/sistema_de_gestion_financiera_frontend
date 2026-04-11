@@ -69,7 +69,7 @@ const ProtectedRoutes = () => {
   );
 };
 
-export const App = () => {
+const App = () => {
   return (
     <BrowserRouter>
       <Routes>
@@ -79,3 +79,5 @@ export const App = () => {
     </BrowserRouter>
   );
 };
+
+export default App;

@@ -1,29 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell,
-  CheckCheck,
-  Trash2,
-  Settings,
-  RefreshCw,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Info,
-  TrendingUp,
-  Target,
-  CreditCard,
-  Gift,
-  Archive,
-  ArchiveRestore,
-  MoreVertical,
-  BellOff,
-  X,
-  Save
+  Bell, CheckCheck, Trash2, Settings, RefreshCw, Filter,
+  ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle,
+  Info, Target, CreditCard, Archive, MoreVertical, BellOff, X, XCircle
 } from 'lucide-react';
 
 interface Notification {
@@ -46,163 +26,24 @@ interface NotificationSettings {
   retentionDays: number;
 }
 
-// Función para generar ID único
-const generateUniqueId = () => {
-  return `NOT-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-};
+const generateUniqueId = () => `NOT-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
-// Datos iniciales por defecto
 const getDefaultNotifications = (): Notification[] => [
-  {
-    id: generateUniqueId(),
-    type: 'goal',
-    title: '¡Meta de ahorro alcanzada!',
-    message: 'Has alcanzado el 50% de tu meta "Fondo de Emergencia". ¡Sigue así!',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    archived: false,
-    actionable: true,
-    actionUrl: '/savings',
-    actionLabel: 'Ver meta'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'transaction',
-    title: 'Pago recibido',
-    message: 'Has recibido un pago de $2,500.00 de María González',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    archived: false,
-    actionable: true,
-    actionUrl: '/incomes',
-    actionLabel: 'Ver transacción'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'reminder',
-    title: 'Recordatorio de pago',
-    message: 'Mañana vence el pago de tu tarjeta de crédito.',
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/expenses',
-    actionLabel: 'Ver detalles'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'warning',
-    title: 'Gasto inusual detectado',
-    message: 'Se ha detectado un gasto inusual de $1,200.00.',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    archived: false,
-    actionable: true,
-    actionUrl: '/expenses',
-    actionLabel: 'Revisar'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'info',
-    title: 'Actualización del sistema',
-    message: 'Hemos actualizado nuestra plataforma con nuevas características.',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/changelog',
-    actionLabel: 'Ver novedades'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'goal',
-    title: 'Meta próxima a vencer',
-    message: 'Tu meta "Vacaciones Europa" vence en 30 días.',
-    timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/savings',
-    actionLabel: 'Ver progreso'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'transaction',
-    title: 'Transferencia programada',
-    message: 'Se ha programado una transferencia de $500.00 para mañana.',
-    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    archived: false,
-    actionable: true,
-    actionUrl: '/wallet',
-    actionLabel: 'Ver programación'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'warning',
-    title: 'Límite de gasto alcanzado',
-    message: 'Has alcanzado el 80% de tu límite en "Alimentación".',
-    timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: false
-  },
-  {
-    id: generateUniqueId(),
-    type: 'success',
-    title: '¡Meta completada!',
-    message: '¡Felicidades! Has completado tu meta "Boda".',
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/savings',
-    actionLabel: 'Ver detalles'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'reminder',
-    title: 'Revisión mensual',
-    message: 'Es momento de revisar tus finanzas del mes.',
-    timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    archived: false,
-    actionable: true,
-    actionUrl: '/analytics',
-    actionLabel: 'Revisar'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'info',
-    title: 'Nuevo artículo disponible',
-    message: '5 consejos para ahorrar más este año',
-    timestamp: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/blog/5-tips',
-    actionLabel: 'Leer artículo'
-  },
-  {
-    id: generateUniqueId(),
-    type: 'transaction',
-    title: 'Pago realizado',
-    message: 'Se ha realizado el pago de $156.75 en "Supermercado".',
-    timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    archived: false,
-    actionable: true,
-    actionUrl: '/expenses',
-    actionLabel: 'Ver detalle'
-  }
+  { id: generateUniqueId(), type: 'goal', title: '¡Meta de ahorro alcanzada!', message: 'Has alcanzado el 50% de tu meta "Fondo de Emergencia".', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver meta' },
+  { id: generateUniqueId(), type: 'transaction', title: 'Pago recibido', message: 'Has recibido un pago de $2,500.00 de María González', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/incomes', actionLabel: 'Ver transacción' },
+  { id: generateUniqueId(), type: 'reminder', title: 'Recordatorio de pago', message: 'Mañana vence el pago de tu tarjeta de crédito.', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalles' },
+  { id: generateUniqueId(), type: 'warning', title: 'Gasto inusual detectado', message: 'Se ha detectado un gasto inusual de $1,200.00.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Revisar' },
+  { id: generateUniqueId(), type: 'info', title: 'Actualización del sistema', message: 'Hemos actualizado nuestra plataforma con nuevas características.', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/changelog', actionLabel: 'Ver novedades' },
+  { id: generateUniqueId(), type: 'goal', title: 'Meta próxima a vencer', message: 'Tu meta "Vacaciones Europa" vence en 30 días.', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver progreso' },
+  { id: generateUniqueId(), type: 'transaction', title: 'Transferencia programada', message: 'Se ha programado una transferencia de $500.00 para mañana.', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/wallet', actionLabel: 'Ver programación' },
+  { id: generateUniqueId(), type: 'warning', title: 'Límite de gasto alcanzado', message: 'Has alcanzado el 80% de tu límite en "Alimentación".', timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: false },
+  { id: generateUniqueId(), type: 'success', title: '¡Meta completada!', message: '¡Felicidades! Has completado tu meta "Boda".', timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver detalles' },
+  { id: generateUniqueId(), type: 'reminder', title: 'Revisión mensual', message: 'Es momento de revisar tus finanzas del mes.', timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/analytics', actionLabel: 'Revisar' },
+  { id: generateUniqueId(), type: 'info', title: 'Nuevo artículo disponible', message: '5 consejos para ahorrar más este año', timestamp: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/blog/5-tips', actionLabel: 'Leer artículo' },
+  { id: generateUniqueId(), type: 'transaction', title: 'Pago realizado', message: 'Se ha realizado el pago de $156.75 en "Supermercado".', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalle' }
 ];
 
-const getDefaultSettings = (): NotificationSettings => ({
-  pushEnabled: true,
-  soundEnabled: true,
-  emailEnabled: false,
-  retentionDays: 30
-});
+const getDefaultSettings = (): NotificationSettings => ({ pushEnabled: true, soundEnabled: true, emailEnabled: false, retentionDays: 30 });
 
 export const NotificationsPage = () => {
   const navigate = useNavigate();
@@ -221,27 +62,17 @@ export const NotificationsPage = () => {
 
   const itemsPerPage = 6;
 
-  // Cargar notificaciones desde localStorage
   const [notifications, setNotifications] = useState<Notification[]>(() => {
     const saved = localStorage.getItem('notifications');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
     return getDefaultNotifications();
   });
 
-  // Guardar notificaciones en localStorage
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
-  // Guardar settings en localStorage
-  useEffect(() => {
-    localStorage.setItem('notification_settings', JSON.stringify(settings));
-  }, [settings]);
+  useEffect(() => { localStorage.setItem('notifications', JSON.stringify(notifications)); }, [notifications]);
+  useEffect(() => { localStorage.setItem('notification_settings', JSON.stringify(settings)); }, [settings]);
 
   const unreadCount = notifications.filter(n => !n.read && !n.archived).length;
   const archivedCount = notifications.filter(n => n.archived).length;
@@ -260,65 +91,26 @@ export const NotificationsPage = () => {
   });
 
   const totalPages = Math.ceil(sortedNotifications.length / itemsPerPage);
-  const paginatedNotifications = sortedNotifications.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const paginatedNotifications = sortedNotifications.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1000);
-  };
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
+  const handleRefresh = () => { setIsRefreshing(true); setTimeout(() => setIsRefreshing(false), 1000); };
+  const handleMarkAllAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   const handleSelectAll = () => {
-    if (selectedNotifications.length === paginatedNotifications.length) {
-      setSelectedNotifications([]);
-    } else {
-      setSelectedNotifications(paginatedNotifications.map(n => n.id));
-    }
+    if (selectedNotifications.length === paginatedNotifications.length) setSelectedNotifications([]);
+    else setSelectedNotifications(paginatedNotifications.map(n => n.id));
   };
-
-  const handleSelectNotification = (id: string) => {
-    setSelectedNotifications(prev =>
-      prev.includes(id) ? prev.filter(n => n !== id) : [...prev, id]
-    );
-  };
-
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
-
+  const handleSelectNotification = (id: string) => setSelectedNotifications(prev => prev.includes(id) ? prev.filter(n => n !== id) : [...prev, id]);
+  const handleMarkAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const handleArchive = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, archived: true, read: true } : n
-    ));
-    if (selectedNotifications.includes(id)) {
-      setSelectedNotifications(prev => prev.filter(n => n !== id));
-    }
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, archived: true, read: true } : n));
+    setSelectedNotifications(prev => prev.filter(n => n !== id));
   };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('¿Eliminar esta notificación?')) {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }
-  };
-
+  const handleDelete = (id: string) => { if (window.confirm('¿Eliminar esta notificación?')) setNotifications(prev => prev.filter(n => n.id !== id)); };
   const handleBulkArchive = () => {
     if (selectedNotifications.length === 0) return;
-    setNotifications(prev => prev.map(n => 
-      selectedNotifications.includes(n.id) ? { ...n, archived: true, read: true } : n
-    ));
+    setNotifications(prev => prev.map(n => selectedNotifications.includes(n.id) ? { ...n, archived: true, read: true } : n));
     setSelectedNotifications([]);
   };
-
   const handleBulkDelete = () => {
     if (selectedNotifications.length === 0) return;
     if (window.confirm(`¿Eliminar ${selectedNotifications.length} notificaciones?`)) {
@@ -326,13 +118,7 @@ export const NotificationsPage = () => {
       setSelectedNotifications([]);
     }
   };
-
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará todas las notificaciones a los valores por defecto. ¿Continuar?')) {
-      localStorage.removeItem('notifications');
-      setNotifications(getDefaultNotifications());
-    }
-  };
+  const resetData = () => { if (window.confirm('¿Restaurar datos por defecto?')) { localStorage.removeItem('notifications'); setNotifications(getDefaultNotifications()); } };
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -341,13 +127,11 @@ export const NotificationsPage = () => {
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
     if (diffMins < 1) return 'Ahora mismo';
     if (diffMins < 60) return `Hace ${diffMins} minutos`;
     if (diffHours < 24) return `Hace ${diffHours} horas`;
     if (diffDays === 1) return 'Ayer';
     if (diffDays < 7) return `Hace ${diffDays} días`;
-    
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   };
 
@@ -366,25 +150,15 @@ export const NotificationsPage = () => {
 
   return (
     <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Notificaciones</h1>
-            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {unreadCount} no leídas
-            </span>
-          </div>
-          <p className="text-white/60 text-sm mt-1">Mantente al día con tus actividades y alertas</p>
-        </div>
+        <div><div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-white">Notificaciones</h1><span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">{unreadCount} no leídas</span></div><p className="text-white/60 text-sm mt-1">Mantente al día con tus actividades y alertas</p></div>
         <div className="flex gap-2">
           <button onClick={handleRefresh} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"><RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} /></button>
           <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}><Settings size={20} /></button>
-          <button onClick={resetData} className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300" title="Restaurar datos por defecto"><RefreshCw size={20} /></button>
+          <button onClick={resetData} className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300" title="Restaurar datos"><RefreshCw size={20} /></button>
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10"><p className="text-white/60 text-sm">Total</p><p className="text-2xl font-bold text-white">{notifications.length}</p></div>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10"><p className="text-white/60 text-sm">No leídas</p><p className="text-2xl font-bold text-yellow-400">{unreadCount}</p></div>
@@ -392,7 +166,6 @@ export const NotificationsPage = () => {
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10"><p className="text-white/60 text-sm">Archivadas</p><p className="text-2xl font-bold text-gray-400">{archivedCount}</p></div>
       </div>
 
-      {/* Filters and Search */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -414,19 +187,14 @@ export const NotificationsPage = () => {
           </div>
         </div>
 
-        {/* Actions Bar */}
         <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={selectedNotifications.length === paginatedNotifications.length && paginatedNotifications.length > 0} onChange={handleSelectAll} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" /><span className="text-white/60 text-sm">Seleccionar todo</span></label>
-            {selectedNotifications.length > 0 && (<span className="text-white/40 text-sm">{selectedNotifications.length} seleccionados</span>)}
-          </div>
+          <div className="flex items-center gap-4"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={selectedNotifications.length === paginatedNotifications.length && paginatedNotifications.length > 0} onChange={handleSelectAll} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" /><span className="text-white/60 text-sm">Seleccionar todo</span></label>{selectedNotifications.length > 0 && (<span className="text-white/40 text-sm">{selectedNotifications.length} seleccionados</span>)}</div>
           <div className="flex items-center gap-2">
             <button onClick={handleMarkAllAsRead} className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"><CheckCheck size={16} /><span>Marcar todas</span></button>
             {selectedNotifications.length > 0 && (<><button onClick={handleBulkArchive} className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-colors"><Archive size={16} /><span>Archivar</span></button><button onClick={handleBulkDelete} className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"><Trash2 size={16} /><span>Eliminar</span></button></>)}
           </div>
         </div>
 
-        {/* Notifications List */}
         <div className="divide-y divide-white/10">
           {paginatedNotifications.map((notification) => (
             <div key={notification.id} className={`p-4 hover:bg-white/5 transition-colors ${!notification.read ? 'bg-white/5' : ''}`}>
@@ -439,11 +207,11 @@ export const NotificationsPage = () => {
                       <h3 className={`text-white ${!notification.read ? 'font-semibold' : ''}`}>{notification.title}{!notification.read && <span className="ml-2 w-2 h-2 bg-[#F05984] rounded-full inline-block" />}</h3>
                       <p className="text-white/60 text-sm mt-1">{notification.message}</p>
                       <div className="flex items-center gap-3 mt-2"><span className="text-white/40 text-xs flex items-center gap-1"><Clock size={12} />{formatDateTime(notification.timestamp)}</span></div>
-                      {notification.actionable && notification.actionUrl && (<button onClick={() => navigate(notification.actionUrl)} className="mt-2 text-[#F05984] hover:text-[#d14d75] text-sm transition-colors">{notification.actionLabel || 'Ver detalles'} →</button>)}
+                      {notification.actionable && notification.actionUrl && (<button onClick={() => navigate(notification.actionUrl!)} className="mt-2 text-[#F05984] hover:text-[#d14d75] text-sm transition-colors">{notification.actionLabel || 'Ver detalles'} →</button>)}
                     </div>
                     <div className="flex items-center gap-1">
                       {!notification.read && (<button onClick={() => handleMarkAsRead(notification.id)} className="p-1 hover:bg-white/10 rounded transition-colors" title="Marcar como leída"><CheckCheck size={16} className="text-white/40 hover:text-white" /></button>)}
-                      {!notification.archived ? (<button onClick={() => handleArchive(notification.id)} className="p-1 hover:bg-white/10 rounded transition-colors" title="Archivar"><Archive size={16} className="text-white/40 hover:text-white" /></button>) : null}
+                      {!notification.archived && (<button onClick={() => handleArchive(notification.id)} className="p-1 hover:bg-white/10 rounded transition-colors" title="Archivar"><Archive size={16} className="text-white/40 hover:text-white" /></button>)}
                       <button onClick={() => handleDelete(notification.id)} className="p-1 hover:bg-white/10 rounded transition-colors" title="Eliminar"><Trash2 size={16} className="text-white/40 hover:text-red-400" /></button>
                     </div>
                   </div>
@@ -454,7 +222,6 @@ export const NotificationsPage = () => {
           {paginatedNotifications.length === 0 && (<div className="p-12 text-center"><div className="inline-flex p-3 bg-white/5 rounded-full mb-4"><BellOff size={32} className="text-white/20" /></div><h3 className="text-white font-medium mb-1">No hay notificaciones</h3><p className="text-white/40 text-sm">No tienes notificaciones para mostrar</p></div>)}
         </div>
 
-        {/* Pagination */}
         <div className="p-4 border-t border-white/10 flex items-center justify-between">
           <p className="text-white/40 text-sm">Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredNotifications.length)} de {filteredNotifications.length} notificaciones</p>
           <div className="flex gap-2">
@@ -468,7 +235,6 @@ export const NotificationsPage = () => {
         </div>
       </div>
 
-      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
