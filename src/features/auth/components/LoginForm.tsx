@@ -58,7 +58,7 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
               placeholder="ejemplo@correo.com"
               required
             />
@@ -76,7 +76,7 @@ export const LoginForm = ({ onBack, onLogin }: LoginFormProps) => {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
               placeholder="••••••••"
               required
             />
