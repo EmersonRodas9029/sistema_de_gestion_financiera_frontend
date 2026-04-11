@@ -37,3 +37,74 @@
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .hide-on-mobile {
+    display: none;
+  }
+  
+  .mobile-full-width {
+    width: 100%;
+  }
+  
+  .mobile-stack {
+    flex-direction: column;
+  }
+  
+  .text-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .padding-responsive {
+    padding: 0.75rem;
+  }
+}
+
+/* Scroll suave para móvil */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Mejorar touch targets */
+  button, 
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-2cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .desktop-4cols {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .xs-hidden {
+    display: none;
+  }
+  
+  .xs-text-sm {
+    font-size: 0.75rem;
+  }
+  
+  .xs-p-2 {
+    padding: 0.5rem;
+  }
+}
