@@ -15,7 +15,6 @@ import {
   FolderTree,
   FileText,
   Bell,
-  HelpCircle,
   Home,
   BarChart3,
   PiggyBank,
@@ -227,7 +226,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
       <div className="flex items-center justify-between p-4 border-b border-white/10 mb-4">
         {!collapsed && (
           <h1 className="text-xl font-bold text-white tracking-tight">
-            FinanSys
+            BudgEase
           </h1>
         )}
         <button
@@ -289,16 +288,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
               {unreadNotifications}
             </span>
           )}
-        </button>
-
-        {/* Ayuda */}
-        <button
-          className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-2 ${
-            collapsed ? 'justify-center' : 'space-x-3'
-          }`}
-        >
-          <HelpCircle size={20} />
-          {!collapsed && <span className="text-sm font-medium">Ayuda</span>}
         </button>
 
         {/* Cerrar sesión */}
