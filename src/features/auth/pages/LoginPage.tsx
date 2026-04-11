@@ -146,23 +146,6 @@ export const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Testimonios */}
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <div className="flex items-center space-x-1 text-yellow-400 mb-2">
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                  <Star size={16} fill="currentColor" />
-                </div>
-                <p className="text-gray-600 italic">
-                  "Desde que uso BudgEase, el control de mis finanzas nunca fue tan fácil"
-                </p>
-                <p className="text-sm font-semibold text-gray-900 mt-2">
-                  — María González, Contadora
-                </p>
-              </div>
-
               <button
                 onClick={() => setShowLogin(true)}
                 className="w-full py-4 px-6 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02]"
