@@ -1,17 +1,9 @@
 /* Estilos adicionales si necesitas personalizar más allá de Tailwind */
 .leftbar-scroll::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
 
-.leftbar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.leftbar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.leftbar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.leftbar-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
