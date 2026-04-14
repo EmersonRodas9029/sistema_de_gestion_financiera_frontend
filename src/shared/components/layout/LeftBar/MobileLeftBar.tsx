@@ -25,15 +25,14 @@ export const MobileLeftBar = ({ userRole, userName, isOpen, onClose }: MobileLef
 
   return (
     <>
-      {/* Overlay oscuro */}
+      {/* Overlay oscuro - sin cerrar al hacer click */}
       <div
         className="fixed inset-0 bg-black/70 z-40 transition-opacity duration-300"
-        onClick={onClose}
       />
-      
+
       {/* Menú lateral que se desliza desde la izquierda */}
       <div className="fixed top-0 left-0 z-50 h-full transition-transform duration-300 ease-in-out animate-slide-in">
-        <LeftBar userRole={userRole} userName={userName} onMobileClose={onClose} />
+        <LeftBar userRole={userRole} userName={userName} onNavigate={onClose} />
       </div>
     </>
   );

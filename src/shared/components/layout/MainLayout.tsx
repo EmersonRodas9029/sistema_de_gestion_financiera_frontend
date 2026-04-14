@@ -98,11 +98,11 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
       </button>
 
       {/* Menú móvil (solo se muestra cuando está abierto) */}
-      <MobileLeftBar 
-        userRole={userRole} 
-        userName={userName} 
-        isOpen={isMobileMenuOpen} 
-        onClose={() => setIsMobileMenuOpen(false)} 
+      <MobileLeftBar
+        userRole={userRole}
+        userName={userName}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
       
       {/* Contenido principal - sin margen izquierdo en móvil */}

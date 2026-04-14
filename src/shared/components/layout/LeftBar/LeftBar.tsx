@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
-  LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat, X
+  LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
 } from 'lucide-react';
 
 interface MenuItem {
@@ -16,20 +16,20 @@ interface LeftBarProps {
   userRole: 'admin' | 'client';
   userName?: string;
   userAvatar?: string;
-  onMobileClose?: () => void;
+  onNavigate?: () => void;
 }
 
-export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onMobileClose }: LeftBarProps) => {
+export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate }: LeftBarProps) => {
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    if (onMobileClose) onMobileClose();
+    onNavigate?.();
   };
 
   const handleNotifications = () => {
     navigate('/notifications');
-    if (onMobileClose) onMobileClose();
+    onNavigate?.();
   };
 
   const handleLogout = () => {
@@ -37,7 +37,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onMobileCl
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     navigate('/login');
-    if (onMobileClose) onMobileClose();
+    onNavigate?.();
   };
 
   const unreadNotifications = 3;
@@ -61,16 +61,6 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onMobileCl
 
   return (
     <aside className="h-full w-64 bg-gradient-to-b from-[#321D28] via-[#6E4068] to-[#BC455F] flex flex-col">
-      {/* Botón cerrar para móvil */}
-      {onMobileClose && (
-        <button
-          onClick={onMobileClose}
-          className="absolute top-3 right-3 p-2 rounded-lg bg-white/10 text-white lg:hidden z-10"
-        >
-          <X size={20} />
-        </button>
-      )}
-      
       {/* Logo */}
       <div className="flex items-center justify-center p-5 border-b border-white/10">
         <h1 className="text-xl font-bold text-white tracking-tight">BudgEase</h1>
