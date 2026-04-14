@@ -1,9 +1,31 @@
-/* Estilos adicionales si necesitas personalizar más allá de Tailwind */
-.leftbar-scroll::-webkit-scrollbar {
-  display: none;
+/* Ocultar scrollbar pero mantener scroll funcional */
+.leftbar-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
 
+.leftbar-scroll::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.leftbar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.leftbar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Firefox */
+@supports (scrollbar-width: none) {
+  .leftbar-scroll {
+    scrollbar-width: none;
+  }
+}
+
+/* IE/Edge */
 .leftbar-scroll {
   -ms-overflow-style: none;
-  scrollbar-width: none;
 }
