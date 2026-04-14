@@ -1,23 +1,9 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  Wallet, 
-  TrendingUp, 
-  TrendingDown,
-  Target,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  FolderTree,
-  FileText,
-  Bell,
-  Home,
-  BarChart3,
-  PiggyBank,
-  Repeat
+import { NavLink } from 'react-router-dom';
+import {
+  Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
+  LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
 } from 'lucide-react';
+import styles from './LeftBar.module.css';
 
 interface MenuItem {
   path: string;
@@ -31,23 +17,10 @@ interface LeftBarProps {
   userRole: 'admin' | 'client';
   userName?: string;
   userAvatar?: string;
+  onNavigate?: () => void;
 }
 
-export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarProps) => {
-  const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    navigate('/login');
-  };
-
-  const handleNotifications = () => {
-    navigate('/notifications');
-  };
-
+export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate }: LeftBarProps) => {
   const unreadNotifications = 3;
 
   const menuItems: MenuItem[] = [
@@ -74,81 +47,106 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar }: LeftBarP
   const reportsItems = filteredMenuItems.filter(item => item.section === 'reports');
   const settingsItems = filteredMenuItems.filter(item => item.section === 'settings');
 
-  const renderMenuSection = (items: MenuItem[], title?: string) => {
+  const renderMenuSection = (items: MenuItem[], title: string) => {
     if (items.length === 0) return null;
     return (
-      <div className="mb-6">
-        {!collapsed && title && <h3 className="text-xs uppercase tracking-wider text-white/50 px-3 mb-2">{title}</h3>}
-        <ul className="space-y-1 px-2">
+      <div className="mb-4">
+        <h3 className="text-xs uppercase tracking-wider text-white/50 px-3 mb-2 font-semibold">{title}</h3>
+        <div className="space-y-1">
           {items.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${
-                    collapsed ? 'justify-center' : 'space-x-3'
-                  } ${
-                    isActive 
-                      ? 'bg-[#F05984] text-white shadow-lg shadow-[#F05984]/20' 
-                      : 'text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1'
-                  }`
-                }
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                {!collapsed && <span className="text-sm font-medium">{item.name}</span>}
-              </NavLink>
-            </li>
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-[#F05984] text-white shadow-lg shadow-[#F05984]/20'
+                    : 'text-white/70 hover:bg-[#F05984]/20 hover:text-white'
+                }`
+              }
+            >
+              <span className="flex-shrink-0">{item.icon}</span>
+              <span className="ml-3 text-sm font-medium">{item.name}</span>
+            </NavLink>
           ))}
-        </ul>
+        </div>
       </div>
     );
   };
 
   return (
-    <aside 
-      className={`h-screen transition-all duration-300 fixed left-0 top-0 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}
-      style={{ background: 'linear-gradient(180deg, #321D28 0%, #6E4068 50%, #BC455F 100%)', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      <style>{`aside::-webkit-scrollbar { display: none; }`}</style>
-      
-      <div className="flex items-center justify-between p-4 border-b border-white/10 mb-4">
-        {!collapsed && <h1 className="text-xl font-bold text-white tracking-tight">BudgEase</h1>}
-        <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors ml-auto text-white">
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
+    <aside className="h-full w-64 bg-gradient-to-b from-[#321D28] via-[#6E4068] to-[#BC455F] flex flex-col">
+      {/* Logo */}
+      <div className="flex items-center justify-center p-5 border-b border-white/10">
+        <h1 className="text-xl font-bold text-white tracking-tight">BudgEase</h1>
       </div>
 
-      <div className="flex items-center p-3 border-b border-white/10 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-lg" style={{ backgroundColor: '#F05984' }}>
+      {/* Perfil de usuario */}
+      <div className="flex items-center p-4 border-b border-white/10">
+        <div className="w-10 h-10 rounded-xl bg-[#F05984] flex items-center justify-center text-white font-bold shadow-lg">
           {userAvatar ? <img src={userAvatar} alt={userName} className="w-full h-full rounded-xl object-cover" /> : userName.charAt(0).toUpperCase()}
         </div>
-        {!collapsed && (
-          <div className="ml-3">
-            <p className="text-sm font-semibold text-white">{userName}</p>
-            <p className="text-xs text-white/60 capitalize">{userRole}</p>
-          </div>
-        )}
+        <div className="ml-3">
+          <p className="text-sm font-semibold text-white">{userName}</p>
+          <p className="text-xs text-white/60 capitalize">{userRole}</p>
+        </div>
       </div>
 
-      <nav className="flex-1 py-2 px-2">
-        {renderMenuSection(mainItems, 'PRINCIPAL')}
-        {renderMenuSection(financesItems, 'FINANZAS')}
-        {renderMenuSection(goalsItems, 'METAS')}
-        {renderMenuSection(managementItems, 'GESTIÓN')}
-        {renderMenuSection(reportsItems, 'REPORTES')}
-        {renderMenuSection(settingsItems, 'CONFIGURACIÓN')}
+      {/* Navegación por secciones */}
+      <nav
+        className="flex-1 overflow-y-auto py-4 px-3"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <style>{`
+          nav::-webkit-scrollbar {
+            width: 0;
+            display: none;
+          }
+          nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          nav::-webkit-scrollbar-thumb {
+            background: transparent;
+          }
+        `}</style>
+        {renderMenuSection(mainItems, 'Principal')}
+        {renderMenuSection(financesItems, 'Finanzas')}
+        {renderMenuSection(goalsItems, 'Metas')}
+        {renderMenuSection(managementItems, 'Gestión')}
+        {renderMenuSection(reportsItems, 'Reportes')}
+        {renderMenuSection(settingsItems, 'Configuración')}
       </nav>
 
-      <div className="p-3 border-t border-white/10 mt-auto">
-        <button onClick={handleNotifications} className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white hover:translate-x-1 mb-1 ${collapsed ? 'justify-center' : 'space-x-3'}`}>
+      {/* Botones adicionales */}
+      <div className="p-3 border-t border-white/10 space-y-1">
+        <button
+          onClick={() => {
+            onNavigate?.();
+            window.location.href = '/notifications';
+          }}
+          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white"
+        >
           <Bell size={20} />
-          {!collapsed && <span className="text-sm font-medium">Notificaciones</span>}
-          {!collapsed && unreadNotifications > 0 && <span className="ml-auto bg-[#F05984] text-white text-xs px-1.5 py-0.5 rounded-full">{unreadNotifications}</span>}
-          {collapsed && unreadNotifications > 0 && <span className="absolute -top-1 -right-1 bg-[#F05984] text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">{unreadNotifications}</span>}
+          <span className="ml-3 text-sm font-medium">Notificaciones</span>
+          {unreadNotifications > 0 && (
+            <span className="ml-auto bg-[#F05984] text-white text-xs px-1.5 py-0.5 rounded-full">
+              {unreadNotifications}
+            </span>
+          )}
         </button>
-        <button onClick={handleLogout} className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300 hover:translate-x-1 ${collapsed ? 'justify-center' : 'space-x-3'}`}>
+        <button
+          onClick={() => {
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            onNavigate?.();
+            window.location.href = '/login';
+          }}
+          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300"
+        >
           <LogOut size={20} />
-          {!collapsed && <span className="text-sm font-medium">Cerrar sesión</span>}
+          <span className="ml-3 text-sm font-medium">Cerrar sesión</span>
         </button>
       </div>
     </aside>

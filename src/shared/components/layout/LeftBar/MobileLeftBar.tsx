@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useEffect } from 'react';
 import { LeftBar } from './LeftBar';
 
 interface MobileLeftBarProps {
@@ -10,7 +9,6 @@ interface MobileLeftBarProps {
 }
 
 export const MobileLeftBar = ({ userRole, userName, isOpen, onClose }: MobileLeftBarProps) => {
-  // Prevenir scroll cuando el menú está abierto
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -22,36 +20,19 @@ export const MobileLeftBar = ({ userRole, userName, isOpen, onClose }: MobileLef
     };
   }, [isOpen]);
 
+  // Solo renderizar si está abierto
+  if (!isOpen) return null;
+
   return (
     <>
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/70 z-40 lg:hidden transition-opacity duration-300"
-          onClick={onClose}
-        />
-      )}
-      
-      {/* Menú lateral móvil */}
+      {/* Overlay oscuro - sin cerrar al hacer click */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="relative h-full">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors"
-          >
-            <X size={20} />
-          </button>
-          <LeftBar userRole={userRole} userName={userName} />
-        </div>
-      </div>
-      
-      {/* Versión desktop */}
-      <div className="hidden lg:block">
-        <LeftBar userRole={userRole} userName={userName} />
+        className="fixed inset-0 bg-black/70 z-40 transition-opacity duration-300"
+      />
+
+      {/* Menú lateral que se desliza desde la izquierda */}
+      <div className="fixed top-0 left-0 z-50 h-full transition-transform duration-300 ease-in-out animate-slide-in">
+        <LeftBar userRole={userRole} userName={userName} onNavigate={onClose} />
       </div>
     </>
   );
