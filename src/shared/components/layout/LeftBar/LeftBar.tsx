@@ -3,6 +3,7 @@ import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
   LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
 } from 'lucide-react';
+import styles from './LeftBar.module.css';
 
 interface MenuItem {
   path: string;
@@ -93,7 +94,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
       </div>
 
       {/* Navegación por secciones */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className={`flex-1 overflow-y-auto py-4 px-3 ${styles.leftbarScroll}`}>
         {renderMenuSection(mainItems, 'Principal')}
         {renderMenuSection(financesItems, 'Finanzas')}
         {renderMenuSection(goalsItems, 'Metas')}
