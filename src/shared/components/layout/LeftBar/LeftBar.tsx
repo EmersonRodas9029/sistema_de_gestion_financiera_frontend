@@ -94,7 +94,22 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
       </div>
 
       {/* Navegación por secciones */}
-      <nav className={`flex-1 overflow-y-auto py-4 px-3 ${styles.leftbarScroll}`}>
+      <nav
+        className="flex-1 overflow-y-auto py-4 px-3"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <style>{`
+          nav::-webkit-scrollbar {
+            width: 0;
+            display: none;
+          }
+          nav::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          nav::-webkit-scrollbar-thumb {
+            background: transparent;
+          }
+        `}</style>
         {renderMenuSection(mainItems, 'Principal')}
         {renderMenuSection(financesItems, 'Finanzas')}
         {renderMenuSection(goalsItems, 'Metas')}

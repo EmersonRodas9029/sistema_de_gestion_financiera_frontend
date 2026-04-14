@@ -122,3 +122,27 @@
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
 }
+
+/* Ocultar scrollbar pero mantener scroll funcional */
+.scrollbar-hide {
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent !important;
+  display: none !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  display: none !important;
+}
