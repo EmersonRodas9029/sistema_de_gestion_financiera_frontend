@@ -1,6 +1,7 @@
 import { type ReactNode, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MobileLeftBar } from './LeftBar/MobileLeftBar';
+import { LeftBar } from './LeftBar/LeftBar';
 import { 
   Home, TrendingUp, TrendingDown, Repeat, Wallet, Target, 
   PiggyBank, FolderTree, BarChart3, FileText, Users, Settings, 
@@ -89,6 +90,11 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
 
   return (
     <div className="min-h-screen bg-gradient-main">
+      {/* LeftBar fijo en desktop - siempre visible */}
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-64 z-40">
+        <LeftBar userRole={userRole} userName={userName} />
+      </div>
+
       {/* Botón menú móvil - solo visible en móvil */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -104,8 +110,8 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
       />
-      
-      {/* Contenido principal - sin margen izquierdo en móvil */}
+
+      {/* Contenido principal - con margen izquierdo en desktop */}
       <main className="lg:ml-64">
         {/* Header simplificado para móvil */}
         <div className="sticky top-0 z-10 glass-effect">
