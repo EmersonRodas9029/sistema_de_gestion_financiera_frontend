@@ -27,6 +27,8 @@ import {
   Zap,
   LineChart as LineChartIcon,
   AreaChart as AreaChartIcon,
+  PieChart,
+  Download
 } from 'lucide-react';
 import {
   AreaChart,
@@ -41,6 +43,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
 import AnimatedCounter from '../components/AnimatedCounter';
@@ -84,13 +89,21 @@ const recentTransactions = [
   { id: 5, description: 'Electricidad', amount: 85.50, type: 'expense', category: 'Servicios', date: '22 Feb', status: 'completada' },
 ];
 
-// Distribución por categoría
-const categoryDistribution = [
+// Datos para el gráfico de pastel - Gastos por categoría
+const pieChartData = [
   { name: 'Alimentación', value: 35, color: '#F05984', amount: 1240.50 },
   { name: 'Vivienda', value: 28, color: '#BC455F', amount: 1200.00 },
   { name: 'Transporte', value: 15, color: '#6E4068', amount: 650.00 },
   { name: 'Entretenimiento', value: 12, color: '#321D28', amount: 520.00 },
   { name: 'Salud', value: 10, color: '#2DD4BF', amount: 430.00 },
+];
+
+// Datos para el gráfico de pastel - Ingresos por categoría
+const pieChartIncomeData = [
+  { name: 'Salario', value: 45, color: '#F05984', amount: 3250.00 },
+  { name: 'Freelance', value: 30, color: '#BC455F', amount: 2150.00 },
+  { name: 'Inversiones', value: 15, color: '#6E4068', amount: 1080.00 },
+  { name: 'Otros', value: 10, color: '#321D28', amount: 720.00 },
 ];
 
 // Métricas de salud financiera
@@ -99,6 +112,19 @@ const healthMetrics = [
   { name: 'Capacidad de Ahorro', value: 72, color: '#BC455F' },
   { name: 'Estabilidad', value: 68, color: '#6E4068' },
 ];
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-medium">
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -109,6 +135,7 @@ export const HomePage = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area');
   const [period, setPeriod] = useState<'week' | 'month'>('week');
+  const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
 
   const chartData = period === 'week' ? mockChartData : monthlyChartData;
   const xAxisKey = period === 'week' ? 'date' : 'mes';
@@ -231,6 +258,9 @@ export const HomePage = () => {
         );
     }
   };
+
+  const currentPieData = activePieChart === 'expenses' ? pieChartData : pieChartIncomeData;
+  const totalAmount = currentPieData.reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <div className="min-h-screen space-y-6" style={{ backgroundColor: '#1a0f14' }}>
@@ -437,15 +467,10 @@ export const HomePage = () => {
             </div>
           </motion.div>
 
-          {/* Recent Activity */}
+          {/* Recent Activity - Sin botón "Ver todas" */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">Actividad Reciente</h3>
-              <button onClick={() => navigate('/incomes')} className="text-[#F05984] hover:text-[#d14d75] text-sm font-medium flex items-center gap-1 transition-colors">
-                Ver todas <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
+            <h3 className="text-lg font-bold text-white mb-4">Actividad Reciente</h3>
             <div className="space-y-3">
               {recentTransactions.map((tx) => (
                 <div key={tx.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
@@ -476,29 +501,74 @@ export const HomePage = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Category Distribution */}
+          {/* Pie Chart Section - Gastos/Ingresos */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
             className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 shadow-sm">
-            <h3 className="text-lg font-bold text-white mb-4">Distribución por Categoría</h3>
-            <div className="space-y-4">
-              {categoryDistribution.map((cat, idx) => (
-                <div key={idx}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="text-white text-sm">{cat.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-white/60 text-sm">{cat.value}%</span>
-                      <span className="text-white text-sm font-medium">{formatCurrency(cat.amount)}</span>
-                    </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">
+                {activePieChart === 'expenses' ? 'Distribución de Gastos' : 'Distribución de Ingresos'}
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActivePieChart('expenses')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePieChart === 'expenses' ? 'bg-[#F05984] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                >
+                  Gastos
+                </button>
+                <button
+                  onClick={() => setActivePieChart('income')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePieChart === 'income' ? 'bg-[#F05984] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                >
+                  Ingresos
+                </button>
+              </div>
+            </div>
+            
+            <ResponsiveContainer width="100%" height={220}>
+              <RePieChart>
+                <Pie
+                  data={currentPieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {currentPieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1a0f14',
+                    border: '1px solid #BC455F',
+                    borderRadius: '8px',
+                  }}
+                  formatter={(value: number, name: string) => [`${value}%`, name]}
+                  itemStyle={{ color: 'white' }}
+                />
+              </RePieChart>
+            </ResponsiveContainer>
+
+            <div className="mt-4 space-y-2">
+              {currentPieData.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-white/80">{item.name}</span>
                   </div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${cat.value}%` }}
-                      className="h-full rounded-full" style={{ backgroundColor: cat.color }} />
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/60">{item.value}%</span>
+                    <span className="text-white font-medium">{formatCurrency(item.amount)}</span>
                   </div>
                 </div>
               ))}
+              <div className="pt-2 mt-2 border-t border-white/10 flex items-center justify-between">
+                <span className="text-white/60 text-xs">Total</span>
+                <span className="text-white font-bold">{formatCurrency(totalAmount)}</span>
+              </div>
             </div>
           </motion.div>
 
