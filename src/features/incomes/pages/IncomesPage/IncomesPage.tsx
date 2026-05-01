@@ -1,19 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
   Calendar,
-  Download,
   Filter,
   Search,
   Plus,
   RefreshCw,
-  ArrowUp,
-  ArrowDown,
   DollarSign,
   CreditCard,
-  Wallet,
   BarChart3,
   ChevronRight,
   ChevronLeft,
@@ -22,7 +17,6 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Printer,
   Tag,
   Briefcase,
   Laptop,
@@ -39,10 +33,7 @@ import {
   Calendar as CalendarIcon,
   Target,
   Trash2,
-  Edit,
-  PieChart,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon
+  Edit
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 
@@ -302,7 +293,6 @@ const itemVariants = {
 };
 
 export const IncomesPage = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
@@ -462,16 +452,19 @@ export const IncomesPage = () => {
     const currentMonth = today.getMonth();
     
     switch(period) {
-      case 'este-mes':
+      case 'este-mes': {
         return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
-      case 'este-semana':
+      }
+      case 'este-semana': {
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - today.getDay());
         const endOfWeek = new Date(today);
         endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
         return incomeDate >= startOfWeek && incomeDate <= endOfWeek;
-      case 'este-ano':
+      }
+      case 'este-ano': {
         return incomeDate.getFullYear() === currentYear;
+      }
       default:
         return true;
     }
@@ -493,8 +486,8 @@ export const IncomesPage = () => {
       amount: parseFloat(formData.amount),
       category: formData.category,
       date: formData.date,
-      paymentMethod: formData.paymentMethod as any,
-      status: formData.status as any,
+      paymentMethod: formData.paymentMethod as Income['paymentMethod'],
+      status: formData.status as Income['status'],
       client: formData.client || undefined,
       invoice: formData.invoice || undefined,
       notes: formData.notes || undefined,
@@ -534,7 +527,7 @@ export const IncomesPage = () => {
     if (selectedIncome && newStatus && newStatus !== selectedIncome.status) {
       setIncomes(prevIncomes => 
         prevIncomes.map(inc => 
-          inc.id === selectedIncome.id ? { ...inc, status: newStatus as any } : inc
+          inc.id === selectedIncome.id ? { ...inc, status: newStatus as Income['status'] } : inc
         )
       );
     }
@@ -1145,25 +1138,25 @@ export const IncomesPage = () => {
                           ) : (
                             <span className="text-white/40 text-sm">-</span>
                           )}
-                         </td>
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-white/40" />
                             <span className="text-white text-sm">{formatDate(income.date)}</span>
                           </div>
-                         </td>
+                        </td>
                         <td className="py-3 px-4">
                           <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
-                         </td>
+                        </td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
                             {getStatusIcon(income.status)}
                             {income.status}
                           </span>
-                         </td>
+                        </td>
                         <td className="py-3 px-4 text-right">
                           <span className="text-white font-bold">{formatCurrency(income.amount)}</span>
-                         </td>
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <motion.button
@@ -1185,7 +1178,7 @@ export const IncomesPage = () => {
                               <Trash2 size={16} />
                             </motion.button>
                           </div>
-                         </td>
+                        </td>
                       </motion.tr>
                     ))}
                   </tbody>
@@ -1614,7 +1607,7 @@ export const IncomesPage = () => {
       </AnimatePresence>
 
       {/* Estilos CSS para el scrollbar personalizado */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: #F05984 #1a0f14;
