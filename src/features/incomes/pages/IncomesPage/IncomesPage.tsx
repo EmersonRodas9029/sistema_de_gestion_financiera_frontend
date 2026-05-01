@@ -824,49 +824,53 @@ export const IncomesPage = () => {
         </motion.div>
       </motion.div>
 
-      {/* Gráfico de Pastel y Categorías - Alineados y reducidos */}
+      {/* Gráfico de Pastel y Categorías - Corregido */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart - Reducido */}
+        {/* Pie Chart - Corregido para que no se corte */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-3 text-sm">Distribución de Ingresos</h3>
-          {pieChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <RePieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  paddingAngle={2}
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-                <ReTooltip
-                  contentStyle={{
-                    backgroundColor: '#1a0f14',
-                    border: '1px solid #BC455F',
-                    borderRadius: '8px',
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                  labelStyle={{ color: 'white' }}
-                />
-                <Legend 
-                  formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
-                  wrapperStyle={{ paddingTop: '10px' }}
-                />
-              </RePieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center">
-              <p className="text-white/40 text-center text-sm">No hay datos de ingresos completados</p>
-            </div>
-          )}
+          <div className="w-full h-[280px]">
+            {pieChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <ReTooltip
+                    contentStyle={{
+                      backgroundColor: '#1a0f14',
+                      border: '1px solid #BC455F',
+                      borderRadius: '8px',
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), 'Monto']}
+                    labelStyle={{ color: 'white' }}
+                  />
+                  <Legend 
+                    formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    verticalAlign="bottom"
+                    height={36}
+                  />
+                </RePieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center">
+                <p className="text-white/40 text-center text-sm">No hay datos de ingresos completados</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Categories Summary - Solo últimas 3 */}
@@ -1078,200 +1082,201 @@ export const IncomesPage = () => {
           </span>
         </div>
 
-        {/* Table View con animaciones */}
-        <AnimatePresence mode="wait">
-          {viewMode === 'table' ? (
-            <motion.div
-              key="table"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="overflow-x-auto"
-            >
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">ID</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Descripción</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Cliente</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Fecha</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
-                    <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
-                    <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedIncomes.map((income, index) => (
-                    <motion.tr
-                      key={income.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      className="border-b border-white/5 hover:bg-white/5 transition-colors group"
-                    >
-                      <td className="py-3 px-4">
-                        <span className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-white font-medium">{income.description}</p>
-                          {income.notes && (
-                            <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{income.notes.substring(0, 40)}...</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm">{income.category}</span>
-                          {income.recurring && (
-                            <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">
-                              recurrente
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {income.client ? (
+        {/* Tabla con scrollbar personalizado */}
+        <div className="overflow-x-auto custom-scrollbar">
+          <AnimatePresence mode="wait">
+            {viewMode === 'table' ? (
+              <motion.div
+                key="table"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">ID</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Descripción</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Cliente</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Fecha</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
+                      <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
+                      <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedIncomes.map((income, index) => (
+                      <motion.tr
+                        key={income.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors group"
+                      >
+                        <td className="py-3 px-4">
+                          <span className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</span>
+                        </td>
+                        <td className="py-3 px-4">
                           <div>
-                            <p className="text-white text-sm">{income.client}</p>
-                            <p className="text-white/40 text-xs">{income.clientId}</p>
+                            <p className="text-white font-medium">{income.description}</p>
+                            {income.notes && (
+                              <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{income.notes.substring(0, 40)}...</p>
+                            )}
                           </div>
-                        ) : (
-                          <span className="text-white/40 text-sm">-</span>
-                        )}
-                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-white/40" />
-                          <span className="text-white text-sm">{formatDate(income.date)}</span>
-                        </div>
-                       </td>
-                      <td className="py-3 px-4">
-                        <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
-                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
-                          {getStatusIcon(income.status)}
-                          {income.status}
-                        </span>
-                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="text-white font-bold">{formatCurrency(income.amount)}</span>
-                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleEditStatus(income)}
-                            className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
-                            title="Editar estado"
-                          >
-                            <Edit size={16} />
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleDeleteIncome(income.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </motion.button>
-                        </div>
-                       </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              {paginatedIncomes.map((income, index) => (
-                <motion.div
-                  key={income.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</p>
-                      <h3 className="text-white font-medium mt-1">{income.description}</h3>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-sm">{income.category}</span>
+                            {income.recurring && (
+                              <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">
+                                recurrente
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {income.client ? (
+                            <div>
+                              <p className="text-white text-sm">{income.client}</p>
+                              <p className="text-white/40 text-xs">{income.clientId}</p>
+                            </div>
+                          ) : (
+                            <span className="text-white/40 text-sm">-</span>
+                          )}
+                         </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-white/40" />
+                            <span className="text-white text-sm">{formatDate(income.date)}</span>
+                          </div>
+                         </td>
+                        <td className="py-3 px-4">
+                          <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
+                         </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
+                            {getStatusIcon(income.status)}
+                            {income.status}
+                          </span>
+                         </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="text-white font-bold">{formatCurrency(income.amount)}</span>
+                         </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleEditStatus(income)}
+                              className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
+                              title="Editar estado"
+                            >
+                              <Edit size={16} />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDeleteIncome(income.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </motion.button>
+                          </div>
+                         </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {paginatedIncomes.map((income, index) => (
+                  <motion.div
+                    key={income.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
+                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</p>
+                        <h3 className="text-white font-medium mt-1">{income.description}</h3>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(income.status)}`}>
+                        {getStatusIcon(income.status)}
+                        {income.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(income.status)}`}>
-                      {getStatusIcon(income.status)}
-                      {income.status}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Categoría:</span>
-                      <span className="text-white">{income.category}</span>
-                    </div>
-                    {income.client && (
+                    
+                    <div className="space-y-2 mb-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Cliente:</span>
-                        <span className="text-white">{income.client}</span>
+                        <span className="text-white/60">Categoría:</span>
+                        <span className="text-white">{income.category}</span>
+                      </div>
+                      {income.client && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-white/60">Cliente:</span>
+                          <span className="text-white">{income.client}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/60">Fecha:</span>
+                        <span className="text-white">{formatDate(income.date)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/60">Método:</span>
+                        <span className="text-white capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                      <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleEditStatus(income)}
+                          className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
+                        >
+                          <Edit size={16} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDeleteIncome(income.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {income.tags && income.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {income.tags.slice(0, 3).map((tag, idx) => (
+                          <span key={idx} className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
+                            #{tag}
+                          </span>
+                        ))}
                       </div>
                     )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Fecha:</span>
-                      <span className="text-white">{formatDate(income.date)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Método:</span>
-                      <span className="text-white capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                    <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEditStatus(income)}
-                        className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
-                      >
-                        <Edit size={16} />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDeleteIncome(income.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
-                      >
-                        <Trash2 size={16} />
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  {income.tags && income.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {income.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Pagination */}
         <div className="p-4 border-t border-white/10 flex items-center justify-between">
@@ -1607,6 +1612,28 @@ export const IncomesPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Estilos CSS para el scrollbar personalizado */}
+      <style jsx>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #F05984 #1a0f14;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1a0f14;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #F05984, #BC455F);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #BC455F, #6E4068);
+        }
+      `}</style>
     </motion.div>
   );
 };
