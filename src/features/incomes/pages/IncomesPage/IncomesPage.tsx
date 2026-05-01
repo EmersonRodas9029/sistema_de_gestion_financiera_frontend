@@ -41,10 +41,9 @@ import {
   Trash2,
   Edit,
   PieChart,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon
+  TrendingUp as TrendingUpIcon
 } from 'lucide-react';
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip } from 'recharts';
 
 interface Income {
   id: string;
@@ -65,16 +64,6 @@ interface Income {
   recurringFrequency?: 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'anual';
   tax: number;
   tags: string[];
-}
-
-interface CategorySummary {
-  name: string;
-  amount: number;
-  percentage: number;
-  color: string;
-  icon: React.ReactNode;
-  count: number;
-  chartColor: string;
 }
 
 // Función para generar ID único
@@ -352,7 +341,7 @@ export const IncomesPage = () => {
 
   // Simular carga inicial
   useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+    setTimeout(() => setIsLoading(false), 500);
   }, []);
 
   // Guardar en localStorage cuando cambien los ingresos
@@ -390,7 +379,7 @@ export const IncomesPage = () => {
   const totalCompletedAmount = completedIncomes.reduce((sum, inc) => sum + inc.amount, 0);
   const averageTicket = completedIncomes.length > 0 ? totalCompletedAmount / completedIncomes.length : 0;
 
-  // Calcular categorías para el gráfico
+  // Calcular categorías para el gráfico (top 5)
   const categoryMap = new Map<string, { amount: number; count: number; color: string }>();
   let colorIndex = 0;
   
@@ -409,12 +398,22 @@ export const IncomesPage = () => {
     }
   });
 
-  const pieChartData = Array.from(categoryMap.entries()).map(([name, data]) => ({
-    name,
-    value: data.amount,
-    color: data.color,
-    count: data.count
-  }));
+  // Ordenar categorías por monto y tomar solo las top 5 para el gráfico
+  const sortedCategories = Array.from(categoryMap.entries())
+    .map(([name, data]) => ({
+      name,
+      amount: data.amount,
+      color: data.color,
+      count: data.count
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const pieChartData = sortedCategories.slice(0, 5);
+  
+  // Categorías para mostrar en lista (todas, pero top 3 con más transacciones recientes)
+  const recentCategories = sortedCategories
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -439,16 +438,6 @@ export const IncomesPage = () => {
     };
     return icons[category] || <Tag size={16} />;
   };
-
-  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
-    name,
-    amount: data.amount,
-    percentage: totalCompletedAmount > 0 ? (data.amount / totalCompletedAmount) * 100 : 0,
-    color: getCategoryColor(name),
-    icon: getCategoryIcon(name),
-    count: data.count,
-    chartColor: CHART_COLORS[idx % CHART_COLORS.length]
-  })).sort((a, b) => b.amount - a.amount);
 
   const filterByPeriod = (date: string, period: string): boolean => {
     const incomeDate = new Date(date);
@@ -743,95 +732,95 @@ export const IncomesPage = () => {
         </div>
       </motion.div>
 
-      {/* Summary Cards con gradientes mejorados */}
+      {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div 
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10 shadow-lg"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/60 text-sm">Ingresos del Año</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalYearlyIncome)}</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(totalYearlyIncome)}</p>
               <p className="text-white/40 text-xs mt-1">{currentYear}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
-              <Calendar size={20} className="text-[#F05984]" />
+            <div className="p-2 rounded-xl bg-white/10">
+              <Calendar size={18} className="text-[#F05984]" />
             </div>
           </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-white/5 rounded-xl p-4 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/60 text-sm">Este mes</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalMonthlyIncome)}</p>
-              <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(totalMonthlyIncome)}</p>
+              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
                 />
               </div>
-              <p className="text-white/40 text-xs mt-1">{monthlyProgress.toFixed(0)}% de meta mensual</p>
+              <p className="text-white/40 text-xs mt-1">{monthlyProgress.toFixed(0)}% de meta</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20">
-              <TrendingUp size={20} className="text-green-400" />
+            <div className="p-2 rounded-xl bg-green-500/20">
+              <TrendingUp size={18} className="text-green-400" />
             </div>
           </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-white/5 rounded-xl p-4 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/60 text-sm">Pendiente por cobrar</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
-              <p className="text-white/40 text-xs mt-1">{pendingIncomes.length} facturas pendientes</p>
+              <p className="text-xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
+              <p className="text-white/40 text-xs mt-1">{pendingIncomes.length} facturas</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20">
-              <Clock size={20} className="text-yellow-400" />
+            <div className="p-2 rounded-xl bg-yellow-500/20">
+              <Clock size={18} className="text-yellow-400" />
             </div>
           </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-white/5 rounded-xl p-4 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/60 text-sm">Ticket Promedio</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
+              <p className="text-xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
               <p className="text-white/40 text-xs mt-1">{completedIncomes.length} transacciones</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/20">
-              <Target size={20} className="text-blue-400" />
+            <div className="p-2 rounded-xl bg-blue-500/20">
+              <Target size={18} className="text-blue-400" />
             </div>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Gráfico de Pastel y Categorías */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <h3 className="text-white font-semibold mb-4">Distribución de Ingresos</h3>
+      {/* Gráfico y Categorías - Alineados y reducidos */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Pie Chart - Reducido */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
+          <h3 className="text-white font-semibold mb-2">Distribución de Ingresos</h3>
           {pieChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={180}>
               <RePieChart>
                 <Pie
                   data={pieChartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  innerRadius={40}
+                  outerRadius={65}
                   paddingAngle={2}
-                  dataKey="value"
+                  dataKey="amount"
                   animationBegin={0}
                   animationDuration={800}
                 >
@@ -844,87 +833,89 @@ export const IncomesPage = () => {
                     backgroundColor: '#1a0f14',
                     border: '1px solid #BC455F',
                     borderRadius: '8px',
+                    fontSize: '12px',
+                    padding: '6px 10px'
                   }}
                   formatter={(value: number) => [formatCurrency(value), 'Monto']}
                   labelStyle={{ color: 'white' }}
                 />
-                <Legend 
-                  formatter={(value) => <span className="text-white/80 text-xs">{value}</span>}
-                  wrapperStyle={{ paddingTop: '20px' }}
-                />
               </RePieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center">
-              <p className="text-white/40 text-center">No hay datos de ingresos completados</p>
+            <div className="h-[180px] flex items-center justify-center">
+              <p className="text-white/40 text-sm">No hay datos disponibles</p>
             </div>
           )}
         </div>
 
-        {/* Categories Summary */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <h3 className="text-white font-semibold mb-4">Ingresos por categoría</h3>
-          {categories.length > 0 ? (
-            <div className="space-y-4">
-              {categories.map((cat, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                        {cat.icon}
+        {/* Top 3 Categorías Recientes */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
+          <h3 className="text-white font-semibold mb-3">Categorías más activas</h3>
+          {recentCategories.length > 0 ? (
+            <div className="space-y-3">
+              {recentCategories.map((cat, index) => {
+                const percentage = (cat.amount / totalCompletedAmount) * 100;
+                return (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white/5 rounded-lg p-2 hover:bg-white/10 transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded-lg bg-gradient-to-r ${getCategoryColor(cat.name)} bg-opacity-20`}>
+                          {getCategoryIcon(cat.name)}
+                        </div>
+                        <span className="text-white text-sm font-medium">{cat.name}</span>
                       </div>
-                      <span className="text-white text-sm font-medium">{cat.name}</span>
+                      <span className="text-white/60 text-xs">{percentage.toFixed(1)}%</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-white/60 text-xs">{cat.percentage.toFixed(1)}%</span>
-                      <span className="text-white text-sm font-semibold">{formatCurrency(cat.amount)}</span>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-white/50">Total:</span>
+                      <span className="text-white font-semibold text-xs">{formatCurrency(cat.amount)}</span>
                     </div>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${cat.percentage}%` }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                    />
-                  </div>
-                  <p className="text-white/40 text-xs mt-1">{cat.count} transacciones</p>
-                </motion.div>
-              ))}
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percentage}%` }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                        className={`h-full bg-gradient-to-r ${getCategoryColor(cat.name)} rounded-full`}
+                      />
+                    </div>
+                    <p className="text-white/40 text-xs mt-1">{cat.count} transacciones</p>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
-            <p className="text-white/40 text-center py-8">No hay datos de ingresos completados</p>
+            <p className="text-white/40 text-center py-6">No hay datos disponibles</p>
           )}
         </div>
       </motion.div>
 
       {/* Filters and Search */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+      <motion.div variants={itemVariants} className="bg-white/5 rounded-xl border border-white/10 shadow-lg">
+        <div className="p-3">
+          <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1 relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40">
-                <Search size={18} />
+                <Search size={16} />
               </div>
               <input
                 type="text"
                 placeholder="Buscar por descripción, cliente o ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                className="w-full pl-9 pr-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-all"
               />
             </div>
             <div className="flex flex-wrap gap-2">
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
                 <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
@@ -932,14 +923,14 @@ export const IncomesPage = () => {
                 <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
               </select>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors ${
                   showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                 }`}
               >
-                <Filter size={18} />
+                <Filter size={16} />
               </motion.button>
               {hasActiveFilters && (
                 <motion.button
@@ -947,10 +938,10 @@ export const IncomesPage = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
+                  className="flex items-center gap-1 px-2 py-1.5 text-xs bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300"
                 >
-                  <XCircleIcon size={16} />
-                  <span>Limpiar filtros</span>
+                  <XCircleIcon size={14} />
+                  <span>Limpiar</span>
                 </motion.button>
               )}
             </div>
@@ -962,19 +953,19 @@ export const IncomesPage = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
+                className="mt-3 pt-3 border-t border-white/10 overflow-hidden"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="text-white/60 text-xs mb-1 block">Categoría</label>
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
                       <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                      {categories.map(cat => (
+                      {sortedCategories.map(cat => (
                         <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
                       ))}
                     </select>
@@ -984,7 +975,7 @@ export const IncomesPage = () => {
                     <select
                       value={selectedStatus}
                       onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
                       <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
@@ -998,7 +989,7 @@ export const IncomesPage = () => {
                     <select
                       value={selectedPaymentMethod}
                       onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
                       <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
@@ -1015,164 +1006,111 @@ export const IncomesPage = () => {
         </div>
 
         {/* Sort Bar */}
-        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 text-sm">Ordenar por:</span>
+        <div className="px-3 py-1.5 bg-white/5 border-t border-white/10 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-3">
+            <span className="text-white/40">Ordenar:</span>
             <button
-              onClick={() => {
-                setSortBy('date');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'date' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
+              onClick={() => { setSortBy('date'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}
+              className={`flex items-center gap-1 transition-colors ${sortBy === 'date' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
-              <Calendar size={14} />
+              <Calendar size={12} />
               <span>Fecha</span>
-              {sortBy === 'date' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
+              {sortBy === 'date' && (sortOrder === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
             </button>
             <button
-              onClick={() => {
-                setSortBy('amount');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
+              onClick={() => { setSortBy('amount'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}
+              className={`flex items-center gap-1 transition-colors ${sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
-              <DollarSign size={14} />
+              <DollarSign size={12} />
               <span>Monto</span>
-              {sortBy === 'amount' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
+              {sortBy === 'amount' && (sortOrder === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
             </button>
             <button
-              onClick={() => {
-                setSortBy('category');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'category' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
+              onClick={() => { setSortBy('category'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}
+              className={`flex items-center gap-1 transition-colors ${sortBy === 'category' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
-              <Tag size={14} />
-              <span>Categoría</span>
-              {sortBy === 'category' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
+              <Tag size={12} />
+              <span>Cat</span>
+              {sortBy === 'category' && (sortOrder === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
             </button>
           </div>
-          <span className="text-white/40 text-sm">
-            {filteredIncomes.length} resultados
-          </span>
+          <span className="text-white/40">{filteredIncomes.length} resultados</span>
         </div>
 
-        {/* Table View con animaciones */}
+        {/* Table View */}
         <AnimatePresence mode="wait">
           {viewMode === 'table' ? (
             <motion.div
               key="table"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={{ opacity: 0, y: -10 }}
               className="overflow-x-auto"
             >
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">ID</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Descripción</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Cliente</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Fecha</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
-                    <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
-                    <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
-                    <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
+                    <th className="text-left py-2 px-3 text-white/60 text-xs font-medium">ID</th>
+                    <th className="text-left py-2 px-3 text-white/60 text-xs font-medium">Descripción</th>
+                    <th className="text-left py-2 px-3 text-white/60 text-xs font-medium">Categoría</th>
+                    <th className="text-left py-2 px-3 text-white/60 text-xs font-medium">Fecha</th>
+                    <th className="text-left py-2 px-3 text-white/60 text-xs font-medium">Estado</th>
+                    <th className="text-right py-2 px-3 text-white/60 text-xs font-medium">Monto</th>
+                    <th className="text-right py-2 px-3 text-white/60 text-xs font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedIncomes.map((income, index) => (
                     <motion.tr
                       key={income.id}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
                       className="border-b border-white/5 hover:bg-white/5 transition-colors group"
                     >
-                      <td className="py-3 px-4">
-                        <span className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</span>
+                      <td className="py-2 px-3">
+                        <span className="text-white/40 text-xs font-mono">{income.id.slice(-6)}</span>
                       </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-white font-medium">{income.description}</p>
-                          {income.notes && (
-                            <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{income.notes.substring(0, 40)}...</p>
-                          )}
-                        </div>
+                      <td className="py-2 px-3">
+                        <p className="text-white text-sm">{income.description}</p>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm">{income.category}</span>
-                          {income.recurring && (
-                            <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">
-                              recurrente
-                            </span>
-                          )}
-                        </div>
+                      <td className="py-2 px-3">
+                        <span className="text-white text-sm">{income.category}</span>
                       </td>
-                      <td className="py-3 px-4">
-                        {income.client ? (
-                          <div>
-                            <p className="text-white text-sm">{income.client}</p>
-                            <p className="text-white/40 text-xs">{income.clientId}</p>
-                          </div>
-                        ) : (
-                          <span className="text-white/40 text-sm">-</span>
-                        )}
-                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-white/40" />
-                          <span className="text-white text-sm">{formatDate(income.date)}</span>
-                        </div>
-                       </td>
-                      <td className="py-3 px-4">
-                        <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
-                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
+                      <td className="py-2 px-3">
+                        <span className="text-white text-sm">{formatDate(income.date)}</span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
                           {getStatusIcon(income.status)}
-                          {income.status}
+                          {income.status === 'completado' ? 'Completado' : income.status === 'pendiente' ? 'Pendiente' : 'Programado'}
                         </span>
-                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="text-white font-bold">{formatCurrency(income.amount)}</span>
-                       </td>
-                      <td className="py-3 px-4">
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <span className="text-white font-semibold">{formatCurrency(income.amount)}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleEditStatus(income)}
-                            className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
+                            className="p-1 rounded hover:bg-blue-500/20 text-blue-400"
                             title="Editar estado"
                           >
-                            <Edit size={16} />
+                            <Edit size={14} />
                           </motion.button>
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleDeleteIncome(income.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
+                            className="p-1 rounded hover:bg-red-500/20 text-red-400"
                             title="Eliminar"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </motion.button>
                         </div>
-                       </td>
+                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -1181,83 +1119,63 @@ export const IncomesPage = () => {
           ) : (
             <motion.div
               key="grid"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              exit={{ opacity: 0, y: -10 }}
+              className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
             >
               {paginatedIncomes.map((income, index) => (
                 <motion.div
                   key={income.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
+                  whileHover={{ y: -2, boxShadow: "0 10px 20px -5px rgba(0,0,0,0.2)" }}
+                  className="bg-white/5 rounded-lg p-3 border border-white/10 hover:border-[#F05984]/50 transition-all group"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</p>
-                      <h3 className="text-white font-medium mt-1">{income.description}</h3>
+                      <p className="text-white/40 text-xs font-mono">{income.id.slice(-6)}</p>
+                      <h3 className="text-white font-medium text-sm mt-0.5">{income.description}</h3>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(income.status)}`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(income.status)}`}>
                       {getStatusIcon(income.status)}
-                      {income.status}
+                      {income.status === 'completado' ? 'Ok' : income.status === 'pendiente' ? 'Pend' : 'Prog'}
                     </span>
                   </div>
                   
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Categoría:</span>
+                  <div className="space-y-1 mb-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-white/50">Categoría:</span>
                       <span className="text-white">{income.category}</span>
                     </div>
-                    {income.client && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Cliente:</span>
-                        <span className="text-white">{income.client}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Fecha:</span>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-white/50">Fecha:</span>
                       <span className="text-white">{formatDate(income.date)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Método:</span>
-                      <span className="text-white capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                    <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <span className="text-base font-bold text-white">{formatCurrency(income.amount)}</span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleEditStatus(income)}
-                        className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
+                        className="p-1 rounded hover:bg-blue-500/20 text-blue-400"
                       >
-                        <Edit size={16} />
+                        <Edit size={14} />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleDeleteIncome(income.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
+                        className="p-1 rounded hover:bg-red-500/20 text-red-400"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </motion.button>
                     </div>
                   </div>
-
-                  {income.tags && income.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {income.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </motion.div>
               ))}
             </motion.div>
@@ -1265,30 +1183,30 @@ export const IncomesPage = () => {
         </AnimatePresence>
 
         {/* Pagination */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/40 text-sm">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredIncomes.length)} de {filteredIncomes.length} ingresos
+        <div className="p-3 border-t border-white/10 flex items-center justify-between text-xs">
+          <p className="text-white/40">
+            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredIncomes.length)} de {filteredIncomes.length}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white disabled:opacity-50"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} />
             </motion.button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
               let pageNum;
-              if (totalPages <= 5) {
+              if (totalPages <= 3) {
                 pageNum = i + 1;
-              } else if (currentPage <= 3) {
+              } else if (currentPage <= 2) {
                 pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
+              } else if (currentPage >= totalPages - 1) {
+                pageNum = totalPages - 2 + i;
               } else {
-                pageNum = currentPage - 2 + i;
+                pageNum = currentPage - 1 + i;
               }
               
               return (
@@ -1297,9 +1215,9 @@ export const IncomesPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs transition-all ${
                     currentPage === pageNum
-                      ? 'bg-[#F05984] text-white shadow-md'
+                      ? 'bg-[#F05984] text-white'
                       : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                   }`}
                 >
@@ -1312,15 +1230,16 @@ export const IncomesPage = () => {
               whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white disabled:opacity-50"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} />
             </motion.button>
           </div>
         </div>
       </motion.div>
 
-      {/* Modal para crear nuevo ingreso - Mejorado */}
+      {/* Modales - se mantienen igual pero con animaciones */}
+      {/* Modal para crear nuevo ingreso */}
       <AnimatePresence>
         {showCreateModal && (
           <motion.div
@@ -1333,55 +1252,52 @@ export const IncomesPage = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
             >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
-                    <TrendingUp size={20} className="text-white" />
+              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-5 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
+                    <TrendingUp size={18} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">Nuevo Ingreso</h2>
-                    <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo ingreso</p>
+                    <h2 className="text-lg font-bold text-white">Nuevo Ingreso</h2>
+                    <p className="text-white/40 text-xs">Completa los campos</p>
                   </div>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <X size={20} className="text-white/60" />
+                  <X size={18} className="text-white/60" />
                 </motion.button>
               </div>
 
-              <div className="p-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-5">
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
-                      <div className="relative">
-                        <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.description}
-                          onChange={(e) => setFormData({...formData, description: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-                          placeholder="Ej: Pago de nómina"
-                          required
-                        />
-                      </div>
+                      <label className="text-white/60 text-xs mb-1 block">Descripción *</label>
+                      <input
+                        type="text"
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className="w-full px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        placeholder="Ej: Pago de nómina"
+                        required
+                      />
                     </div>
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                      <label className="text-white/60 text-xs mb-1 block">Monto *</label>
                       <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <DollarSign size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white/40" />
                         <input
                           type="number"
                           step="0.01"
                           value={formData.amount}
                           onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                          className="w-full pl-7 pr-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                           placeholder="0.00"
                           required
                         />
@@ -1389,114 +1305,108 @@ export const IncomesPage = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                      <label className="text-white/60 text-xs mb-1 block">Categoría *</label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                         required
                       >
-                        <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                        {categories.map(cat => (
+                        <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar</option>
+                        {sortedCategories.map(cat => (
                           <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
+                      <label className="text-white/60 text-xs mb-1 block">Fecha *</label>
                       <div className="relative">
-                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <CalendarIcon size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white/40" />
                         <input
                           type="date"
                           value={formData.date}
                           onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                          className="w-full pl-7 pr-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                           required
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                      <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
                       <select
                         value={formData.paymentMethod}
                         onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                       >
-                        <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                        <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                        <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                        <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="cheque">Cheque</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
+                      <label className="text-white/60 text-xs mb-1 block">Estado</label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                       >
-                        <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                        <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                        <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                        <option value="completado">Completado</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="programado">Programado</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
-                      <div className="relative">
-                        <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.client}
-                          onChange={(e) => setFormData({...formData, client: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                          placeholder="Nombre del cliente"
-                        />
-                      </div>
+                      <label className="text-white/60 text-xs mb-1 block">Cliente</label>
+                      <input
+                        type="text"
+                        value={formData.client}
+                        onChange={(e) => setFormData({...formData, client: e.target.value})}
+                        className="w-full px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        placeholder="Nombre del cliente"
+                      />
                     </div>
                     <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
-                      <div className="relative">
-                        <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.invoice}
-                          onChange={(e) => setFormData({...formData, invoice: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                          placeholder="INV-2024-001"
-                        />
-                      </div>
+                      <label className="text-white/60 text-xs mb-1 block">Factura</label>
+                      <input
+                        type="text"
+                        value={formData.invoice}
+                        onChange={(e) => setFormData({...formData, invoice: e.target.value})}
+                        className="w-full px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        placeholder="INV-2024-001"
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
+                    <label className="text-white/60 text-xs mb-1 block">Notas</label>
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                      rows={3}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                      placeholder="Notas adicionales sobre este ingreso..."
+                      rows={2}
+                      className="w-full px-3 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                      placeholder="Notas adicionales..."
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                  <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={() => setShowCreateModal(false)}
-                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
+                      className="px-3 py-1.5 text-sm bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all"
                     >
                       Cancelar
                     </motion.button>
@@ -1504,10 +1414,10 @@ export const IncomesPage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all"
                     >
-                      <Save size={18} />
-                      <span>Guardar Ingreso</span>
+                      <Save size={14} />
+                      <span>Guardar</span>
                     </motion.button>
                   </div>
                 </form>
@@ -1532,54 +1442,54 @@ export const IncomesPage = () => {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
             >
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Edit size={20} className="text-blue-400" />
+              <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                    <Edit size={18} className="text-blue-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">Editar Estado</h2>
-                    <p className="text-white/40 text-sm">Cambia el estado del ingreso</p>
+                    <h2 className="text-lg font-bold text-white">Editar Estado</h2>
+                    <p className="text-white/40 text-xs">Cambia el estado del ingreso</p>
                   </div>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowEditStatusModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <X size={20} className="text-white/60" />
+                  <X size={18} className="text-white/60" />
                 </motion.button>
               </div>
 
-              <div className="p-6">
-                <div className="space-y-4">
+              <div className="p-5">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Ingreso</label>
-                    <p className="text-white font-medium">{selectedIncome.description}</p>
-                    <p className="text-white/40 text-sm mt-1">{formatCurrency(selectedIncome.amount)}</p>
+                    <label className="text-white/60 text-xs mb-1 block">Ingreso</label>
+                    <p className="text-white font-medium text-sm">{selectedIncome.description}</p>
+                    <p className="text-white/40 text-xs mt-1">{formatCurrency(selectedIncome.amount)}</p>
                   </div>
 
                   <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
+                    <label className="text-white/60 text-xs mb-1 block">Nuevo Estado</label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                      className="w-full px-2 py-1.5 text-sm bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                     >
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                      <option value="completado">Completado</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="programado">Programado</option>
                     </select>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4">
+                  <div className="flex justify-end gap-2 pt-3">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowEditStatusModal(false)}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all"
+                      className="px-3 py-1.5 text-sm bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all"
                     >
                       Cancelar
                     </motion.button>
@@ -1587,7 +1497,7 @@ export const IncomesPage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleUpdateStatus}
-                      className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all"
+                      className="px-3 py-1.5 text-sm bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all"
                     >
                       Actualizar Estado
                     </motion.button>
