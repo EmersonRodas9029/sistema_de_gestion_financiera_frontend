@@ -6,12 +6,6 @@ import {
   Wallet, 
   Target,
   Sparkles,
-  FolderTree,
-  BarChart3,
-  ArrowRight,
-  Users,
-  UserCircle,
-  Settings,
   Repeat,
   PiggyBank,
   ArrowUpRight,
@@ -19,9 +13,8 @@ import {
   Activity,
   DollarSign,
   Zap,
-  LineChart as LineChartIcon,
-  PieChart,
-  Calendar
+  Users,
+  UserCircle
 } from 'lucide-react';
 import {
   AreaChart,
@@ -48,25 +41,32 @@ interface QuickOption {
   stats?: string;
 }
 
+// Tipo unificado para los datos del gráfico
+interface ChartDataPoint {
+  name: string;
+  ingresos: number;
+  gastos: number;
+}
+
 // Datos para el gráfico de 7 días
-const weeklyChartData = [
-  { date: 'Lun', ingresos: 450, gastos: 320 },
-  { date: 'Mar', ingresos: 380, gastos: 420 },
-  { date: 'Mié', ingresos: 520, gastos: 380 },
-  { date: 'Jue', ingresos: 410, gastos: 450 },
-  { date: 'Vie', ingresos: 480, gastos: 390 },
-  { date: 'Sáb', ingresos: 530, gastos: 410 },
-  { date: 'Dom', ingresos: 490, gastos: 370 },
+const weeklyChartData: ChartDataPoint[] = [
+  { name: 'Lun', ingresos: 450, gastos: 320 },
+  { name: 'Mar', ingresos: 380, gastos: 420 },
+  { name: 'Mié', ingresos: 520, gastos: 380 },
+  { name: 'Jue', ingresos: 410, gastos: 450 },
+  { name: 'Vie', ingresos: 480, gastos: 390 },
+  { name: 'Sáb', ingresos: 530, gastos: 410 },
+  { name: 'Dom', ingresos: 490, gastos: 370 },
 ];
 
 // Datos para el gráfico de 6 meses
-const monthlyChartData = [
-  { mes: 'Ene', ingresos: 3200, gastos: 2800 },
-  { mes: 'Feb', ingresos: 3600, gastos: 3100 },
-  { mes: 'Mar', ingresos: 3800, gastos: 3200 },
-  { mes: 'Abr', ingresos: 3500, gastos: 2800 },
-  { mes: 'May', ingresos: 4000, gastos: 3300 },
-  { mes: 'Jun', ingresos: 4200, gastos: 3400 },
+const monthlyChartData: ChartDataPoint[] = [
+  { name: 'Ene', ingresos: 3200, gastos: 2800 },
+  { name: 'Feb', ingresos: 3600, gastos: 3100 },
+  { name: 'Mar', ingresos: 3800, gastos: 3200 },
+  { name: 'Abr', ingresos: 3500, gastos: 2800 },
+  { name: 'May', ingresos: 4000, gastos: 3300 },
+  { name: 'Jun', ingresos: 4200, gastos: 3400 },
 ];
 
 // Datos para el gráfico de pastel
@@ -108,15 +108,15 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
+type ChartPeriod = 'week' | 'month';
+
 export const HomePage = () => {
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState('');
-  const [userName] = useState(localStorage.getItem('userName') || 'Emerson');
   const [userRole] = useState<'admin' | 'client'>(localStorage.getItem('userRole') as 'admin' | 'client' || 'client');
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [period, setPeriod] = useState<'week' | 'month'>('week');
+  const [period, setPeriod] = useState<ChartPeriod>('week');
   const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
 
   const stats = {
@@ -136,11 +136,6 @@ export const HomePage = () => {
   ];
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Buenos días');
-    else if (hour < 18) setGreeting('Buenas tardes');
-    else setGreeting('Buenas noches');
-
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(now.toLocaleString('es-ES', { 
@@ -152,15 +147,14 @@ export const HomePage = () => {
         minute: '2-digit'
       }));
     };
+    
     updateTime();
     const interval = setInterval(updateTime, 60000);
 
-    // Ocultar banner después de 5 segundos con animación suave
     const timer = setTimeout(() => {
       setShowWelcome(false);
     }, 5000);
 
-    // Simular carga
     setTimeout(() => setIsLoading(false), 800);
 
     return () => {
@@ -177,24 +171,21 @@ export const HomePage = () => {
     }).format(amount);
   };
 
-  // Seleccionar datos según el período
-  const getChartData = () => {
-    if (period === 'week') {
-      return weeklyChartData;
-    } else {
-      return monthlyChartData;
-    }
-  };
-
-  const getXAxisKey = () => {
-    return period === 'week' ? 'date' : 'mes';
+  // Obtener datos del gráfico según el período
+  const getChartData = (): ChartDataPoint[] => {
+    return period === 'week' ? weeklyChartData : monthlyChartData;
   };
 
   const chartData = getChartData();
-  const xAxisKey = getXAxisKey();
   
   const currentPieData = activePieChart === 'expenses' ? pieChartExpensesData : pieChartIncomeData;
   const totalAmount = currentPieData.reduce((sum, item) => sum + item.amount, 0);
+
+  // Calcular totales según el período
+  const totalIngresos = chartData.reduce((sum, d) => sum + d.ingresos, 0);
+  const totalGastos = chartData.reduce((sum, d) => sum + d.gastos, 0);
+  const diferencia = totalIngresos - totalGastos;
+  const promedioDiario = period === 'week' ? diferencia / 7 : diferencia / 180;
 
   if (isLoading) {
     return (
@@ -228,7 +219,7 @@ export const HomePage = () => {
       className="min-h-screen p-4 md:p-6 space-y-8"
       style={{ backgroundColor: '#1a0f14' }}
     >
-      {/* Welcome Banner - con animación de salida suave */}
+      {/* Welcome Banner */}
       <AnimatePresence>
         {showWelcome && (
           <motion.div
@@ -441,7 +432,7 @@ export const HomePage = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.2} />
-                <XAxis dataKey={xAxisKey} stroke="#94a3b8" style={{ fontSize: '12px' }} />
+                <XAxis dataKey="name" stroke="#94a3b8" style={{ fontSize: '12px' }} />
                 <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
                 <Tooltip
                   contentStyle={{
@@ -460,19 +451,21 @@ export const HomePage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10">
               <div className="text-center">
                 <p className="text-white/40 text-xs">Total Ingresos</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 3260 : 22300)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(totalIngresos)}</p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Total Gastos</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 2740 : 18500)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(totalGastos)}</p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Diferencia</p>
-                <p className="text-[#F05984] font-bold text-sm">{formatCurrency(period === 'week' ? 520 : 3800)}</p>
+                <p className={`font-bold text-sm ${diferencia >= 0 ? 'text-[#F05984]' : 'text-rose-400'}`}>
+                  {formatCurrency(diferencia)}
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Promedio/Día</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 74 : 63)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(promedioDiario)}</p>
               </div>
             </div>
           </motion.div>
