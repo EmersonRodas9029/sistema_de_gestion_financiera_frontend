@@ -48,8 +48,8 @@ interface QuickOption {
   stats?: string;
 }
 
-// Datos de ejemplo para los gráficos
-const mockChartData = [
+// Datos para el gráfico de 7 días
+const weeklyChartData = [
   { date: 'Lun', ingresos: 450, gastos: 320 },
   { date: 'Mar', ingresos: 380, gastos: 420 },
   { date: 'Mié', ingresos: 520, gastos: 380 },
@@ -57,6 +57,16 @@ const mockChartData = [
   { date: 'Vie', ingresos: 480, gastos: 390 },
   { date: 'Sáb', ingresos: 530, gastos: 410 },
   { date: 'Dom', ingresos: 490, gastos: 370 },
+];
+
+// Datos para el gráfico de 6 meses
+const monthlyChartData = [
+  { mes: 'Ene', ingresos: 3200, gastos: 2800 },
+  { mes: 'Feb', ingresos: 3600, gastos: 3100 },
+  { mes: 'Mar', ingresos: 3800, gastos: 3200 },
+  { mes: 'Abr', ingresos: 3500, gastos: 2800 },
+  { mes: 'May', ingresos: 4000, gastos: 3300 },
+  { mes: 'Jun', ingresos: 4200, gastos: 3400 },
 ];
 
 // Datos para el gráfico de pastel
@@ -101,9 +111,11 @@ const itemVariants = {
 export const HomePage = () => {
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
   const [userName] = useState(localStorage.getItem('userName') || 'Emerson');
   const [userRole] = useState<'admin' | 'client'>(localStorage.getItem('userRole') as 'admin' | 'client' || 'client');
   const [isLoading, setIsLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [period, setPeriod] = useState<'week' | 'month'>('week');
   const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
 
@@ -129,8 +141,32 @@ export const HomePage = () => {
     else if (hour < 18) setGreeting('Buenas tardes');
     else setGreeting('Buenas noches');
 
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+
+    // Ocultar banner después de 5 segundos con animación suave
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 5000);
+
     // Simular carga
     setTimeout(() => setIsLoading(false), 800);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
   }, []);
 
   const formatCurrency = (amount: number) => {
@@ -141,7 +177,22 @@ export const HomePage = () => {
     }).format(amount);
   };
 
-  const chartData = period === 'week' ? mockChartData : mockChartData;
+  // Seleccionar datos según el período
+  const getChartData = () => {
+    if (period === 'week') {
+      return weeklyChartData;
+    } else {
+      return monthlyChartData;
+    }
+  };
+
+  const getXAxisKey = () => {
+    return period === 'week' ? 'date' : 'mes';
+  };
+
+  const chartData = getChartData();
+  const xAxisKey = getXAxisKey();
+  
   const currentPieData = activePieChart === 'expenses' ? pieChartExpensesData : pieChartIncomeData;
   const totalAmount = currentPieData.reduce((sum, item) => sum + item.amount, 0);
 
@@ -177,40 +228,65 @@ export const HomePage = () => {
       className="min-h-screen p-4 md:p-6 space-y-8"
       style={{ backgroundColor: '#1a0f14' }}
     >
-      {/* Welcome Banner - Minimalista */}
-      <motion.div 
-        variants={itemVariants}
-        whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#321D28] to-[#BC455F] p-6 shadow-xl"
-      >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div>
-            <p className="text-white/70 text-sm mb-1">{greeting}, {userName}</p>
-            <p className="text-white text-4xl md:text-5xl font-bold tracking-tight">
-              {formatCurrency(stats.balance)}
-            </p>
-            <p className="text-white/50 text-sm mt-1">Balance total</p>
-          </div>
-          <div className="flex gap-6">
-            <div className="text-right">
-              <div className="flex items-center gap-1 text-emerald-300 text-sm">
-                <ArrowUpRight size={14} />
-                <span>Ingresos</span>
+      {/* Welcome Banner - con animación de salida suave */}
+      <AnimatePresence>
+        {showWelcome && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.5, ease: "easeInOut" } }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#321D28] via-[#6E4068] to-[#BC455F] p-6 shadow-2xl"
+          >
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0YzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+                    <Sparkles className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/90 text-sm font-medium mb-1">Balance Total</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold text-white">$</span>
+                      <span className="text-5xl font-bold text-white">{formatCurrency(stats.balance)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-xl px-4 py-2 border border-white/30">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                    <span className="text-white font-semibold">+12.5%</span>
+                    <span className="text-white/80 text-sm">vs mes anterior</span>
+                  </div>
+                </div>
+                <p className="text-white/70 text-sm mt-4">{currentTime}</p>
               </div>
-              <p className="text-white font-semibold text-lg">{formatCurrency(stats.monthlyIncome)}</p>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1 text-rose-300 text-sm">
-                <ArrowDownRight size={14} />
-                <span>Gastos</span>
-              </div>
-              <p className="text-white font-semibold text-lg">{formatCurrency(stats.monthlyExpenses)}</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Quick Stats Row - Grid consistente */}
+              <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
+                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 min-w-[140px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowUpRight className="w-4 h-4 text-emerald-300" />
+                    <span className="text-white/90 text-sm font-medium">Ingresos</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyIncome)}</div>
+                  <p className="text-emerald-300 text-xs mt-1 font-medium">+12% este mes</p>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 min-w-[140px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowDownRight className="w-4 h-4 text-rose-300" />
+                    <span className="text-white/90 text-sm font-medium">Gastos</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyExpenses)}</div>
+                  <p className="text-rose-300 text-xs mt-1 font-medium">-5% vs mes anterior</p>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quick Stats Row */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
@@ -288,7 +364,7 @@ export const HomePage = () => {
         </motion.div>
       </motion.div>
 
-      {/* Quick Actions - Cards más grandes */}
+      {/* Quick Actions */}
       <motion.div variants={itemVariants}>
         <h2 className="text-lg font-semibold text-white mb-4">Accesos Rápidos</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -322,7 +398,7 @@ export const HomePage = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Chart Section */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Chart Card - Simplificado */}
+          {/* Chart Card */}
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
@@ -365,7 +441,7 @@ export const HomePage = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.2} />
-                <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: '12px' }} />
+                <XAxis dataKey={xAxisKey} stroke="#94a3b8" style={{ fontSize: '12px' }} />
                 <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
                 <Tooltip
                   contentStyle={{
@@ -384,24 +460,24 @@ export const HomePage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10">
               <div className="text-center">
                 <p className="text-white/40 text-xs">Total Ingresos</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(4230)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 3260 : 22300)}</p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Total Gastos</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(3120)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 2740 : 18500)}</p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Diferencia</p>
-                <p className="text-[#F05984] font-bold text-sm">{formatCurrency(1110)}</p>
+                <p className="text-[#F05984] font-bold text-sm">{formatCurrency(period === 'week' ? 520 : 3800)}</p>
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Promedio/Día</p>
-                <p className="text-white font-bold text-sm">{formatCurrency(158)}</p>
+                <p className="text-white font-bold text-sm">{formatCurrency(period === 'week' ? 74 : 63)}</p>
               </div>
             </div>
           </motion.div>
 
-          {/* Recent Activity - Mejorada */}
+          {/* Recent Activity */}
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
@@ -441,7 +517,7 @@ export const HomePage = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Pie Chart Section - Mejorada */}
+          {/* Pie Chart Section */}
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
