@@ -360,7 +360,7 @@ export const ExpensesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('este-mes');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -539,6 +539,8 @@ export const ExpensesPage = () => {
 
   // Función para filtrar por período
   const filterByPeriod = (date: string, period: string): boolean => {
+    if (period === 'todos') return true;
+    
     const expenseDate = new Date(date);
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -568,7 +570,7 @@ export const ExpensesPage = () => {
     setSelectedCategory('todas');
     setSelectedStatus('todos');
     setSelectedPaymentMethod('todos');
-    setSelectedPeriod('este-mes');
+    setSelectedPeriod('todos');
     setCurrentPage(1);
     setShowDeductibleOnly(false);
     setShowNoReceiptOnly(false);
@@ -780,7 +782,7 @@ export const ExpensesPage = () => {
     selectedCategory !== 'todas' || 
     selectedStatus !== 'todos' || 
     selectedPaymentMethod !== 'todos' ||
-    selectedPeriod !== 'este-mes' ||
+    selectedPeriod !== 'todos' ||
     showDeductibleOnly ||
     showNoReceiptOnly;
 
@@ -879,7 +881,7 @@ export const ExpensesPage = () => {
         </div>
       </motion.div>
 
-      {/* Summary Cards Mejoradas */}
+      {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
@@ -892,13 +894,9 @@ export const ExpensesPage = () => {
               <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalYearlyExpense)}</p>
               <p className="text-white/40 text-xs mt-1">{currentYear}</p>
             </div>
-            <motion.div 
-              animate={{ rotate: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="p-3 rounded-xl bg-white/10"
-            >
+            <div className="p-3 rounded-xl bg-white/10">
               <Calendar size={20} className="text-[#F05984]" />
-            </motion.div>
+            </div>
           </div>
         </motion.div>
 
@@ -916,13 +914,9 @@ export const ExpensesPage = () => {
                 <span className="text-xs">{Math.abs(monthlyChange).toFixed(1)}% vs mes anterior</span>
               </div>
             </div>
-            <motion.div 
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="p-3 rounded-xl bg-red-500/20"
-            >
+            <div className="p-3 rounded-xl bg-red-500/20">
               <TrendingDown size={20} className="text-red-400" />
-            </motion.div>
+            </div>
           </div>
         </motion.div>
 
@@ -937,13 +931,9 @@ export const ExpensesPage = () => {
               <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
               <p className="text-white/40 text-xs mt-1">{pendingExpenses.length} facturas pendientes</p>
             </div>
-            <motion.div 
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              className="p-3 rounded-xl bg-yellow-500/20"
-            >
+            <div className="p-3 rounded-xl bg-yellow-500/20">
               <Clock size={20} className="text-yellow-400" />
-            </motion.div>
+            </div>
           </div>
         </motion.div>
 
@@ -958,43 +948,35 @@ export const ExpensesPage = () => {
               <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
               <p className="text-white/40 text-xs mt-1">{completedExpenses.length} transacciones</p>
             </div>
-            <motion.div 
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.5 }}
-              className="p-3 rounded-xl bg-blue-500/20"
-            >
+            <div className="p-3 rounded-xl bg-blue-500/20">
               <Target size={20} className="text-blue-400" />
-            </motion.div>
+            </div>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Gastos Deducibles - Tarjeta Mejorada */}
+      {/* Gastos Deducibles - Reducido */}
       <motion.div variants={itemVariants}>
-        <div className="bg-gradient-to-r from-emerald-900/40 to-green-900/30 backdrop-blur-sm rounded-xl p-5 border border-emerald-500/30 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <motion.div 
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="p-2 rounded-xl bg-emerald-500/20"
-              >
-                <Shield size={24} className="text-emerald-400" />
-              </motion.div>
+        <div className="bg-gradient-to-r from-emerald-900/40 to-green-900/30 backdrop-blur-sm rounded-xl p-3 border border-emerald-500/30 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                <Shield size={18} className="text-emerald-400" />
+              </div>
               <div>
-                <h3 className="text-white font-semibold">Gastos Deducibles</h3>
-                <p className="text-white/40 text-xs">Gastos que puedes deducir de impuestos</p>
+                <h3 className="text-white text-sm font-semibold">Gastos Deducibles</h3>
+                <p className="text-white/40 text-[10px]">Gastos que puedes deducir de impuestos</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-emerald-400">{formatCurrency(totalDeductible)}</p>
-              <p className="text-white/40 text-xs">de {formatCurrency(totalYearlyExpense)} totales</p>
+              <p className="text-lg font-bold text-emerald-400">{formatCurrency(totalDeductible)}</p>
+              <p className="text-white/40 text-[10px]">de {formatCurrency(totalYearlyExpense)} totales</p>
             </div>
           </div>
           
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-row items-center gap-4 mt-2">
             {/* Gráfico de dona pequeño */}
-            <div className="w-full lg:w-48 h-32">
+            <div className="w-20 h-20">
               <ResponsiveContainer width="100%" height="100%">
                 <RePieChart>
                   <Pie
@@ -1004,15 +986,15 @@ export const ExpensesPage = () => {
                     ]}
                     cx="50%"
                     cy="50%"
-                    innerRadius={25}
-                    outerRadius={40}
+                    innerRadius={20}
+                    outerRadius={32}
                     dataKey="value"
                   >
                     <Cell fill="#10B981" />
                     <Cell fill="#6B7280" />
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #10B981', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #10B981', borderRadius: '8px', fontSize: '10px', padding: '4px 8px' }}
                     formatter={(value: number) => [formatCurrency(value), '']}
                   />
                 </RePieChart>
@@ -1020,7 +1002,7 @@ export const ExpensesPage = () => {
             </div>
             
             <div className="flex-1">
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${totalYearlyExpense > 0 ? (totalDeductible / totalYearlyExpense) * 100 : 0}%` }}
@@ -1028,20 +1010,20 @@ export const ExpensesPage = () => {
                   className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"
                 />
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-white/60 text-xs">Deducible: {((totalDeductible / totalYearlyExpense) * 100).toFixed(1)}%</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-white/50 text-[10px]">Deducible: {((totalDeductible / totalYearlyExpense) * 100).toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-gray-500" />
-                    <span className="text-white/60 text-xs">No deducible: {((totalNonDeductible / totalYearlyExpense) * 100).toFixed(1)}%</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                    <span className="text-white/50 text-[10px]">No deducible: {((totalNonDeductible / totalYearlyExpense) * 100).toFixed(1)}%</span>
                   </div>
                 </div>
                 <div className="relative group">
-                  <Info size={14} className="text-white/40 cursor-help" />
-                  <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-[#1a0f14] border border-white/10 rounded-lg text-white/60 text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  <Info size={12} className="text-white/40 cursor-help" />
+                  <div className="absolute bottom-full right-0 mb-2 w-56 p-1.5 bg-[#1a0f14] border border-white/10 rounded-lg text-white/60 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                     Los gastos deducibles son aquellos relacionados con actividad económica, alquiler de vivienda habitual, o donaciones.
                   </div>
                 </div>
@@ -1246,6 +1228,7 @@ export const ExpensesPage = () => {
                 className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors text-sm"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
                 <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
                 <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
                 <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
@@ -1409,7 +1392,7 @@ export const ExpensesPage = () => {
           </span>
         </div>
 
-        {/* Table View Mejorado */}
+        {/* Table View */}
         <AnimatePresence mode="wait">
           {viewMode === 'table' ? (
             <motion.div
@@ -1436,7 +1419,7 @@ export const ExpensesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedExpenses.map((expense, index) => {
+                  {paginatedExpenses.slice(0, 6).map((expense, index) => {
                     const highExpense = isHighExpense(expense.amount);
                     const recurringAlert = getRecurringAlert(expense);
                     const isPending = expense.status === 'pendiente';
@@ -1581,7 +1564,7 @@ export const ExpensesPage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             >
-              {paginatedExpenses.map((expense, index) => {
+              {paginatedExpenses.slice(0, 6).map((expense, index) => {
                 const highExpense = isHighExpense(expense.amount);
                 const isPending = expense.status === 'pendiente';
                 
@@ -1742,7 +1725,7 @@ export const ExpensesPage = () => {
         </div>
       </motion.div>
 
-      {/* Modal para crear nuevo gasto - Mejorado */}
+      {/* Modal para crear nuevo gasto */}
       <AnimatePresence>
         {showCreateModal && (
           <motion.div
