@@ -1083,7 +1083,7 @@ export const ExpensesPage = () => {
           </div>
         </div>
 
-        {/* Tendencia de Gastos */}
+        {/* Tendencia de Gastos - Corregido */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-semibold flex items-center gap-2">
@@ -1093,15 +1093,41 @@ export const ExpensesPage = () => {
             <span className="text-white/40 text-xs">Últimos 6 meses</span>
           </div>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={monthlyTrends}>
+            <LineChart data={monthlyTrends} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-              <XAxis dataKey="month" stroke="#ffffff40" />
-              <YAxis stroke="#ffffff40" tickFormatter={(value) => formatCurrency(value)} />
+              <XAxis 
+                dataKey="month" 
+                stroke="#ffffff60" 
+                tick={{ fill: '#ffffff60', fontSize: 12 }}
+                axisLine={{ stroke: '#ffffff20' }}
+                tickLine={{ stroke: '#ffffff20' }}
+              />
+              <YAxis 
+                stroke="#ffffff60" 
+                tick={{ fill: '#ffffff60', fontSize: 11 }}
+                axisLine={{ stroke: '#ffffff20' }}
+                tickLine={{ stroke: '#ffffff20' }}
+                tickFormatter={(value) => {
+                  if (value >= 1000) {
+                    return `$${(value / 1000).toFixed(0)}k`;
+                  }
+                  return `$${value}`;
+                }}
+                width={50}
+              />
               <ReTooltip
                 contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
                 formatter={(value: number) => [formatCurrency(value), 'Gastos']}
+                labelStyle={{ color: '#ffffff' }}
               />
-              <Line type="monotone" dataKey="amount" stroke="#F05984" strokeWidth={2} dot={{ fill: '#F05984', strokeWidth: 2 }} />
+              <Line 
+                type="monotone" 
+                dataKey="amount" 
+                stroke="#F05984" 
+                strokeWidth={2} 
+                dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, fill: '#BC455F' }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -1419,7 +1445,7 @@ export const ExpensesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedExpenses.slice(0, 6).map((expense, index) => {
+                  {paginatedExpenses.map((expense, index) => {
                     const highExpense = isHighExpense(expense.amount);
                     const recurringAlert = getRecurringAlert(expense);
                     const isPending = expense.status === 'pendiente';
@@ -1564,7 +1590,7 @@ export const ExpensesPage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             >
-              {paginatedExpenses.slice(0, 6).map((expense, index) => {
+              {paginatedExpenses.map((expense, index) => {
                 const highExpense = isHighExpense(expense.amount);
                 const isPending = expense.status === 'pendiente';
                 
