@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingDown, 
   Calendar,
-  Download,
   Filter,
   Search,
   Plus,
@@ -33,7 +32,6 @@ import {
   Edit,
   X,
   Save,
-  User,
   Hash,
   Calendar as CalendarIcon,
   Target,
@@ -41,14 +39,11 @@ import {
   AlertTriangle,
   TrendingUp,
   PieChart,
-  Upload,
   Info,
   Building,
-  Coffee,
-  Gift,
   Film
 } from 'lucide-react';
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface Expense {
   id: string;
@@ -89,6 +84,12 @@ interface MonthlyTrend {
   amount: number;
 }
 
+interface WeeklyTrend {
+  week: string;
+  amount: number;
+}
+
+
 // Función para generar ID único
 const generateUniqueId = () => {
   return `EXP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -117,7 +118,7 @@ const monthlyTrends: MonthlyTrend[] = [
 ];
 
 // Datos de tendencia semanal
-const weeklyTrends = [
+const weeklyTrends: WeeklyTrend[] = [
   { week: 'Sem 1', amount: 450 },
   { week: 'Sem 2', amount: 520 },
   { week: 'Sem 3', amount: 480 },
@@ -472,10 +473,6 @@ export const ExpensesPage = () => {
   const totalDeductible = deductibleExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalNonDeductible = totalYearlyExpense - totalDeductible;
 
-  // Gastos sin recibo
-  const noReceiptExpenses = expenses.filter(exp => !exp.receipt && exp.status === 'completado');
-  const totalNoReceipt = noReceiptExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-
   // Gastos que vencen pronto (próximos 7 días)
   const upcomingExpenses = expenses.filter(exp => {
     const expDate = new Date(exp.date);
@@ -795,19 +792,6 @@ export const ExpensesPage = () => {
     showDeductibleOnly ||
     showNoReceiptOnly;
 
-  // Generar ticks personalizados para el eje Y sin duplicados
-  const getYAxisTicks = (data: any[]) => {
-    if (!data.length) return [];
-    const maxValue = Math.max(...data.map(d => d.amount));
-    const ticks = [];
-    const step = maxValue / 4;
-    for (let i = 0; i <= 4; i++) {
-      const value = step * i;
-      ticks.push(Math.round(value));
-    }
-    return [...new Set(ticks)];
-  };
-
   // Skeleton Loader
   if (isLoading) {
     return (
@@ -1105,7 +1089,7 @@ export const ExpensesPage = () => {
           </div>
         </div>
 
-        {/* Tendencia de Gastos - Con filtros de semana/mes */}
+        {/* Tendencia de Gastos */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -1140,49 +1124,95 @@ export const ExpensesPage = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart 
-              data={trendView === 'mensual' ? monthlyTrends : weeklyTrends} 
-              margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-              <XAxis 
-                dataKey={trendView === 'mensual' ? 'month' : 'week'} 
-                stroke="#ffffff60" 
-                tick={{ fill: '#ffffff60', fontSize: 11 }}
-                axisLine={{ stroke: '#ffffff20' }}
-                tickLine={{ stroke: '#ffffff20' }}
-              />
-              <YAxis 
-                stroke="#ffffff60" 
-                tick={{ fill: '#ffffff60', fontSize: 11 }}
-                axisLine={{ stroke: '#ffffff20' }}
-                tickLine={{ stroke: '#ffffff20' }}
-                domain={[0, 'auto']}
-                tickFormatter={(value) => {
-                  if (value >= 1000) {
-                    return `$${(value / 1000).toFixed(0)}k`;
-                  }
-                  return `$${value}`;
-                }}
-                width={50}
-                allowDecimals={false}
-              />
-              <ReTooltip
-                contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
-                formatter={(value: number) => [formatCurrency(value), 'Gastos']}
-                labelStyle={{ color: '#ffffff' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke="#F05984" 
-                strokeWidth={2} 
-                dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: '#BC455F' }}
-                isAnimationActive={true}
-                animationDuration={800}
-              />
-            </LineChart>
+            {trendView === 'mensual' ? (
+              <LineChart 
+                data={monthlyTrends}
+                margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis 
+                  dataKey="month"
+                  stroke="#ffffff60" 
+                  tick={{ fill: '#ffffff60', fontSize: 11 }}
+                  axisLine={{ stroke: '#ffffff20' }}
+                  tickLine={{ stroke: '#ffffff20' }}
+                />
+                <YAxis 
+                  stroke="#ffffff60" 
+                  tick={{ fill: '#ffffff60', fontSize: 11 }}
+                  axisLine={{ stroke: '#ffffff20' }}
+                  tickLine={{ stroke: '#ffffff20' }}
+                  domain={[0, 'auto']}
+                  tickFormatter={(value) => {
+                    if (value >= 1000) {
+                      return `$${(value / 1000).toFixed(0)}k`;
+                    }
+                    return `$${value}`;
+                  }}
+                  width={50}
+                  allowDecimals={false}
+                />
+                <ReTooltip
+                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  formatter={(value: number) => [formatCurrency(value), 'Gastos']}
+                  labelStyle={{ color: '#ffffff' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#F05984" 
+                  strokeWidth={2} 
+                  dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#BC455F' }}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                />
+              </LineChart>
+            ) : (
+              <LineChart 
+                data={weeklyTrends}
+                margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis 
+                  dataKey="week"
+                  stroke="#ffffff60" 
+                  tick={{ fill: '#ffffff60', fontSize: 11 }}
+                  axisLine={{ stroke: '#ffffff20' }}
+                  tickLine={{ stroke: '#ffffff20' }}
+                />
+                <YAxis 
+                  stroke="#ffffff60" 
+                  tick={{ fill: '#ffffff60', fontSize: 11 }}
+                  axisLine={{ stroke: '#ffffff20' }}
+                  tickLine={{ stroke: '#ffffff20' }}
+                  domain={[0, 'auto']}
+                  tickFormatter={(value) => {
+                    if (value >= 1000) {
+                      return `$${(value / 1000).toFixed(0)}k`;
+                    }
+                    return `$${value}`;
+                  }}
+                  width={50}
+                  allowDecimals={false}
+                />
+                <ReTooltip
+                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  formatter={(value: number) => [formatCurrency(value), 'Gastos']}
+                  labelStyle={{ color: '#ffffff' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#F05984" 
+                  strokeWidth={2} 
+                  dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#BC455F' }}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                />
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </div>
       </motion.div>
@@ -1996,7 +2026,7 @@ export const ExpensesPage = () => {
                         <label className="text-white/60 text-sm mb-1.5 block">Tipo de Deducción</label>
                         <select
                           value={formData.deductionType}
-                          onChange={(e) => setFormData({...formData, deductionType: e.target.value as any})}
+                          onChange={(e) => setFormData({...formData, deductionType: e.target.value as 'parcial' | 'total' | 'ninguna'})}
                           className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                         >
