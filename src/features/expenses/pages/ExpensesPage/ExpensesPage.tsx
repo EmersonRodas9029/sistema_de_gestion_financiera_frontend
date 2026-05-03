@@ -116,6 +116,14 @@ const monthlyTrends: MonthlyTrend[] = [
   { month: 'Feb', amount: 2020 },
 ];
 
+// Datos de tendencia semanal
+const weeklyTrends = [
+  { week: 'Sem 1', amount: 450 },
+  { week: 'Sem 2', amount: 520 },
+  { week: 'Sem 3', amount: 480 },
+  { week: 'Sem 4', amount: 610 },
+];
+
 // Datos iniciales por defecto
 const getDefaultExpenses = (): Expense[] => [
   {
@@ -361,6 +369,7 @@ export const ExpensesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
+  const [trendView, setTrendView] = useState<'mensual' | 'semanal'>('mensual');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -786,6 +795,19 @@ export const ExpensesPage = () => {
     showDeductibleOnly ||
     showNoReceiptOnly;
 
+  // Generar ticks personalizados para el eje Y sin duplicados
+  const getYAxisTicks = (data: any[]) => {
+    if (!data.length) return [];
+    const maxValue = Math.max(...data.map(d => d.amount));
+    const ticks = [];
+    const step = maxValue / 4;
+    for (let i = 0; i <= 4; i++) {
+      const value = step * i;
+      ticks.push(Math.round(value));
+    }
+    return [...new Set(ticks)];
+  };
+
   // Skeleton Loader
   if (isLoading) {
     return (
@@ -1083,22 +1105,50 @@ export const ExpensesPage = () => {
           </div>
         </div>
 
-        {/* Tendencia de Gastos - Corregido */}
+        {/* Tendencia de Gastos - Con filtros de semana/mes */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <TrendingUp size={18} className="text-[#F05984]" />
-              Tendencia de Gastos
-            </h3>
-            <span className="text-white/40 text-xs">Últimos 6 meses</span>
+              <h3 className="text-white font-semibold">Tendencia de Gastos</h3>
+            </div>
+            <div className="flex gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setTrendView('semanal')}
+                className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                  trendView === 'semanal' 
+                    ? 'bg-[#F05984] text-white' 
+                    : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+                }`}
+              >
+                Por semana
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setTrendView('mensual')}
+                className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                  trendView === 'mensual' 
+                    ? 'bg-[#F05984] text-white' 
+                    : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+                }`}
+              >
+                Por mes
+              </motion.button>
+            </div>
           </div>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={monthlyTrends} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart 
+              data={trendView === 'mensual' ? monthlyTrends : weeklyTrends} 
+              margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
               <XAxis 
-                dataKey="month" 
+                dataKey={trendView === 'mensual' ? 'month' : 'week'} 
                 stroke="#ffffff60" 
-                tick={{ fill: '#ffffff60', fontSize: 12 }}
+                tick={{ fill: '#ffffff60', fontSize: 11 }}
                 axisLine={{ stroke: '#ffffff20' }}
                 tickLine={{ stroke: '#ffffff20' }}
               />
@@ -1107,6 +1157,7 @@ export const ExpensesPage = () => {
                 tick={{ fill: '#ffffff60', fontSize: 11 }}
                 axisLine={{ stroke: '#ffffff20' }}
                 tickLine={{ stroke: '#ffffff20' }}
+                domain={[0, 'auto']}
                 tickFormatter={(value) => {
                   if (value >= 1000) {
                     return `$${(value / 1000).toFixed(0)}k`;
@@ -1114,6 +1165,7 @@ export const ExpensesPage = () => {
                   return `$${value}`;
                 }}
                 width={50}
+                allowDecimals={false}
               />
               <ReTooltip
                 contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
@@ -1127,6 +1179,8 @@ export const ExpensesPage = () => {
                 strokeWidth={2} 
                 dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6, fill: '#BC455F' }}
+                isAnimationActive={true}
+                animationDuration={800}
               />
             </LineChart>
           </ResponsiveContainer>
