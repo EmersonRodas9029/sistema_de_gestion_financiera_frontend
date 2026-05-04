@@ -5,26 +5,18 @@ import {
   Plus,
   Search,
   Filter,
-  Download,
   RefreshCw,
-  Eye,
   Edit,
   Trash2,
   Calendar,
   DollarSign,
-  CreditCard,
-  Wallet,
   Home as HomeIcon,
-  Utensils,
-  Car,
-  Heart,
-  ShoppingBag,
   Film,
   Zap,
   Shield,
+  Heart,
   X,
   Save,
-  Copy,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -33,15 +25,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Play,
   Pause,
   StopCircle,
-  Target,
-  TrendingUp,
-  TrendingDown,
   User,
-  Hash,
   Calendar as CalendarIcon,
   Activity,
   Tag,
@@ -82,16 +69,6 @@ interface PaymentHistory {
   amount: number;
   status: 'paid' | 'pending' | 'failed' | 'skipped';
   reference?: string;
-}
-
-interface CategorySummary {
-  name: string;
-  amount: number;
-  percentage: number;
-  count: number;
-  color: string;
-  icon: React.ReactNode;
-  chartColor: string;
 }
 
 // Colores para el gráfico de pastel
@@ -484,7 +461,7 @@ export const RecurringExpensesPage = () => {
     } else if (sortBy === 'amount') {
       return sortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
     } else if (sortBy === 'frequency') {
-      const freqOrder = { daily: 1, weekly: 2, biweekly: 3, monthly: 4, quarterly: 5, semiannual: 6, annual: 7 };
+      const freqOrder: Record<string, number> = { daily: 1, weekly: 2, biweekly: 3, monthly: 4, quarterly: 5, semiannual: 6, annual: 7 };
       return sortOrder === 'asc'
         ? freqOrder[a.frequency] - freqOrder[b.frequency]
         : freqOrder[b.frequency] - freqOrder[a.frequency];
@@ -519,11 +496,11 @@ export const RecurringExpensesPage = () => {
       name: formData.name,
       amount: parseFloat(formData.amount),
       category: formData.category,
-      frequency: formData.frequency as any,
+      frequency: formData.frequency as RecurringExpense['frequency'],
       startDate: startDate,
       nextPayment: nextPayment.toISOString().split('T')[0],
-      paymentMethod: formData.paymentMethod as any,
-      status: formData.status as any,
+      paymentMethod: formData.paymentMethod as RecurringExpense['paymentMethod'],
+      status: formData.status as RecurringExpense['status'],
       autoPay: formData.autoPay,
       vendor: formData.vendor || undefined,
       notes: formData.notes || undefined,
@@ -564,7 +541,7 @@ export const RecurringExpensesPage = () => {
     if (selectedExpense && newStatus && newStatus !== selectedExpense.status) {
       setExpenses(prev => 
         prev.map(exp => 
-          exp.id === selectedExpense.id ? { ...exp, status: newStatus as any } : exp
+          exp.id === selectedExpense.id ? { ...exp, status: newStatus as RecurringExpense['status'] } : exp
         )
       );
     }
