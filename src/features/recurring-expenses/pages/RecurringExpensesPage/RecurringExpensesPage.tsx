@@ -452,7 +452,7 @@ export const RecurringExpensesPage = () => {
     count: data.count
   }));
 
-  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
+  const allCategories = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
     name,
     amount: data.amount,
     percentage: totalCategoryAmount > 0 ? (data.amount / totalCategoryAmount) * 100 : 0,
@@ -461,6 +461,9 @@ export const RecurringExpensesPage = () => {
     icon: getCategoryIcon(name),
     chartColor: CHART_COLORS[idx % CHART_COLORS.length]
   })).sort((a, b) => b.amount - a.amount);
+
+  // Solo las 3 categorías más usadas
+  const topThreeCategories = allCategories.slice(0, 3);
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -575,6 +578,14 @@ export const RecurringExpensesPage = () => {
       localStorage.removeItem('recurringExpenses');
       setExpenses(getDefaultExpenses());
     }
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('todas');
+    setSelectedFrequency('todos');
+    setSelectedStatus('todos');
+    setCurrentPage(1);
   };
 
   const formatCurrency = (amount: number) => {
@@ -810,7 +821,7 @@ export const RecurringExpensesPage = () => {
         </motion.div>
       </motion.div>
 
-      {/* Distribución por Categoría - Gráfico de Dona */}
+      {/* Distribución por Categoría - Solo 3 más usadas */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico de Dona */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
@@ -852,49 +863,53 @@ export const RecurringExpensesPage = () => {
           </div>
         </div>
 
-        {/* Lista de Categorías Mejorada */}
+        {/* Top 3 Categorías más usadas */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
             <Tag size={18} className="text-[#F05984]" />
-            Desglose por categoría
+            Top 3 Categorías
           </h3>
-          <div className="space-y-4 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
-            {categories.map((cat, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                      {cat.icon}
+          <div className="space-y-4">
+            {topThreeCategories.length > 0 ? (
+              topThreeCategories.map((cat, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
+                        {cat.icon}
+                      </div>
+                      <span className="text-white text-sm font-medium">{cat.name}</span>
                     </div>
-                    <span className="text-white text-sm font-medium">{cat.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
+                      <span className="text-white text-sm font-semibold">{formatCurrency(cat.amount)}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
-                    <span className="text-white text-sm font-semibold">{formatCurrency(cat.amount)}</span>
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${cat.percentage}%` }}
+                      transition={{ duration: 0.8, delay: index * 0.1 }}
+                      className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+                    />
                   </div>
-                </div>
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${cat.percentage}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                  />
-                </div>
-                <p className="text-white/30 text-[10px] mt-1">{cat.count} gasto(s)</p>
-              </motion.div>
-            ))}
+                  <p className="text-white/30 text-[10px] mt-1">{cat.count} gasto(s)</p>
+                </motion.div>
+              ))
+            ) : (
+              <p className="text-white/40 text-center py-6 text-sm">No hay datos de categorías</p>
+            )}
           </div>
         </div>
       </motion.div>
 
-      {/* Filters and Search */}
+      {/* Filters and Search - Simplificado con botón de filtros */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -909,44 +924,6 @@ export const RecurringExpensesPage = () => {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                {categories.map(cat => (
-                  <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                ))}
-              </select>
-              <select
-                value={selectedFrequency}
-                onChange={(e) => setSelectedFrequency(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las frecuencias</option>
-                <option value="daily" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Diario</option>
-                <option value="weekly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semanal</option>
-                <option value="biweekly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Quincenal</option>
-                <option value="monthly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
-                <option value="quarterly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Trimestral</option>
-                <option value="semiannual" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semestral</option>
-                <option value="annual" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
-              </select>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                <option value="active" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
-                <option value="paused" style={{ backgroundColor: '#1a0f14', color: 'white' }}>En pausa</option>
-                <option value="cancelled" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cancelados</option>
-                <option value="completed" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completados</option>
-              </select>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -962,13 +939,7 @@ export const RecurringExpensesPage = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('todas');
-                    setSelectedFrequency('todos');
-                    setSelectedStatus('todos');
-                    setCurrentPage(1);
-                  }}
+                  onClick={clearAllFilters}
                   className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
                 >
                   <XCircle size={16} />
@@ -977,6 +948,68 @@ export const RecurringExpensesPage = () => {
               )}
             </div>
           </div>
+
+          {/* Panel de filtros desplegable */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-white/60 text-xs mb-1 block">Categoría</label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                    >
+                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                      {allCategories.map(cat => (
+                        <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-xs mb-1 block">Frecuencia</label>
+                    <select
+                      value={selectedFrequency}
+                      onChange={(e) => setSelectedFrequency(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                    >
+                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las frecuencias</option>
+                      <option value="daily" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Diario</option>
+                      <option value="weekly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semanal</option>
+                      <option value="biweekly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Quincenal</option>
+                      <option value="monthly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
+                      <option value="quarterly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Trimestral</option>
+                      <option value="semiannual" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semestral</option>
+                      <option value="annual" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                    >
+                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                      <option value="active" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
+                      <option value="paused" style={{ backgroundColor: '#1a0f14', color: 'white' }}>En pausa</option>
+                      <option value="cancelled" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cancelados</option>
+                      <option value="completed" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completados</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Sort Bar */}
@@ -1331,7 +1364,7 @@ export const RecurringExpensesPage = () => {
                       <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
                       <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
                         <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                        {categories.map(cat => <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>)}
+                        {allCategories.map(cat => <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>)}
                       </select>
                     </div>
                     <div>
