@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Repeat,
   Plus,
@@ -44,8 +44,10 @@ import {
   Hash,
   Calendar as CalendarIcon,
   Activity,
-  Tag
+  Tag,
+  PieChart
 } from 'lucide-react';
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 
 interface RecurringExpense {
   id: string;
@@ -89,7 +91,11 @@ interface CategorySummary {
   count: number;
   color: string;
   icon: React.ReactNode;
+  chartColor: string;
 }
+
+// Colores para el gráfico de pastel
+const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
 // Función para generar ID único
 const generateUniqueId = () => {
@@ -294,14 +300,24 @@ const getDefaultExpenses = (): RecurringExpense[] => [
   }
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
 export const RecurringExpensesPage = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedFrequency, setSelectedFrequency] = useState<string>('todos');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditStatusModal, setShowEditStatusModal] = useState(false);
@@ -342,6 +358,11 @@ export const RecurringExpensesPage = () => {
     }
   });
 
+  // Simular carga inicial
+  useEffect(() => {
+    setTimeout(() => setIsLoading(false), 800);
+  }, []);
+
   // Guardar en localStorage cuando cambien los gastos recurrentes
   useEffect(() => {
     localStorage.setItem('recurringExpenses', JSON.stringify(expenses));
@@ -380,7 +401,7 @@ export const RecurringExpensesPage = () => {
 
   const averagePerDay = totalMonthly / 30;
 
-  // Calcular categorías
+  // Calcular categorías para el gráfico
   const categoryMap = new Map<string, { amount: number; count: number }>();
   activeExpenses.forEach(exp => {
     let monthlyAmount = exp.amount;
@@ -402,33 +423,43 @@ export const RecurringExpensesPage = () => {
       'Vivienda': 'from-blue-500 to-blue-600',
       'Servicios': 'from-cyan-500 to-cyan-600',
       'Entretenimiento': 'from-purple-500 to-purple-600',
-      'Salud': 'from-red-500 to-red-600',
+      'Salud': 'from-rose-500 to-rose-600',
       'Seguros': 'from-orange-500 to-orange-600',
-      'Hogar': 'from-green-500 to-green-600'
+      'Hogar': 'from-emerald-500 to-emerald-600'
     };
     return colors[category] || 'from-gray-500 to-gray-600';
   };
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, React.ReactNode> = {
-      'Vivienda': <HomeIcon size={16} />,
-      'Servicios': <Zap size={16} />,
-      'Entretenimiento': <Film size={16} />,
-      'Salud': <Heart size={16} />,
-      'Seguros': <Shield size={16} />,
-      'Hogar': <HomeIcon size={16} />
+      'Vivienda': <HomeIcon size={18} />,
+      'Servicios': <Zap size={18} />,
+      'Entretenimiento': <Film size={18} />,
+      'Salud': <Heart size={18} />,
+      'Seguros': <Shield size={18} />,
+      'Hogar': <HomeIcon size={18} />
     };
-    return icons[category] || <Tag size={16} />;
+    return icons[category] || <Tag size={18} />;
   };
 
   const totalCategoryAmount = Array.from(categoryMap.values()).reduce((sum, cat) => sum + cat.amount, 0);
-  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data]) => ({
+  
+  // Datos para el gráfico de dona
+  const pieChartData = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
+    name,
+    value: data.amount,
+    color: CHART_COLORS[idx % CHART_COLORS.length],
+    count: data.count
+  }));
+
+  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
     name,
     amount: data.amount,
     percentage: totalCategoryAmount > 0 ? (data.amount / totalCategoryAmount) * 100 : 0,
     count: data.count,
     color: getCategoryColor(name),
-    icon: getCategoryIcon(name)
+    icon: getCategoryIcon(name),
+    chartColor: CHART_COLORS[idx % CHART_COLORS.length]
   })).sort((a, b) => b.amount - a.amount);
 
   const filteredExpenses = expenses.filter(expense => {
@@ -608,113 +639,263 @@ export const RecurringExpensesPage = () => {
     selectedFrequency !== 'todos' || 
     selectedStatus !== 'todos';
 
-  return (
-    <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Gastos Recurrentes</h1>
-            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {expenses.length} gastos
-            </span>
+  // Skeleton Loader
+  if (isLoading) {
+    return (
+      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+        <div className="animate-pulse space-y-6">
+          <div className="flex justify-between">
+            <div className="h-8 w-48 bg-white/10 rounded-lg" />
+            <div className="h-10 w-32 bg-white/10 rounded-lg" />
           </div>
-          <p className="text-white/60 text-sm mt-1">
-            Gestiona tus suscripciones y pagos periódicos
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleRefresh}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-          >
-            <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <BarChart3 size={20} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'list' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <Repeat size={20} />
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Nuevo Gasto</span>
-          </button>
-          <button
-            onClick={resetData}
-            className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300"
-            title="Restaurar datos por defecto"
-          >
-            <RefreshCw size={20} />
-          </button>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-28 bg-white/10 rounded-xl" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-80 bg-white/10 rounded-xl" />
+            <div className="h-80 bg-white/10 rounded-xl" />
+          </div>
+          <div className="h-96 bg-white/10 rounded-xl" />
         </div>
       </div>
+    );
+  }
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Total Mensual</p>
-          <p className="text-2xl font-bold text-white">{formatCurrency(totalMonthly)}</p>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Total Anual</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(totalAnnual)}</p>
-          <p className="text-white/40 text-xs mt-1">{activeExpenses.length} gastos activos</p>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Próximos pagos</p>
-          <p className="text-xl font-bold text-yellow-400">{upcomingThisMonth}</p>
-          <p className="text-white/40 text-xs mt-1">{upcomingThisWeek} esta semana</p>
-        </div>
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <p className="text-white/60 text-sm">Promedio diario</p>
-          <p className="text-xl font-bold text-green-400">{formatCurrency(averagePerDay)}</p>
-        </div>
-      </div>
-
-      {/* Category Summary */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-        <h3 className="text-white font-semibold mb-3">Distribución por Categoría</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {categories.map((cat, index) => (
-            <div key={index} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                  {cat.icon}
-                </div>
-                <span className="text-white text-sm">{cat.name}</span>
-              </div>
-              <p className="text-white font-semibold text-sm">{formatCurrency(cat.amount)}</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-white/40 text-xs">{cat.percentage.toFixed(1)}%</span>
-                <span className="text-white/40 text-xs">{cat.count} gastos</span>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
-                  style={{ width: `${cat.percentage}%` }}
-                />
-              </div>
+  return (
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 min-h-screen p-6"
+      style={{ backgroundColor: '#1a0f14' }}
+    >
+      {/* Header Mejorado */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+              <Repeat size={28} className="text-white" />
             </div>
-          ))}
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Gastos Recurrentes</h1>
+              <p className="text-white/50 text-sm mt-1">Gestiona tus suscripciones y pagos periódicos</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRefresh}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
+            >
+              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-xl transition-all duration-300 ${
+                viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
+              }`}
+            >
+              <BarChart3 size={20} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-xl transition-all duration-300 ${
+                viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
+              }`}
+            >
+              <Repeat size={20} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline font-medium">Nuevo Gasto</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={resetData}
+              className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl transition-all duration-300 text-yellow-400 hover:text-yellow-300 backdrop-blur-sm"
+              title="Restaurar datos por defecto"
+            >
+              <RefreshCw size={20} />
+            </motion.button>
+          </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Summary Cards Mejoradas */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Total Mensual</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalMonthly)}</p>
+              <p className="text-white/30 text-xs mt-1">Gastos fijos mensuales</p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/10">
+              <DollarSign size={24} className="text-[#F05984]" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Total Anual</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalAnnual)}</p>
+              <p className="text-white/30 text-xs mt-1">{activeExpenses.length} gastos activos</p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/10">
+              <Calendar size={24} className="text-[#F05984]" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Próximos pagos</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">{upcomingThisMonth}</p>
+              <p className="text-white/30 text-xs mt-1">{upcomingThisWeek} esta semana</p>
+            </div>
+            <div className="p-3 rounded-xl bg-yellow-500/20">
+              <Clock size={24} className="text-yellow-400" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -4, scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Promedio diario</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{formatCurrency(averagePerDay)}</p>
+              <p className="text-white/30 text-xs mt-1">Gasto diario promedio</p>
+            </div>
+            <div className="p-3 rounded-xl bg-green-500/20">
+              <Activity size={24} className="text-green-400" />
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Distribución por Categoría - Gráfico de Dona */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de Dona */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <PieChart size={20} className="text-[#F05984]" />
+            <h3 className="text-white font-semibold">Distribución por Categoría</h3>
+          </div>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
+                  animationBegin={0}
+                  animationDuration={800}
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <ReTooltip
+                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  formatter={(value: number) => [formatCurrency(value), 'Monto mensual']}
+                  labelStyle={{ color: 'white' }}
+                />
+                <Legend 
+                  formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  verticalAlign="bottom"
+                  height={36}
+                />
+              </RePieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Lista de Categorías Mejorada */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+            <Tag size={18} className="text-[#F05984]" />
+            Desglose por categoría
+          </h3>
+          <div className="space-y-4 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+            {categories.map((cat, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
+                      {cat.icon}
+                    </div>
+                    <span className="text-white text-sm font-medium">{cat.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
+                    <span className="text-white text-sm font-semibold">{formatCurrency(cat.amount)}</span>
+                  </div>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.percentage}%` }}
+                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                    className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+                  />
+                </div>
+                <p className="text-white/30 text-[10px] mt-1">{cat.count} gasto(s)</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Filters and Search */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -766,19 +947,21 @@ export const RecurringExpensesPage = () => {
                 <option value="cancelled" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cancelados</option>
                 <option value="completed" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completados</option>
               </select>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`p-2 rounded-lg transition-colors ${
                   showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                 }`}
               >
                 <Filter size={20} />
-              </button>
-              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
-                <Download size={20} />
-              </button>
+              </motion.button>
               {hasActiveFilters && (
-                <button
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
                   onClick={() => {
                     setSearchTerm('');
                     setSelectedCategory('todas');
@@ -790,7 +973,7 @@ export const RecurringExpensesPage = () => {
                 >
                   <XCircle size={16} />
                   <span>Limpiar filtros</span>
-                </button>
+                </motion.button>
               )}
             </div>
           </div>
@@ -835,177 +1018,487 @@ export const RecurringExpensesPage = () => {
           <span className="text-white/40 text-sm">{filteredExpenses.length} resultados</span>
         </div>
 
-        {/* Grid View */}
-        {viewMode === 'grid' && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedExpenses.map((expense) => {
-              const daysUntil = getDaysUntilNext(expense.nextPayment);
-              const isUrgent = daysUntil <= 3 && expense.status === 'active';
-              return (
-                <div key={expense.id} className={`bg-white/5 rounded-xl p-4 border transition-all cursor-pointer hover:border-[#F05984]/50 ${isUrgent ? 'border-red-500/30' : 'border-white/10'}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
+        {/* Estado Vacío */}
+        {filteredExpenses.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-12 px-4"
+          >
+            <div className="p-4 bg-white/10 rounded-full mb-4">
+              <Repeat size={48} className="text-white/30" />
+            </div>
+            <h3 className="text-white font-semibold text-lg mb-2">No hay gastos recurrentes</h3>
+            <p className="text-white/40 text-sm text-center max-w-md">
+              No se encontraron gastos recurrentes con los filtros actuales.
+              Prueba a ajustar los filtros o crea un nuevo gasto recurrente.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
+              <Plus size={18} />
+              <span>Crear nuevo gasto</span>
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Grid View Mejorado */}
+        {filteredExpenses.length > 0 && viewMode === 'grid' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            <AnimatePresence>
+              {paginatedExpenses.map((expense, index) => {
+                const daysUntil = getDaysUntilNext(expense.nextPayment);
+                const isUrgent = daysUntil <= 3 && expense.status === 'active';
+                return (
+                  <motion.div
+                    key={expense.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
+                      isUrgent ? 'border-red-500/50 shadow-red-500/20' : 'border-white/10 hover:border-[#F05984]/50'
+                    }`}
+                  >
+                    {isUrgent && (
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/10 rounded-full blur-2xl" />
+                    )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl bg-gradient-to-r ${getCategoryColor(expense.category)} bg-opacity-20 shadow-lg`}>
+                          {getCategoryIcon(expense.category)}
+                        </div>
+                        <div>
+                          <h3 className="text-white font-semibold">{expense.name}</h3>
+                          <p className="text-white/40 text-xs">{expense.vendor || expense.category}</p>
+                        </div>
+                      </div>
+                      {getStatusBadge(expense.status)}
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Monto:</span>
+                        <span className="text-white font-bold text-lg">{formatCurrency(expense.amount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Frecuencia:</span>
+                        <span className="text-white">{getFrequencyLabel(expense.frequency)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Próximo pago:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-white">{formatDate(expense.nextPayment)}</span>
+                          {isUrgent && (
+                            <span className="text-red-400 text-xs font-medium animate-pulse">({daysUntil} días)</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Método:</span>
+                        <span className="text-white">{getPaymentMethodLabel(expense.paymentMethod)}</span>
+                      </div>
+                    </div>
+                    {expense.autoPay && (
+                      <div className="mt-2 flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full w-fit">
+                        <Zap size={12} /> Pago automático
+                      </div>
+                    )}
+                    <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleEditStatus(expense)}
+                        className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                      >
+                        <Edit size={14} />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleDeleteExpense(expense.id)}
+                        className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                      >
+                        <Trash2 size={14} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* List View Mejorado */}
+        {filteredExpenses.length > 0 && viewMode === 'list' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-4 space-y-2"
+          >
+            <AnimatePresence>
+              {paginatedExpenses.map((expense, index) => {
+                const daysUntil = getDaysUntilNext(expense.nextPayment);
+                const isUrgent = daysUntil <= 3 && expense.status === 'active';
+                return (
+                  <motion.div
+                    key={expense.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: index * 0.03 }}
+                    whileHover={{ scale: 1.01 }}
+                    className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
+                      isUrgent ? 'border-red-500/30' : 'border-white/10 hover:border-[#F05984]/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryColor(expense.category)} bg-opacity-20`}>
                         {getCategoryIcon(expense.category)}
                       </div>
-                      <div>
-                        <h3 className="text-white font-medium">{expense.name}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-medium">{expense.name}</h3>
+                          {getStatusBadge(expense.status)}
+                        </div>
                         <p className="text-white/40 text-xs">{expense.vendor || expense.category}</p>
                       </div>
-                    </div>
-                    {getStatusBadge(expense.status)}
-                  </div>
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Monto:</span>
-                      <span className="text-white font-bold">{formatCurrency(expense.amount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Frecuencia:</span>
-                      <span className="text-white">{getFrequencyLabel(expense.frequency)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Próximo pago:</span>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-white/50 text-xs">Monto</p>
+                          <p className="text-white text-sm font-bold">{formatCurrency(expense.amount)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white/50 text-xs">Frecuencia</p>
+                          <p className="text-white text-sm">{getFrequencyLabel(expense.frequency)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white/50 text-xs">Próximo pago</p>
+                          <div className="flex items-center gap-1">
+                            <span className="text-white text-sm">{formatDate(expense.nextPayment)}</span>
+                            {isUrgent && (
+                              <span className="text-red-400 text-xs font-medium animate-pulse">({daysUntil} días)</span>
+                            )}
+                          </div>
+                        </div>
+                        {expense.autoPay && (
+                          <div className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                            <Zap size={12} className="inline mr-1" /> Auto
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-white">{formatDate(expense.nextPayment)}</span>
-                        {isUrgent && <span className="text-red-400 text-xs">({daysUntil} días)</span>}
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleEditStatus(expense)}
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                        >
+                          <Edit size={16} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">Método:</span>
-                      <span className="text-white">{getPaymentMethodLabel(expense.paymentMethod)}</span>
-                    </div>
-                  </div>
-                  {expense.autoPay && <div className="mt-2 flex items-center gap-1 text-xs text-green-400"><Zap size={12} /> Pago automático</div>}
-                  <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-white/10">
-                    <button onClick={() => handleEditStatus(expense)} className="p-1 hover:bg-blue-500/20 rounded transition-colors text-blue-400"><Edit size={14} /></button>
-                    <button onClick={() => handleDeleteExpense(expense.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400"><Trash2 size={14} /></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* List View */}
-        {viewMode === 'list' && (
-          <div className="p-4 space-y-2">
-            {paginatedExpenses.map((expense) => {
-              const daysUntil = getDaysUntilNext(expense.nextPayment);
-              const isUrgent = daysUntil <= 3 && expense.status === 'active';
-              return (
-                <div key={expense.id} className={`bg-white/5 rounded-lg p-3 border transition-all cursor-pointer hover:border-[#F05984]/50 ${isUrgent ? 'border-red-500/30' : 'border-white/10'}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryColor(expense.category)} bg-opacity-20`}>
-                      {getCategoryIcon(expense.category)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-white font-medium">{expense.name}</h3>
-                        {getStatusBadge(expense.status)}
-                      </div>
-                      <p className="text-white/40 text-xs">{expense.vendor || expense.category}</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right"><p className="text-white/60 text-xs">Monto</p><p className="text-white text-sm font-bold">{formatCurrency(expense.amount)}</p></div>
-                      <div className="text-right"><p className="text-white/60 text-xs">Frecuencia</p><p className="text-white text-sm">{getFrequencyLabel(expense.frequency)}</p></div>
-                      <div className="text-right"><p className="text-white/60 text-xs">Próximo pago</p><div className="flex items-center gap-1"><span className="text-white text-sm">{formatDate(expense.nextPayment)}</span>{isUrgent && <span className="text-red-400 text-xs">({daysUntil} días)</span>}</div></div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => handleEditStatus(expense)} className="p-1 hover:bg-blue-500/20 rounded transition-colors text-blue-400"><Edit size={16} /></button>
-                      <button onClick={() => handleDeleteExpense(expense.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors text-red-400"><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
 
         {/* Pagination */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/40 text-sm">Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredExpenses.length)} de {filteredExpenses.length} gastos</p>
-          <div className="flex gap-2">
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50"><ChevronLeft size={16} /></button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum = totalPages <= 5 ? i + 1 : (currentPage <= 3 ? i + 1 : (currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i));
-              return <button key={i} onClick={() => setCurrentPage(pageNum)} className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${currentPage === pageNum ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>{pageNum}</button>;
-            })}
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50"><ChevronRight size={16} /></button>
+        {filteredExpenses.length > 0 && (
+          <div className="p-4 border-t border-white/10 flex items-center justify-between">
+            <p className="text-white/40 text-sm">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredExpenses.length)} de {filteredExpenses.length} gastos
+            </p>
+            <div className="flex gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </motion.button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <motion.button
+                    key={i}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-[#F05984] text-white shadow-md'
+                        : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </motion.button>
+                );
+              })}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </motion.button>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      </motion.div>
 
-      {/* Modal para crear nuevo gasto recurrente */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg"><Repeat size={20} className="text-white" /></div>
-                <div><h2 className="text-xl font-bold text-white">Nuevo Gasto Recurrente</h2><p className="text-white/40 text-sm">Completa los campos para registrar un nuevo gasto recurrente</p></div>
+      {/* Modal para crear nuevo gasto recurrente - Mejorado con animación */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg shadow-lg">
+                    <Repeat size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Nuevo Gasto Recurrente</h2>
+                    <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo gasto recurrente</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-white/60" />
+                </motion.button>
               </div>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} className="text-white/60" /></button>
-            </div>
-            <div className="p-6">
-              <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Nombre *</label><input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Ej: Netflix" required /></div>
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Monto *</label><div className="relative"><DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="0.00" required /></div></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Categoría *</label><select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                    {categories.map(cat => <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>)}
-                  </select></div>
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Frecuencia *</label><select value={formData.frequency} onChange={(e) => setFormData({...formData, frequency: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                    <option value="daily">Diario</option><option value="weekly">Semanal</option><option value="biweekly">Quincenal</option><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="semiannual">Semestral</option><option value="annual">Anual</option>
-                  </select></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Fecha de inicio *</label><div className="relative"><CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="date" value={formData.startDate} onChange={(e) => setFormData({...formData, startDate: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" required /></div></div>
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Método de pago</label><select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                    <option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option><option value="direct_debit">Domiciliado</option>
-                  </select></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Proveedor</label><div className="relative"><User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" /><input type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Nombre del proveedor" /></div></div>
-                  <div><label className="text-white/60 text-sm mb-1.5 block">Estado</label><select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                    <option value="active">Activo</option><option value="paused">En pausa</option>
-                  </select></div>
-                </div>
-                <div><label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label><textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" placeholder="Notas adicionales..." /></div>
-                <div className="flex items-center gap-3"><input type="checkbox" id="autoPay" checked={formData.autoPay} onChange={(e) => setFormData({...formData, autoPay: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" /><label htmlFor="autoPay" className="text-white text-sm">Pago automático</label></div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-medium">Cancelar</button>
-                  <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"><Save size={18} /><span>Guardar Gasto</span></button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="p-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Nombre *</label>
+                      <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Netflix" required />
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                      <div className="relative">
+                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" required />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                      <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
+                        <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
+                        {categories.map(cat => <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Frecuencia *</label>
+                      <select value={formData.frequency} onChange={(e) => setFormData({...formData, frequency: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                        <option value="daily">Diario</option><option value="weekly">Semanal</option><option value="biweekly">Quincenal</option><option value="monthly">Mensual</option><option value="quarterly">Trimestral</option><option value="semiannual">Semestral</option><option value="annual">Anual</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Fecha de inicio *</label>
+                      <div className="relative">
+                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input type="date" value={formData.startDate} onChange={(e) => setFormData({...formData, startDate: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                      <select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                        <option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option><option value="direct_debit">Domiciliado</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Proveedor</label>
+                      <div className="relative">
+                        <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Nombre del proveedor" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
+                      <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                        <option value="active">Activo</option><option value="paused">En pausa</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
+                    <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Notas adicionales..." />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="autoPay" checked={formData.autoPay} onChange={(e) => setFormData({...formData, autoPay: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+                    <label htmlFor="autoPay" className="text-white text-sm">Pago automático</label>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg"
+                    >
+                      <Save size={18} />
+                      <span>Guardar Gasto</span>
+                    </motion.button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Modal para editar estado */}
-      {showEditStatusModal && selectedExpense && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full">
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-3"><div className="p-2 bg-blue-500/20 rounded-lg"><Edit size={20} className="text-blue-400" /></div><div><h2 className="text-xl font-bold text-white">Editar Estado</h2><p className="text-white/40 text-sm">Cambia el estado del gasto recurrente</p></div></div>
-              <button onClick={() => setShowEditStatusModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} className="text-white/60" /></button>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div><label className="text-white/60 text-sm mb-1.5 block">Gasto</label><p className="text-white font-medium">{selectedExpense.name}</p><p className="text-white/40 text-sm">{formatCurrency(selectedExpense.amount)}</p></div>
-                <div><label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label><select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="active">Activo</option><option value="paused">En pausa</option><option value="cancelled">Cancelado</option><option value="completed">Completado</option>
-                </select></div>
-                <div className="flex justify-end gap-3 pt-4"><button onClick={() => setShowEditStatusModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors">Cancelar</button><button onClick={handleUpdateStatus} className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">Actualizar Estado</button></div>
+      {/* Modal para editar estado - Mejorado con animación */}
+      <AnimatePresence>
+        {showEditStatusModal && selectedExpense && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
+            >
+              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <Edit size={20} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Editar Estado</h2>
+                    <p className="text-white/40 text-sm">Cambia el estado del gasto recurrente</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowEditStatusModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-white/60" />
+                </motion.button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Gasto</label>
+                    <p className="text-white font-medium">{selectedExpense.name}</p>
+                    <p className="text-white/40 text-sm mt-1">{formatCurrency(selectedExpense.amount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
+                    <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                      <option value="active">Activo</option><option value="paused">En pausa</option><option value="cancelled">Cancelado</option><option value="completed">Completado</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowEditStatusModal(false)}
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all"
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleUpdateStatus}
+                      className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all shadow-lg"
+                    >
+                      Actualizar Estado
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Estilos CSS para el scrollbar personalizado */}
+      <style>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #F05984 #1a0f14;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1a0f14;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #F05984, #BC455F);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #BC455F, #6E4068);
+        }
+      `}</style>
+    </motion.div>
   );
 };
