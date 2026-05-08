@@ -2,18 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Target, Plus, Search, Edit, Trash2, ChevronRight, ChevronLeft,
-  Calendar, TrendingUp, TrendingDown, PieChart as PieChartIcon, BarChart3, RefreshCw,
-  Filter, Home as HomeIcon, Briefcase, Gift, Award, Smartphone,
-  Laptop, Plane, Hotel, Shirt, Dumbbell, BookOpen, Coffee, Dog, Sparkles,
-  AlertCircle, CheckCircle, Clock, X, Save, Flag,
-  Trophy, Rocket, Star, Crown, Gem, Wallet, CreditCard, DollarSign, Percent,
-  Activity, XCircle, Tag,
-  Car, Heart, ShoppingBag, ChevronDown, ChevronUp,
-  LineChart as LineChartIcon
+  Calendar, TrendingUp, PieChart as PieChartIcon, BarChart3, RefreshCw,
+  Filter, Home as HomeIcon, Gift, BookOpen, AlertCircle, CheckCircle, Clock,
+  X, Save, Flag, Crown, Wallet, CreditCard, DollarSign, Activity, XCircle,
+  Car, Heart, ShoppingBag, ChevronDown, ChevronUp, LineChart as LineChartIcon
 } from 'lucide-react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line 
+  XAxis, YAxis, CartesianGrid, LineChart, Line 
 } from 'recharts';
 
 interface Goal {
@@ -364,9 +360,7 @@ export const GoalsPage = () => {
   }, [goals]);
 
   // Calcular estadísticas en tiempo real
-  const totalGoals = goals.length;
   const activeGoals = goals.filter(g => g.status === 'active').length;
-  const completedGoals = goals.filter(g => g.status === 'completed').length;
   const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
   const totalCurrent = goals.reduce((sum, g) => sum + g.currentAmount, 0);
   const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
@@ -423,7 +417,7 @@ export const GoalsPage = () => {
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, React.ReactNode> = {
       'Ahorro': <Wallet size={16} />,
-      'Viajes': <Plane size={16} />,
+      'Viajes': <Car size={16} />,
       'Vehículo': <Car size={16} />,
       'Inversiones': <TrendingUp size={16} />,
       'Deudas': <CreditCard size={16} />,
@@ -431,7 +425,7 @@ export const GoalsPage = () => {
       'Vivienda': <HomeIcon size={16} />,
       'Eventos': <Gift size={16} />,
       'Jubilación': <Crown size={16} />,
-      'Tecnología': <Laptop size={16} />,
+      'Tecnología': <ShoppingBag size={16} />,
       'Salud': <Heart size={16} />
     };
     return icons[category] || <Target size={16} />;
@@ -635,7 +629,7 @@ export const GoalsPage = () => {
       case 'investment': return <TrendingUp size={16} className="text-white" />;
       case 'debt': return <CreditCard size={16} className="text-white" />;
       case 'purchase': return <ShoppingBag size={16} className="text-white" />;
-      case 'travel': return <Plane size={16} className="text-white" />;
+      case 'travel': return <Car size={16} className="text-white" />;
       case 'education': return <BookOpen size={16} className="text-white" />;
       case 'emergency': return <AlertCircle size={16} className="text-white" />;
       case 'retirement': return <Crown size={16} className="text-white" />;
@@ -1475,7 +1469,6 @@ export const GoalsPage = () => {
               </div>
               <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateGoal(); }} className="space-y-5">
-                  {/* Formulario simplificado por brevedad, mantener el mismo contenido del código original */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Nombre de la meta *</label>
