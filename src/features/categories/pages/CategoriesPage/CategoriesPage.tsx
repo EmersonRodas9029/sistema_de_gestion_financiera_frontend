@@ -36,9 +36,6 @@ import {
   Coffee,
   Dog,
   Sparkles,
-  AlertCircle,
-  CheckCircle,
-  Clock,
   Save,
   X,
   Shield,
@@ -51,8 +48,6 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
-  Calendar as CalendarIcon,
-  Percent,
   PieChart as PieChartIcon,
   Target
 } from 'lucide-react';
@@ -471,7 +466,7 @@ export const CategoriesPage = () => {
     const newCategory: Category = {
       id: generateUniqueId(),
       name: formData.name,
-      type: formData.type as any,
+      type: formData.type as 'income' | 'expense',
       icon: formData.icon,
       color: formData.color,
       description: formData.description || undefined,
@@ -561,13 +556,6 @@ export const CategoriesPage = () => {
     } else {
       return <span className="bg-rose-500/20 text-rose-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><TrendingDown size={12} /> Gasto</span>;
     }
-  };
-
-  const getBudgetStatusColor = (spent: number, budget: number) => {
-    const percentage = (spent / budget) * 100;
-    if (percentage >= 90) return 'bg-red-500';
-    if (percentage >= 70) return 'bg-yellow-500';
-    return 'bg-gradient-to-r from-[#F05984] to-[#BC455F]';
   };
 
   const hasActiveFilters = searchTerm !== '' || showInactive || showWithBudget || selectedTypeFilter !== 'todas';
@@ -792,7 +780,8 @@ export const CategoriesPage = () => {
           </h3>
           <div className="space-y-4">
             {topCategories.map((cat, index) => {
-              const usagePercentage = (cat.transactions / expenseCategories.reduce((sum, c) => sum + c.transactions, 0)) * 100;
+              const totalTransactions = expenseCategories.reduce((sum, c) => sum + c.transactions, 0);
+              const usagePercentage = totalTransactions > 0 ? (cat.transactions / totalTransactions) * 100 : 0;
               return (
                 <motion.div 
                   key={cat.id}
@@ -975,229 +964,23 @@ export const CategoriesPage = () => {
 
         {/* Sección de Gastos */}
         {(filteredExpenseCategories.length > 0 || filteredIncomeCategories.length > 0) && (
-          <>
-            <div className="p-4">
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
-                  <TrendingDown size={20} className="text-rose-400" />
-                  <h2 className="text-lg font-semibold text-white">Categorías de Gastos</h2>
-                  <span className="bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full">{filteredExpenseCategories.length}</span>
-                </div>
-                {filteredExpenseCategories.length === 0 ? (
-                  <div className="text-center py-8 text-white/40">No hay categorías de gastos que coincidan con los filtros</div>
-                ) : viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <AnimatePresence>
-                      {paginatedExpenseCategories.map((category, index) => {
-                        const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
-                        const isOverBudget = budgetPercentage >= 90;
-                        const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
-                        return (
-                          <motion.div
-                            key={category.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={{ y: -4, scale: 1.02 }}
-                            className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                              category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-rose-500/20 opacity-60 hover:opacity-100'
-                            }`}
-                          >
-                            {!category.isActive && (
-                              <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-2xl" />
-                            )}
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-xl bg-gradient-to-r ${category.color} bg-opacity-20 shadow-lg`}>
-                                  {iconMap[category.icon] || <Tag size={20} className="text-white" />}
-                                </div>
-                                <div>
-                                  <h3 className="text-white font-semibold">{category.name}</h3>
-                                  <p className="text-white/40 text-xs">{category.id.slice(-8)}</p>
-                                </div>
-                              </div>
-                              {getTypeBadge(category.type)}
-                            </div>
-                            {category.description && (
-                              <p className="text-white/60 text-sm mb-3 line-clamp-2">{category.description}</p>
-                            )}
-                            <div className="space-y-2 mb-3">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-white/50">Transacciones:</span>
-                                <span className="text-white font-medium">{category.transactions}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-white/50">Total gastado:</span>
-                                <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
-                              </div>
-                              {category.budget && (
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="text-white/50">Presupuesto:</span>
-                                    <span className={`font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
-                                      {formatCurrency(category.budget)}
-                                    </span>
-                                  </div>
-                                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                    <motion.div 
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                                      transition={{ duration: 0.8 }}
-                                      className={`h-full rounded-full ${
-                                        isOverBudget ? 'bg-rose-500' : 
-                                        isWarning ? 'bg-yellow-500' : 
-                                        'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                                      }`}
-                                    />
-                                  </div>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className={`${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white/40'}`}>
-                                      {budgetPercentage.toFixed(0)}% utilizado
-                                    </span>
-                                    <span className={`${(category.budget - (category.spent || 0)) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                                      Restante: {formatCurrency((category.budget - (category.spent || 0)))}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            {!category.isActive && (
-                              <div className="mt-2">
-                                <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handleEditCategory(category)}
-                                className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                                title="Editar categoría"
-                              >
-                                <Edit size={14} />
-                              </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handleDeleteCategory(category.id)}
-                                className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                                title="Eliminar categoría"
-                              >
-                                <Trash2 size={14} />
-                              </motion.button>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <AnimatePresence>
-                      {paginatedExpenseCategories.map((category, index) => {
-                        const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
-                        const isOverBudget = budgetPercentage >= 90;
-                        const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
-                        return (
-                          <motion.div
-                            key={category.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ delay: index * 0.03 }}
-                            whileHover={{ scale: 1.01 }}
-                            className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                              category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-rose-500/20 opacity-60 hover:opacity-100'
-                            }`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className={`p-2 rounded-lg bg-gradient-to-r ${category.color} bg-opacity-20`}>
-                                {iconMap[category.icon] || <Tag size={16} className="text-white" />}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="text-white font-medium">{category.name}</h3>
-                                  {getTypeBadge(category.type)}
-                                  {!category.isActive && <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>}
-                                </div>
-                                {category.description && <p className="text-white/40 text-sm">{category.description}</p>}
-                              </div>
-                              <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                  <p className="text-white/50 text-xs">Transacciones</p>
-                                  <p className="text-white text-sm">{category.transactions}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-white/50 text-xs">Total</p>
-                                  <p className="text-white text-sm font-medium">{formatCurrency(category.totalAmount)}</p>
-                                </div>
-                                {category.budget && (
-                                  <div className="text-right">
-                                    <p className="text-white/50 text-xs">Presupuesto</p>
-                                    <p className={`text-sm font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
-                                      {formatCurrency(category.budget)}
-                                    </p>
-                                  </div>
-                                )}
-                                {category.budget && (
-                                  <div className="w-32">
-                                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                      <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                                        transition={{ duration: 0.6 }}
-                                        className={`h-full rounded-full ${
-                                          isOverBudget ? 'bg-rose-500' : 
-                                          isWarning ? 'bg-yellow-500' : 
-                                          'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                                        }`}
-                                      />
-                                    </div>
-                                    <p className="text-white/40 text-xs text-right mt-1">{budgetPercentage.toFixed(0)}%</p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleEditCategory(category)}
-                                  className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                                >
-                                  <Edit size={16} />
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleDeleteCategory(category.id)}
-                                  className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                                >
-                                  <Trash2 size={16} />
-                                </motion.button>
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                )}
+          <div className="p-4">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
+                <TrendingDown size={20} className="text-rose-400" />
+                <h2 className="text-lg font-semibold text-white">Categorías de Gastos</h2>
+                <span className="bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full">{filteredExpenseCategories.length}</span>
               </div>
-
-              {/* Sección de Ingresos */}
-              <div>
-                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
-                  <TrendingUp size={20} className="text-emerald-400" />
-                  <h2 className="text-lg font-semibold text-white">Categorías de Ingresos</h2>
-                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">{filteredIncomeCategories.length}</span>
-                </div>
-                {filteredIncomeCategories.length === 0 ? (
-                  <div className="text-center py-8 text-white/40">No hay categorías de ingresos que coincidan con los filtros</div>
-                ) : viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <AnimatePresence>
-                      {paginatedIncomeCategories.map((category, index) => (
+              {filteredExpenseCategories.length === 0 ? (
+                <div className="text-center py-8 text-white/40">No hay categorías de gastos que coincidan con los filtros</div>
+              ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <AnimatePresence>
+                    {paginatedExpenseCategories.map((category, index) => {
+                      const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                      const isOverBudget = budgetPercentage >= 90;
+                      const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
+                      return (
                         <motion.div
                           key={category.id}
                           initial={{ opacity: 0, scale: 0.9 }}
@@ -1206,11 +989,11 @@ export const CategoriesPage = () => {
                           transition={{ delay: index * 0.05 }}
                           whileHover={{ y: -4, scale: 1.02 }}
                           className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                            category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                            category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-rose-500/20 opacity-60 hover:opacity-100'
                           }`}
                         >
                           {!category.isActive && (
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl" />
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-2xl" />
                           )}
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
@@ -1233,13 +1016,43 @@ export const CategoriesPage = () => {
                               <span className="text-white font-medium">{category.transactions}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-white/50">Total ingresado:</span>
+                              <span className="text-white/50">Total gastado:</span>
                               <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
                             </div>
+                            {category.budget && (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-white/50">Presupuesto:</span>
+                                  <span className={`font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
+                                    {formatCurrency(category.budget)}
+                                  </span>
+                                </div>
+                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                                    transition={{ duration: 0.8 }}
+                                    className={`h-full rounded-full ${
+                                      isOverBudget ? 'bg-rose-500' : 
+                                      isWarning ? 'bg-yellow-500' : 
+                                      'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
+                                    }`}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={`${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white/40'}`}>
+                                    {budgetPercentage.toFixed(0)}% utilizado
+                                  </span>
+                                  <span className={`${(category.budget - (category.spent || 0)) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                                    Restante: {formatCurrency((category.budget - (category.spent || 0)))}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                           {!category.isActive && (
                             <div className="mt-2">
-                              <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>
+                              <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>
                             </div>
                           )}
                           <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
@@ -1248,6 +1061,7 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleEditCategory(category)}
                               className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                              title="Editar categoría"
                             >
                               <Edit size={14} />
                             </motion.button>
@@ -1256,18 +1070,24 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleDeleteCategory(category.id)}
                               className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                              title="Eliminar categoría"
                             >
                               <Trash2 size={14} />
                             </motion.button>
                           </div>
                         </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <AnimatePresence>
-                      {paginatedIncomeCategories.map((category, index) => (
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <AnimatePresence>
+                    {paginatedExpenseCategories.map((category, index) => {
+                      const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                      const isOverBudget = budgetPercentage >= 90;
+                      const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
+                      return (
                         <motion.div
                           key={category.id}
                           initial={{ opacity: 0, x: -20 }}
@@ -1276,7 +1096,7 @@ export const CategoriesPage = () => {
                           transition={{ delay: index * 0.03 }}
                           whileHover={{ scale: 1.01 }}
                           className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                            category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                            category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-rose-500/20 opacity-60 hover:opacity-100'
                           }`}
                         >
                           <div className="flex items-center gap-4">
@@ -1287,7 +1107,7 @@ export const CategoriesPage = () => {
                               <div className="flex items-center gap-2">
                                 <h3 className="text-white font-medium">{category.name}</h3>
                                 {getTypeBadge(category.type)}
-                                {!category.isActive && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>}
+                                {!category.isActive && <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>}
                               </div>
                               {category.description && <p className="text-white/40 text-sm">{category.description}</p>}
                             </div>
@@ -1300,6 +1120,31 @@ export const CategoriesPage = () => {
                                 <p className="text-white/50 text-xs">Total</p>
                                 <p className="text-white text-sm font-medium">{formatCurrency(category.totalAmount)}</p>
                               </div>
+                              {category.budget && (
+                                <div className="text-right">
+                                  <p className="text-white/50 text-xs">Presupuesto</p>
+                                  <p className={`text-sm font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
+                                    {formatCurrency(category.budget)}
+                                  </p>
+                                </div>
+                              )}
+                              {category.budget && (
+                                <div className="w-32">
+                                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div 
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                                      transition={{ duration: 0.6 }}
+                                      className={`h-full rounded-full ${
+                                        isOverBudget ? 'bg-rose-500' : 
+                                        isWarning ? 'bg-yellow-500' : 
+                                        'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
+                                      }`}
+                                    />
+                                  </div>
+                                  <p className="text-white/40 text-xs text-right mt-1">{budgetPercentage.toFixed(0)}%</p>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-1">
                               <motion.button
@@ -1321,72 +1166,216 @@ export const CategoriesPage = () => {
                             </div>
                           </div>
                         </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
 
-            {/* Pagination */}
-            <div className="p-4 border-t border-white/10 flex items-center justify-between">
-              <p className="text-white/40 text-sm">
-                Mostrando página {currentPage} de {Math.max(totalExpensePages, totalIncomePages)}
-              </p>
-              <div className="flex gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft size={16} />
-                </motion.button>
-                {Array.from({ length: Math.min(5, Math.max(totalExpensePages, totalIncomePages)) }, (_, i) => {
-                  let pageNum;
-                  const maxPages = Math.max(totalExpensePages, totalIncomePages);
-                  if (maxPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= maxPages - 2) {
-                    pageNum = maxPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  return (
-                    <motion.button
-                      key={i}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                        currentPage === pageNum
-                          ? 'bg-[#F05984] text-white shadow-md'
-                          : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                      }`}
-                    >
-                      {pageNum}
-                    </motion.button>
-                  );
-                })}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(p => Math.min(Math.max(totalExpensePages, totalIncomePages), p + 1))}
-                  disabled={currentPage === Math.max(totalExpensePages, totalIncomePages)}
-                  className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight size={16} />
-                </motion.button>
+            {/* Sección de Ingresos */}
+            <div>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
+                <TrendingUp size={20} className="text-emerald-400" />
+                <h2 className="text-lg font-semibold text-white">Categorías de Ingresos</h2>
+                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">{filteredIncomeCategories.length}</span>
               </div>
+              {filteredIncomeCategories.length === 0 ? (
+                <div className="text-center py-8 text-white/40">No hay categorías de ingresos que coincidan con los filtros</div>
+              ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <AnimatePresence>
+                    {paginatedIncomeCategories.map((category, index) => (
+                      <motion.div
+                        key={category.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ y: -4, scale: 1.02 }}
+                        className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
+                          category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        {!category.isActive && (
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl" />
+                        )}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-xl bg-gradient-to-r ${category.color} bg-opacity-20 shadow-lg`}>
+                              {iconMap[category.icon] || <Tag size={20} className="text-white" />}
+                            </div>
+                            <div>
+                              <h3 className="text-white font-semibold">{category.name}</h3>
+                              <p className="text-white/40 text-xs">{category.id.slice(-8)}</p>
+                            </div>
+                          </div>
+                          {getTypeBadge(category.type)}
+                        </div>
+                        {category.description && (
+                          <p className="text-white/60 text-sm mb-3 line-clamp-2">{category.description}</p>
+                        )}
+                        <div className="space-y-2 mb-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-white/50">Transacciones:</span>
+                            <span className="text-white font-medium">{category.transactions}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-white/50">Total ingresado:</span>
+                            <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
+                          </div>
+                        </div>
+                        {!category.isActive && (
+                          <div className="mt-2">
+                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleEditCategory(category)}
+                            className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                          >
+                            <Edit size={14} />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                          >
+                            <Trash2 size={14} />
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <AnimatePresence>
+                    {paginatedIncomeCategories.map((category, index) => (
+                      <motion.div
+                        key={category.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: index * 0.03 }}
+                        whileHover={{ scale: 1.01 }}
+                        className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
+                          category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg bg-gradient-to-r ${category.color} bg-opacity-20`}>
+                            {iconMap[category.icon] || <Tag size={16} className="text-white" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-white font-medium">{category.name}</h3>
+                              {getTypeBadge(category.type)}
+                              {!category.isActive && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>}
+                            </div>
+                            {category.description && <p className="text-white/40 text-sm">{category.description}</p>}
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <p className="text-white/50 text-xs">Transacciones</p>
+                              <p className="text-white text-sm">{category.transactions}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-white/50 text-xs">Total</p>
+                              <p className="text-white text-sm font-medium">{formatCurrency(category.totalAmount)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleEditCategory(category)}
+                              className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                            >
+                              <Edit size={16} />
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDeleteCategory(category.id)}
+                              className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                            >
+                              <Trash2 size={16} />
+                            </motion.button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
-          </>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {(filteredExpenseCategories.length > 0 || filteredIncomeCategories.length > 0) && (
+          <div className="p-4 border-t border-white/10 flex items-center justify-between">
+            <p className="text-white/40 text-sm">
+              Mostrando página {currentPage} de {Math.max(totalExpensePages, totalIncomePages)}
+            </p>
+            <div className="flex gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </motion.button>
+              {Array.from({ length: Math.min(5, Math.max(totalExpensePages, totalIncomePages)) }, (_, i) => {
+                let pageNum;
+                const maxPages = Math.max(totalExpensePages, totalIncomePages);
+                if (maxPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= maxPages - 2) {
+                  pageNum = maxPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <motion.button
+                    key={i}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-[#F05984] text-white shadow-md'
+                        : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </motion.button>
+                );
+              })}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage(p => Math.min(Math.max(totalExpensePages, totalIncomePages), p + 1))}
+                disabled={currentPage === Math.max(totalExpensePages, totalIncomePages)}
+                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </motion.button>
+            </div>
+          </div>
         )}
       </motion.div>
 
-      {/* Modal para crear nueva categoría - Mejorado con animación */}
+      {/* Modal para crear nueva categoría */}
       <AnimatePresence>
         {showCreateModal && (
           <motion.div
@@ -1504,7 +1493,7 @@ export const CategoriesPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Modal para editar categoría - Mejorado con animación */}
+      {/* Modal para editar categoría */}
       <AnimatePresence>
         {showEditModal && selectedCategory && (
           <motion.div
