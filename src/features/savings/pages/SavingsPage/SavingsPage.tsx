@@ -4,8 +4,8 @@ import {
   Target, Plus, Search, Edit, Trash2, ChevronRight, ChevronLeft,
   Calendar, TrendingUp, PieChart as PieChartIcon, BarChart3, RefreshCw,
   Filter, Home as HomeIcon, Gift, BookOpen, AlertCircle, CheckCircle, Clock,
-  X, Save, Flag, Crown, Wallet, CreditCard, DollarSign, Activity, XCircle,
-  Car, Heart, ShoppingBag, ChevronDown, ChevronUp, PiggyBank, Shield, Plane, Laptop
+  X, Save, Flag, Crown, DollarSign, Activity, XCircle,
+  Car, Heart, ChevronDown, ChevronUp, PiggyBank, Shield, Plane, Laptop
 } from 'lucide-react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend,
