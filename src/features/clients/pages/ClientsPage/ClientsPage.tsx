@@ -6,66 +6,32 @@ import {
   Search,
   Filter,
   RefreshCw,
-  Eye,
   Edit,
   Trash2,
-  Mail,
-  Phone,
-  MapPin,
   Calendar,
   DollarSign,
   TrendingUp,
-  TrendingDown,
-  CreditCard,
-  Wallet,
-  Building2,
-  Briefcase,
-  Star,
-  Award,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
   BarChart3,
   Activity,
-  FileText,
-  Settings,
-  User,
-  UserCheck,
-  UserX,
-  Users as UsersIcon,
-  Mail as MailIcon,
-  Phone as PhoneIcon,
-  MapPin as MapPinIcon,
-  Calendar as CalendarIcon,
-  Building2 as Building2Icon,
   X,
   Save,
-  Plus,
-  Upload,
   Lock,
-  Unlock,
   Ban,
-  Send,
-  Printer,
-  Share2,
-  Link,
-  Copy,
-  Flag,
-  Tag,
-  FolderTree,
-  Archive,
-  Bell,
-  Shield,
-  Globe,
   XCircle as XCircleIcon,
-  ChevronRight as ChevronRightIcon,
   PieChart as PieChartIcon,
-  Target
+  Target,
+  MailIcon,
+  PhoneIcon,
+  MapPinIcon,
+  Building2Icon,
+  CalendarIcon,
+  CheckCircle,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 
@@ -103,9 +69,6 @@ interface Client {
   createdAt: string;
   updatedAt: string;
 }
-
-// Colores para el gráfico de pastel
-const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
 // Función para generar ID único
 const generateUniqueId = () => {
@@ -756,7 +719,7 @@ export const ClientsPage = () => {
   const getStatusBadge = (status: string) => {
     switch(status) {
       case 'active': return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><CheckCircle size={12} /> Activo</span>;
-      case 'inactive': return <span className="bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><XCircle size={12} /> Inactivo</span>;
+      case 'inactive': return <span className="bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><XCircleIcon size={12} /> Inactivo</span>;
       case 'pending': return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Clock size={12} /> Pendiente</span>;
       case 'suspended': return <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Ban size={12} /> Suspendido</span>;
       case 'blocked': return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Lock size={12} /> Bloqueado</span>;
@@ -1519,6 +1482,7 @@ export const ClientsPage = () => {
               </div>
               <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-5">
+                  {/* El contenido del formulario se mantiene igual */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Nombre completo *</label>
@@ -1645,6 +1609,7 @@ export const ClientsPage = () => {
               </div>
               <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleUpdateClient(); }} className="space-y-5">
+                  {/* El contenido del formulario de edición se mantiene igual */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Nombre completo *</label>
