@@ -13,20 +13,13 @@ import {
   Filter, 
   RefreshCw,
   ArrowUp,
-  ArrowDown,
   Activity,
   Target,
   BarChart3,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
-  ChevronDown,
-  ChevronUp,
-  XCircle,
-  Star,
   Home as HomeIcon,
-  Users,
   Wallet,
-  CreditCard,
   ShoppingBag,
   Utensils,
   Car,
@@ -34,13 +27,6 @@ import {
   Film,
   Zap,
   Shield,
-  Plane,
-  BookOpen,
-  Gift,
-  Crown,
-  Laptop,
-  Coffee,
-  Dumbbell,
   Sparkles,
   Briefcase
 } from 'lucide-react';
@@ -58,19 +44,6 @@ interface CategoryData {
   color: string;
   icon?: React.ReactNode;
 }
-
-// Colores para el gráfico
-const CHART_COLORS = {
-  income: '#10B981',
-  expense: '#EF4444',
-  savings: '#F05984'
-};
-
-// Colores pastel para categorías
-const CATEGORY_COLORS = [
-  '#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1',
-  '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#14B8A6', '#D946EF', '#F43F5E'
-];
 
 // Datos de ejemplo - Evolución mensual
 const monthlyData: ChartData[] = [
@@ -127,13 +100,25 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
 // Componente de tooltip personalizado
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-black/90 backdrop-blur-xl rounded-xl p-3 shadow-2xl border border-white/20">
         <p className="text-xs text-white/60 mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index) => (
           <div key={index} className="flex items-center justify-between gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -150,11 +135,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+interface CustomPieChartProps {
+  data: CategoryData[];
+  title: string;
+  total: number;
+}
+
 // Componente de gráfico de pastel personalizado
-const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: string, total: number }) => {
+const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
   
@@ -185,7 +176,6 @@ const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: s
             dataKey="value"
             onMouseEnter={onPieEnter}
             onMouseLeave={onPieLeave}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
             labelLine={{ stroke: '#ffffff60', strokeWidth: 1 }}
           >
             {data.map((entry, index) => (
@@ -198,6 +188,12 @@ const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: s
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />
+          <Legend 
+            formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
+            wrapperStyle={{ paddingTop: '20px' }}
+            verticalAlign="bottom"
+            height={36}
+          />
         </PieChart>
       </ResponsiveContainer>
       <div className="mt-4 text-center">
@@ -707,7 +703,7 @@ export const ChartsPage = () => {
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-5 flex-items-center gap-2">
+                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
                     <TrendingDown size={18} className="text-red-400" />
                     Evolución de Gastos
                   </h3>
