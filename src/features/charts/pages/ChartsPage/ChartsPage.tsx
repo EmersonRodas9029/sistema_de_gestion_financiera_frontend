@@ -598,15 +598,15 @@ export const ChartsPage = () => {
           </LazyChart>
         </motion.div>
 
-        {/* Tabs y Gráficos Principales */}
+        {/* Tabs y Gráficos Principales - SIN scrollbar horizontal */}
         <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-          {/* Tabs */}
-          <div className="flex border-b border-white/10 overflow-x-auto">
+          {/* Tabs - Sin overflow-x-auto */}
+          <div className="flex border-b border-white/10">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('comparison')}
-              className={`flex-1 px-6 py-3 text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === 'comparison'
                   ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -622,7 +622,7 @@ export const ChartsPage = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('income')}
-              className={`flex-1 px-6 py-3 text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === 'income'
                   ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -638,7 +638,7 @@ export const ChartsPage = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('expense')}
-              className={`flex-1 px-6 py-3 text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
                 activeTab === 'expense'
                   ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
