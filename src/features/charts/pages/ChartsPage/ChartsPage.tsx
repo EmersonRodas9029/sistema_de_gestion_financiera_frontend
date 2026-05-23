@@ -31,8 +31,7 @@ import {
   Briefcase,
   Camera,
   Menu,
-  X as XIcon,
-  Palette
+  X as XIcon
 } from 'lucide-react';
 
 interface ChartData {
@@ -65,7 +64,7 @@ const monthlyData: ChartData[] = [
   { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
 ];
 
-// Datos de categorías de ingresos con iconos y gradientes
+// Datos de categorías de ingresos con iconos
 const incomeCategories: CategoryData[] = [
   { name: 'Salario', value: 28500, color: '#10b981', icon: <Wallet size={14} /> },
   { name: 'Servicios', value: 12500, color: '#3b82f6', icon: <Briefcase size={14} /> },
@@ -93,13 +92,6 @@ const quarterlyData = [
   { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
   { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
 ];
-
-// Colores para gradientes de los gráficos
-const gradientColors = {
-  income: { start: '#10b981', end: '#34d399' },
-  expense: { start: '#ef4444', end: '#f87171' },
-  savings: { start: '#f59e0b', end: '#fbbf24' }
-};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -134,8 +126,8 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
       >
         <p className="text-xs text-white/50 mb-2 font-medium">{label}</p>
         <div className="space-y-2">
-          {payload.map((entry, index) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-sm">
+          {payload.map((entry, idx) => (
+            <div key={idx} className="flex items-center justify-between gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-full shadow-lg" 
@@ -162,7 +154,7 @@ interface CustomPieChartProps {
   total: number;
 }
 
-// Componente de gráfico de pastel personalizado con mejor diseño
+// Componente de gráfico de pastel personalizado - sin label personalizado para evitar errores de tipo
 const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   
@@ -172,19 +164,6 @@ const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
   
   const onPieLeave = () => {
     setActiveIndex(null);
-  };
-  
-  const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
-    return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
   };
   
   return (
@@ -203,8 +182,8 @@ const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
       <ResponsiveContainer width="100%" height={320}>
         <PieChart>
           <defs>
-            {data.map((entry, index) => (
-              <linearGradient id={`gradient-${index}`} key={`grad-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            {data.map((entry, idx) => (
+              <linearGradient id={`gradient-${idx}`} key={`grad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={entry.color} stopOpacity={0.9}/>
                 <stop offset="100%" stopColor={entry.color} stopOpacity={0.7}/>
               </linearGradient>
@@ -220,28 +199,30 @@ const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
             dataKey="value"
             onMouseEnter={onPieEnter}
             onMouseLeave={onPieLeave}
-            label={renderCustomizedLabel}
-            labelLine={false}
             animationBegin={0}
             animationDuration={1000}
             animationEasing="ease-out"
           >
-            {data.map((entry, index) => (
+            {data.map((entry, idx) => (
               <Cell 
-                key={`cell-${index}`} 
-                fill={`url(#gradient-${index})`}
-                stroke={activeIndex === index ? '#fff' : 'none'}
-                strokeWidth={activeIndex === index ? 3 : 0}
-                style={{ filter: activeIndex === index ? 'drop-shadow(0px 0px 10px rgba(255,255,255,0.3))' : 'none' }}
+                key={`cell-${idx}`} 
+                fill={`url(#gradient-${idx})`}
+                stroke={activeIndex === idx ? '#fff' : 'none'}
+                strokeWidth={activeIndex === idx ? 3 : 0}
+                style={{ filter: activeIndex === idx ? 'drop-shadow(0px 0px 10px rgba(255,255,255,0.3))' : 'none' }}
               />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
           <Legend 
-            formatter={(value) => <span className="text-white/80 text-xs font-medium">{value}</span>}
+            formatter={(value) => {
+              const item = data.find(d => d.name === value);
+              const percentage = item ? (item.value / total) * 100 : 0;
+              return <span className="text-white/80 text-xs font-medium">{value} ({percentage.toFixed(0)}%)</span>;
+            }}
             wrapperStyle={{ paddingTop: '24px' }}
             verticalAlign="bottom"
-            height={40}
+            height={50}
             iconType="circle"
           />
         </PieChart>
@@ -597,14 +578,14 @@ export const ChartsPage = () => {
                 Top 5 Categorías de Gastos
               </h3>
               <div className="space-y-5">
-                {topExpenseCategories.map((cat, index) => {
+                {topExpenseCategories.map((cat, idx) => {
                   const percentage = (cat.value / totalExpense) * 100;
                   return (
                     <motion.div 
-                      key={index}
+                      key={idx}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: idx * 0.1 }}
                       className="group"
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -623,7 +604,7 @@ export const ChartsPage = () => {
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${percentage}%` }}
-                          transition={{ duration: 0.8, delay: index * 0.1 }}
+                          transition={{ duration: 0.8, delay: idx * 0.1 }}
                           className="h-full rounded-full transition-all group-hover:opacity-80"
                           style={{ backgroundColor: cat.color }}
                         />
@@ -854,12 +835,12 @@ export const ChartsPage = () => {
                       Resumen Trimestral
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                      {quarterlyData.map((quarter, index) => (
+                      {quarterlyData.map((quarter, idx) => (
                         <motion.div 
-                          key={index}
+                          key={idx}
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.1 }}
+                          transition={{ delay: idx * 0.1 }}
                           whileHover={{ y: -6, scale: 1.02 }}
                           className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/40 transition-all cursor-pointer"
                         >
