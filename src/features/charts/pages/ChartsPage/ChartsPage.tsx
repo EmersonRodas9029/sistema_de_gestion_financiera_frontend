@@ -64,24 +64,24 @@ const monthlyData: ChartData[] = [
   { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
 ];
 
-// Datos de categorías de ingresos con iconos
+// Datos de categorías de ingresos con iconos - Colores del tema
 const incomeCategories: CategoryData[] = [
-  { name: 'Salario', value: 28500, color: '#10b981', icon: <Wallet size={14} /> },
-  { name: 'Servicios', value: 12500, color: '#3b82f6', icon: <Briefcase size={14} /> },
-  { name: 'Ventas', value: 8500, color: '#8b5cf6', icon: <ShoppingBag size={14} /> },
-  { name: 'Inversiones', value: 4200, color: '#06b6d4', icon: <TrendingUp size={14} /> },
+  { name: 'Salario', value: 28500, color: '#F05984', icon: <Wallet size={14} /> },
+  { name: 'Servicios', value: 12500, color: '#BC455F', icon: <Briefcase size={14} /> },
+  { name: 'Ventas', value: 8500, color: '#6E4068', icon: <ShoppingBag size={14} /> },
+  { name: 'Inversiones', value: 4200, color: '#8b5cf6', icon: <TrendingUp size={14} /> },
   { name: 'Otros', value: 3800, color: '#6b7280', icon: <Sparkles size={14} /> }
 ];
 
-// Datos de categorías de gastos con iconos
+// Datos de categorías de gastos con iconos - Colores del tema
 const expenseCategories: CategoryData[] = [
-  { name: 'Vivienda', value: 14400, color: '#3b82f6', icon: <HomeIcon size={14} /> },
-  { name: 'Alimentación', value: 5120, color: '#f59e0b', icon: <Utensils size={14} /> },
-  { name: 'Transporte', value: 3240, color: '#10b981', icon: <Car size={14} /> },
-  { name: 'Servicios', value: 2840, color: '#06b6d4', icon: <Zap size={14} /> },
-  { name: 'Ocio', value: 2150, color: '#8b5cf6', icon: <Film size={14} /> },
+  { name: 'Vivienda', value: 14400, color: '#F05984', icon: <HomeIcon size={14} /> },
+  { name: 'Alimentación', value: 5120, color: '#BC455F', icon: <Utensils size={14} /> },
+  { name: 'Transporte', value: 3240, color: '#6E4068', icon: <Car size={14} /> },
+  { name: 'Servicios', value: 2840, color: '#8b5cf6', icon: <Zap size={14} /> },
+  { name: 'Ocio', value: 2150, color: '#06b6d4', icon: <Film size={14} /> },
   { name: 'Salud', value: 1850, color: '#ef4444', icon: <Heart size={14} /> },
-  { name: 'Compras', value: 1650, color: '#ec4899', icon: <ShoppingBag size={14} /> },
+  { name: 'Compras', value: 1650, color: '#f59e0b', icon: <ShoppingBag size={14} /> },
   { name: 'Seguros', value: 1350, color: '#6366f1', icon: <Shield size={14} /> }
 ];
 
@@ -154,7 +154,7 @@ interface CustomPieChartProps {
   total: number;
 }
 
-// Componente de gráfico de pastel personalizado - sin label personalizado para evitar errores de tipo
+// Componente de gráfico de pastel personalizado
 const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   
@@ -274,7 +274,6 @@ export const ChartsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '2024-01-01', end: '2024-12-31' });
 
-  // Simular carga inicial
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 800);
   }, []);
@@ -360,7 +359,6 @@ export const ChartsPage = () => {
       className="min-h-screen p-4 md:p-6"
       style={{ backgroundColor: '#1a0f14' }}
     >
-      {/* Botón de menú móvil */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10"
@@ -369,7 +367,6 @@ export const ChartsPage = () => {
         {isSidebarOpen ? <XIcon size={24} className="text-white" /> : <Menu size={24} className="text-white" />}
       </button>
 
-      {/* Sidebar */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.aside
@@ -413,7 +410,6 @@ export const ChartsPage = () => {
       </AnimatePresence>
 
       <div className="max-w-7xl mx-auto">
-        {/* Header Mejorado */}
         <motion.div 
           variants={itemVariants}
           className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl mb-6"
@@ -468,73 +464,70 @@ export const ChartsPage = () => {
           </div>
         </motion.div>
 
-        {/* Summary Cards Mejoradas */}
+        {/* Summary Cards con colores del tema */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <motion.div 
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-xl transition-all"
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-white/50 text-sm font-medium mb-2">Ingresos Totales</p>
-                <p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalIncome)}</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
                     <ArrowUp size={12} className="text-green-400" />
                     <span className="text-green-400 text-xs font-medium">+8.5%</span>
                   </div>
                   <span className="text-white/30 text-xs">vs año anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-green-500/20">
-                <TrendingUp size={24} className="text-green-400" />
+              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingUp size={24} className="text-[#F05984]" />
               </div>
             </div>
           </motion.div>
           
           <motion.div 
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-xl transition-all"
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-white/50 text-sm font-medium mb-2">Gastos Totales</p>
-                <p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalExpense)}</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#BC455F] transition-colors">{formatCurrency(totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full group-hover:scale-105 transition-transform">
                     <ArrowUp size={12} className="text-red-400" />
                     <span className="text-red-400 text-xs font-medium">+3.2%</span>
                   </div>
                   <span className="text-white/30 text-xs">vs año anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-red-500/20">
-                <TrendingDown size={24} className="text-red-400" />
+              <div className="p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingDown size={24} className="text-[#BC455F]" />
               </div>
             </div>
           </motion.div>
           
           <motion.div 
-            whileHover={{ y: -6, scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-xl transition-all"
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-white/50 text-sm font-medium mb-2">Ahorro Total</p>
-                <p className="text-3xl font-bold text-green-400 tracking-tight">{formatCurrency(totalIncome - totalExpense)}</p>
+                <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
                     <ArrowUp size={12} className="text-green-400" />
                     <span className="text-green-400 text-xs font-medium">+12.4%</span>
                   </div>
                   <span className="text-white/30 text-xs">vs año anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-blue-500/20">
-                <Target size={24} className="text-blue-400" />
+              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+                <Target size={24} className="text-[#F05984]" />
               </div>
             </div>
             <div className="mt-4">
@@ -547,14 +540,13 @@ export const ChartsPage = () => {
                   initial={{ width: 0 }}
                   animate={{ width: `${savingsRate}%` }}
                   transition={{ duration: 1 }}
-                  className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
+                  className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full group-hover:opacity-80 transition-opacity"
                 />
               </div>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Gráfico de Pastel y Top 5 Categorías */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <LazyChart>
             <CustomPieChart 
@@ -586,14 +578,14 @@ export const ChartsPage = () => {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className="group"
+                      className="group cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${cat.color}20` }}>
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110" style={{ backgroundColor: `${cat.color}20` }}>
                             {cat.icon}
                           </div>
-                          <span className="text-white font-medium">{cat.name}</span>
+                          <span className="text-white font-medium group-hover:text-[#F05984] transition-colors">{cat.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-white/50 text-sm">{percentage.toFixed(1)}%</span>
@@ -617,9 +609,7 @@ export const ChartsPage = () => {
           </LazyChart>
         </motion.div>
 
-        {/* Tabs y Gráficos Principales */}
         <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl overflow-hidden">
-          {/* Tabs */}
           <div className="flex border-b border-white/10 bg-white/5">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -668,7 +658,6 @@ export const ChartsPage = () => {
             </motion.button>
           </div>
 
-          {/* Panel de filtros colapsable */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
@@ -743,7 +732,6 @@ export const ChartsPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Content con gráficos mejorados */}
           <div className="p-6">
             <LazyChart>
               {activeTab === 'comparison' && (
@@ -760,12 +748,12 @@ export const ChartsPage = () => {
                         <BarChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
-                              <stop offset="100%" stopColor="#10b981" stopOpacity={0.6}/>
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
                             </linearGradient>
                             <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9}/>
-                              <stop offset="100%" stopColor="#ef4444" stopOpacity={0.6}/>
+                              <stop offset="100%" stopColor="#f87171" stopOpacity={0.6}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
@@ -783,8 +771,8 @@ export const ChartsPage = () => {
                         <LineChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
-                              <stop offset="100%" stopColor="#34d399" stopOpacity={1}/>
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={1}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={1}/>
                             </linearGradient>
                             <linearGradient id="expenseLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
@@ -796,8 +784,8 @@ export const ChartsPage = () => {
                           <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
-                          <Line type="monotone" dataKey="income" name="Ingresos" stroke="url(#incomeLineGradient)" strokeWidth={3} dot={{ fill: '#10b981', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#10b981' }} />
-                          <Line type="monotone" dataKey="expense" name="Gastos" stroke="url(#expenseLineGradient)" strokeWidth={3} dot={{ fill: '#ef4444', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#ef4444' }} />
+                          <Line type="monotone" dataKey="income" name="Ingresos" stroke="url(#incomeLineGradient)" strokeWidth={3} dot={{ fill: '#F05984', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#BC455F' }} />
+                          <Line type="monotone" dataKey="expense" name="Gastos" stroke="url(#expenseLineGradient)" strokeWidth={3} dot={{ fill: '#ef4444', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#f87171' }} />
                         </LineChart>
                       </ResponsiveContainer>
                     )}
@@ -806,12 +794,12 @@ export const ChartsPage = () => {
                         <AreaChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#10b981" stopOpacity={0.4}/>
-                              <stop offset="100%" stopColor="#10b981" stopOpacity={0.05}/>
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.4}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.05}/>
                             </linearGradient>
                             <linearGradient id="expenseAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4}/>
-                              <stop offset="100%" stopColor="#ef4444" stopOpacity={0.05}/>
+                              <stop offset="100%" stopColor="#f87171" stopOpacity={0.05}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
@@ -819,14 +807,13 @@ export const ChartsPage = () => {
                           <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
-                          <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#10b981" strokeWidth={2} fill="url(#incomeAreaGradient)" />
+                          <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#F05984" strokeWidth={2} fill="url(#incomeAreaGradient)" />
                           <Area type="monotone" dataKey="expense" name="Gastos" stackId="2" stroke="#ef4444" strokeWidth={2} fill="url(#expenseAreaGradient)" />
                         </AreaChart>
                       </ResponsiveContainer>
                     )}
                   </div>
 
-                  {/* Resumen trimestral */}
                   <div>
                     <h3 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
                       <div className="p-1.5 rounded-lg bg-[#F05984]/20">
@@ -842,12 +829,12 @@ export const ChartsPage = () => {
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: idx * 0.1 }}
                           whileHover={{ y: -6, scale: 1.02 }}
-                          className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/40 transition-all cursor-pointer"
+                          className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/40 transition-all cursor-pointer group"
                         >
                           <p className="text-white/40 text-xs font-medium mb-3">{quarter.quarter}</p>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-green-400 text-sm">Ingresos:</span>
+                              <span className="text-green-400 text-sm group-hover:text-[#F05984] transition-colors">Ingresos:</span>
                               <span className="text-white font-semibold">{formatCurrency(quarter.income)}</span>
                             </div>
                             <div className="flex items-center justify-between">
@@ -871,8 +858,8 @@ export const ChartsPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
                     <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-green-500/20">
-                        <TrendingUp size={18} className="text-green-400" />
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <TrendingUp size={18} className="text-[#F05984]" />
                       </div>
                       Evolución de Ingresos
                     </h3>
@@ -880,8 +867,8 @@ export const ChartsPage = () => {
                       <BarChart data={filteredData}>
                         <defs>
                           <linearGradient id="incomeOnlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#10b981" stopOpacity={0.6}/>
+                            <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
+                            <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
@@ -905,8 +892,8 @@ export const ChartsPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
                     <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-red-500/20">
-                        <TrendingDown size={18} className="text-red-400" />
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <TrendingDown size={18} className="text-[#F05984]" />
                       </div>
                       Evolución de Gastos
                     </h3>
@@ -915,7 +902,7 @@ export const ChartsPage = () => {
                         <defs>
                           <linearGradient id="expenseOnlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#ef4444" stopOpacity={0.6}/>
+                            <stop offset="100%" stopColor="#f87171" stopOpacity={0.6}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
@@ -937,7 +924,7 @@ export const ChartsPage = () => {
             </LazyChart>
           </div>
 
-          {/* Insights mejorado */}
+          {/* Insights rediseñados como tarjetas más elaboradas */}
           <div className="p-6 border-t border-white/10 bg-gradient-to-r from-[#321D28]/40 to-[#6E4068]/40">
             <h4 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
               <div className="p-1.5 rounded-lg bg-[#F05984]/20">
@@ -947,39 +934,56 @@ export const ChartsPage = () => {
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="flex items-start gap-4 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer group"
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="p-2.5 bg-green-500/20 rounded-xl group-hover:scale-110 transition-transform">
-                  <TrendingUp size={20} className="text-green-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium mb-1">Crecimiento de ingresos</p>
-                  <p className="text-white/60 text-sm">Tus ingresos han aumentado un <span className="text-green-400 font-semibold">8.5%</span> respecto al año anterior</p>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp size={22} className="text-[#F05984]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Crecimiento de ingresos</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tus ingresos han aumentado un <span className="text-[#F05984] font-bold text-base">8.5%</span> respecto al año anterior
+                    </p>
+                  </div>
                 </div>
               </motion.div>
+              
               <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="flex items-start gap-4 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer group"
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="p-2.5 bg-red-500/20 rounded-xl group-hover:scale-110 transition-transform">
-                  <TrendingDown size={20} className="text-red-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium mb-1">Área de oportunidad</p>
-                  <p className="text-white/60 text-sm">Tus gastos en ocio representan el <span className="text-red-400 font-semibold">15%</span> del total</p>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#BC455F]/5 rounded-full blur-2xl group-hover:bg-[#BC455F]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#BC455F]/20 to-[#6E4068]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingDown size={22} className="text-[#BC455F]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Área de oportunidad</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tus gastos en ocio representan el <span className="text-[#BC455F] font-bold text-base">15%</span> del total
+                    </p>
+                  </div>
                 </div>
               </motion.div>
+              
               <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="flex items-start gap-4 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all cursor-pointer group"
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="p-2.5 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform">
-                  <Target size={20} className="text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium mb-1">Tasa de ahorro</p>
-                  <p className="text-white/60 text-sm">Tu tasa de ahorro actual es del <span className="text-blue-400 font-semibold">{savingsRate.toFixed(0)}%</span>, por encima del promedio</p>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <Target size={22} className="text-[#F05984]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Tasa de ahorro</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tu tasa de ahorro actual es del <span className="text-[#F05984] font-bold text-base">{savingsRate.toFixed(0)}%</span>, por encima del promedio
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -987,7 +991,6 @@ export const ChartsPage = () => {
         </motion.div>
       </div>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
       <style>{`
         .custom-scrollbar {
           scrollbar-width: thin;
