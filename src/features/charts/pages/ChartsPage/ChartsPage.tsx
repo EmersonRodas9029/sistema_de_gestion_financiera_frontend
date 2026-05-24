@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -12,16 +13,25 @@ import {
   Filter, 
   RefreshCw,
   ArrowUp,
-  ArrowDown,
   Activity,
   Target,
   BarChart3,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
-  ChevronDown,
-  ChevronUp,
-  XCircle,
-  Star
+  Home as HomeIcon,
+  Wallet,
+  ShoppingBag,
+  Utensils,
+  Car,
+  Heart,
+  Film,
+  Zap,
+  Shield,
+  Sparkles,
+  Briefcase,
+  Camera,
+  Menu,
+  X as XIcon
 } from 'lucide-react';
 
 interface ChartData {
@@ -35,36 +45,120 @@ interface CategoryData {
   name: string;
   value: number;
   color: string;
+  icon?: React.ReactNode;
 }
 
-// Componente de tooltip personalizado
-const CustomTooltip = ({ active, payload, label }: any) => {
+// Datos de ejemplo - Evolución mensual
+const monthlyData: ChartData[] = [
+  { month: 'Ene', income: 3250, expense: 2100, savings: 1150 },
+  { month: 'Feb', income: 3400, expense: 1950, savings: 1450 },
+  { month: 'Mar', income: 3100, expense: 2300, savings: 800 },
+  { month: 'Abr', income: 3550, expense: 2050, savings: 1500 },
+  { month: 'May', income: 3300, expense: 2250, savings: 1050 },
+  { month: 'Jun', income: 3600, expense: 1900, savings: 1700 },
+  { month: 'Jul', income: 3450, expense: 2150, savings: 1300 },
+  { month: 'Ago', income: 3200, expense: 2350, savings: 850 },
+  { month: 'Sep', income: 3350, expense: 2000, savings: 1350 },
+  { month: 'Oct', income: 3500, expense: 2200, savings: 1300 },
+  { month: 'Nov', income: 3650, expense: 2100, savings: 1550 },
+  { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
+];
+
+// Datos de categorías de ingresos con iconos - Colores del tema
+const incomeCategories: CategoryData[] = [
+  { name: 'Salario', value: 28500, color: '#F05984', icon: <Wallet size={14} /> },
+  { name: 'Servicios', value: 12500, color: '#BC455F', icon: <Briefcase size={14} /> },
+  { name: 'Ventas', value: 8500, color: '#6E4068', icon: <ShoppingBag size={14} /> },
+  { name: 'Inversiones', value: 4200, color: '#8b5cf6', icon: <TrendingUp size={14} /> },
+  { name: 'Otros', value: 3800, color: '#6b7280', icon: <Sparkles size={14} /> }
+];
+
+// Datos de categorías de gastos con iconos - Colores del tema
+const expenseCategories: CategoryData[] = [
+  { name: 'Vivienda', value: 14400, color: '#F05984', icon: <HomeIcon size={14} /> },
+  { name: 'Alimentación', value: 5120, color: '#BC455F', icon: <Utensils size={14} /> },
+  { name: 'Transporte', value: 3240, color: '#6E4068', icon: <Car size={14} /> },
+  { name: 'Servicios', value: 2840, color: '#8b5cf6', icon: <Zap size={14} /> },
+  { name: 'Ocio', value: 2150, color: '#06b6d4', icon: <Film size={14} /> },
+  { name: 'Salud', value: 1850, color: '#ef4444', icon: <Heart size={14} /> },
+  { name: 'Compras', value: 1650, color: '#f59e0b', icon: <ShoppingBag size={14} /> },
+  { name: 'Seguros', value: 1350, color: '#6366f1', icon: <Shield size={14} /> }
+];
+
+// Datos trimestrales
+const quarterlyData = [
+  { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400 },
+  { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250 },
+  { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
+  { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
+// Componente de tooltip personalizado con diseño mejorado
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-black/90 backdrop-blur-xl rounded-xl p-3 shadow-2xl border border-white/20">
-        <p className="text-xs text-white/60 mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center justify-between gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="text-white/80">{entry.name}:</span>
+      <div 
+        className="bg-gradient-to-br from-[#1a0f14] to-[#2d1a25] backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/20"
+        role="tooltip"
+        aria-label={`Información del gráfico para ${label}`}
+      >
+        <p className="text-xs text-white/50 mb-2 font-medium">{label}</p>
+        <div className="space-y-2">
+          {payload.map((entry, idx) => (
+            <div key={idx} className="flex items-center justify-between gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full shadow-lg" 
+                  style={{ backgroundColor: entry.color }}
+                  aria-hidden="true"
+                />
+                <span className="text-white/80 font-medium">{entry.name}:</span>
+              </div>
+              <span className="font-mono text-white font-bold">
+                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(entry.value)}
+              </span>
             </div>
-            <span className="font-mono text-white">
-              {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(entry.value)}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
   return null;
 };
 
+interface CustomPieChartProps {
+  data: CategoryData[];
+  title: string;
+  total: number;
+}
+
 // Componente de gráfico de pastel personalizado
-const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: string, total: number }) => {
+const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
   
@@ -73,105 +167,147 @@ const CustomPieChart = ({ data, title, total }: { data: CategoryData[], title: s
   };
   
   return (
-    <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-      <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-        <PieChartIcon size={18} className="text-purple-400" />
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10 hover:border-[#F05984]/40 transition-all shadow-lg hover:shadow-xl"
+    >
+      <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+        <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+          <PieChartIcon size={18} className="text-[#F05984]" aria-hidden="true" />
+        </div>
         {title}
       </h3>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={320}>
         <PieChart>
+          <defs>
+            {data.map((entry, idx) => (
+              <linearGradient id={`gradient-${idx}`} key={`grad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={entry.color} stopOpacity={0.9}/>
+                <stop offset="100%" stopColor={entry.color} stopOpacity={0.7}/>
+              </linearGradient>
+            ))}
+          </defs>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={5}
+            innerRadius={70}
+            outerRadius={110}
+            paddingAngle={3}
             dataKey="value"
             onMouseEnter={onPieEnter}
             onMouseLeave={onPieLeave}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            labelLine={{ stroke: '#ffffff60', strokeWidth: 1 }}
+            animationBegin={0}
+            animationDuration={1000}
+            animationEasing="ease-out"
           >
-            {data.map((entry, index) => (
+            {data.map((entry, idx) => (
               <Cell 
-                key={`cell-${index}`} 
-                fill={entry.color}
-                stroke={activeIndex === index ? '#fff' : 'none'}
-                strokeWidth={activeIndex === index ? 2 : 0}
+                key={`cell-${idx}`} 
+                fill={`url(#gradient-${idx})`}
+                stroke={activeIndex === idx ? '#fff' : 'none'}
+                strokeWidth={activeIndex === idx ? 3 : 0}
+                style={{ filter: activeIndex === idx ? 'drop-shadow(0px 0px 10px rgba(255,255,255,0.3))' : 'none' }}
               />
             ))}
           </Pie>
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+          <Legend 
+            formatter={(value) => {
+              const item = data.find(d => d.name === value);
+              const percentage = item ? (item.value / total) * 100 : 0;
+              return <span className="text-white/80 text-xs font-medium">{value} ({percentage.toFixed(0)}%)</span>;
+            }}
+            wrapperStyle={{ paddingTop: '24px' }}
+            verticalAlign="bottom"
+            height={50}
+            iconType="circle"
+          />
         </PieChart>
       </ResponsiveContainer>
-      <div className="mt-4 text-center">
-        <p className="text-white/40 text-sm">Total: {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(total)}</p>
+      <div className="mt-6 text-center">
+        <p className="text-white/40 text-sm">Total: <span className="text-white font-semibold">{new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(total)}</span></p>
       </div>
+    </motion.div>
+  );
+};
+
+// Componente de lazy loading
+const LazyChart = ({ children }: { children: React.ReactNode }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      {isVisible ? children : <div className="h-[450px] bg-white/5 rounded-2xl animate-pulse" />}
     </div>
   );
 };
 
 export const ChartsPage = () => {
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'comparison' | 'income' | 'expense'>('comparison');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('6m');
-  const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({ start: '2024-01-01', end: '2024-12-31' });
 
-  // Datos de ejemplo - Evolución mensual
-  const monthlyData: ChartData[] = [
-    { month: 'Ene', income: 3250, expense: 2100, savings: 1150 },
-    { month: 'Feb', income: 3400, expense: 1950, savings: 1450 },
-    { month: 'Mar', income: 3100, expense: 2300, savings: 800 },
-    { month: 'Abr', income: 3550, expense: 2050, savings: 1500 },
-    { month: 'May', income: 3300, expense: 2250, savings: 1050 },
-    { month: 'Jun', income: 3600, expense: 1900, savings: 1700 },
-    { month: 'Jul', income: 3450, expense: 2150, savings: 1300 },
-    { month: 'Ago', income: 3200, expense: 2350, savings: 850 },
-    { month: 'Sep', income: 3350, expense: 2000, savings: 1350 },
-    { month: 'Oct', income: 3500, expense: 2200, savings: 1300 },
-    { month: 'Nov', income: 3650, expense: 2100, savings: 1550 },
-    { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
-  ];
-
-  // Datos de categorías de ingresos
-  const incomeCategories: CategoryData[] = [
-    { name: 'Salario', value: 28500, color: '#10b981' },
-    { name: 'Servicios', value: 12500, color: '#3b82f6' },
-    { name: 'Ventas', value: 8500, color: '#8b5cf6' },
-    { name: 'Inversiones', value: 4200, color: '#06b6d4' },
-    { name: 'Otros', value: 3800, color: '#6b7280' }
-  ];
-
-  // Datos de categorías de gastos
-  const expenseCategories: CategoryData[] = [
-    { name: 'Vivienda', value: 14400, color: '#3b82f6' },
-    { name: 'Alimentación', value: 5120, color: '#f59e0b' },
-    { name: 'Transporte', value: 3240, color: '#10b981' },
-    { name: 'Servicios', value: 2840, color: '#06b6d4' },
-    { name: 'Ocio', value: 2150, color: '#8b5cf6' },
-    { name: 'Salud', value: 1850, color: '#ef4444' },
-    { name: 'Compras', value: 1650, color: '#ec4899' },
-    { name: 'Seguros', value: 1350, color: '#6366f1' }
-  ];
-
-  // Datos trimestrales
-  const quarterlyData = [
-    { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400 },
-    { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250 },
-    { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
-    { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
-  ];
-
-  const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.value, 0);
-  const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.value, 0);
-  const savingsRate = ((totalIncome - totalExpense) / totalIncome) * 100;
+  useEffect(() => {
+    setTimeout(() => setIsLoading(false), 800);
+  }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
   };
+
+  const exportAsImage = useCallback(() => {
+    const charts = document.querySelectorAll('.recharts-wrapper');
+    charts.forEach((chart, index) => {
+      const svg = chart.querySelector('svg');
+      if (svg) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svg);
+        const img = new Image();
+        
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+          const link = document.createElement('a');
+          link.download = `chart-${index + 1}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        };
+        
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+      }
+    });
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
@@ -190,358 +326,691 @@ export const ChartsPage = () => {
   };
 
   const filteredData = getFilteredData();
+  const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.value, 0);
+  const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.value, 0);
+  const savingsRate = ((totalIncome - totalExpense) / totalIncome) * 100;
+
+  const topExpenseCategories = [...expenseCategories].sort((a, b) => b.value - a.value).slice(0, 5);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+        <div className="animate-pulse space-y-6">
+          <div className="flex justify-between">
+            <div className="h-8 w-48 bg-white/10 rounded-lg" />
+            <div className="h-10 w-32 bg-white/10 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-white/10 rounded-xl" />
+            ))}
+          </div>
+          <div className="h-96 bg-white/10 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Análisis y Gráficos</h1>
-            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {monthlyData.length} períodos
-            </span>
-          </div>
-          <p className="text-white/60 text-sm mt-1">
-            Visualiza y analiza tus ingresos y gastos
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={handleRefresh} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-            <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
-          <button onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10'}`}>
-            <Filter size={20} />
-          </button>
-          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
-            <Download size={20} />
-          </button>
-        </div>
-      </div>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen p-4 md:p-6"
+      style={{ backgroundColor: '#1a0f14' }}
+    >
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10"
+        aria-label="Abrir menú"
+      >
+        {isSidebarOpen ? <XIcon size={24} className="text-white" /> : <Menu size={24} className="text-white" />}
+      </button>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-white/60 text-sm mb-1">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(totalIncome)}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUp size={14} className="text-green-400" />
-                <span className="text-green-400 text-sm font-medium">+8.5%</span>
-                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
-              </div>
-            </div>
-            <div className="p-3 bg-green-500/20 rounded-xl">
-              <TrendingUp size={24} className="text-green-400" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-white/60 text-sm mb-1">Gastos Totales</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(totalExpense)}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUp size={14} className="text-red-400" />
-                <span className="text-red-400 text-sm font-medium">+3.2%</span>
-                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
-              </div>
-            </div>
-            <div className="p-3 bg-red-500/20 rounded-xl">
-              <TrendingDown size={24} className="text-red-400" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-white/60 text-sm mb-1">Ahorro Total</p>
-              <p className="text-2xl font-bold text-green-400">{formatCurrency(totalIncome - totalExpense)}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUp size={14} className="text-green-400" />
-                <span className="text-green-400 text-sm font-medium">+12.4%</span>
-                <span className="text-white/40 text-xs ml-1">vs año anterior</span>
-              </div>
-            </div>
-            <div className="p-3 bg-blue-500/20 rounded-xl">
-              <Target size={24} className="text-blue-400" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-white/60">Tasa de ahorro</span>
-              <span className="text-white font-medium">{savingsRate.toFixed(1)}%</span>
-            </div>
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full" style={{ width: `${savingsRate}%` }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
-        <div className="flex border-b border-white/10">
-          <button
-            onClick={() => setActiveTab('comparison')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
-              activeTab === 'comparison'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.aside
+            initial={{ x: -320 }}
+            animate={{ x: 0 }}
+            exit={{ x: -320 }}
+            transition={{ duration: 0.3, type: "spring", damping: 25 }}
+            className="fixed top-0 left-0 z-40 w-80 h-full bg-gradient-to-b from-[#1a0f14] to-[#0d0710] border-r border-white/10 p-6 overflow-y-auto shadow-2xl"
           >
-            <div className="flex items-center justify-center gap-2">
-              <BarChart3 size={16} />
-              Comparación General
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('income')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
-              activeTab === 'income'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <TrendingUp size={16} />
-              Análisis de Ingresos
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('expense')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-all ${
-              activeTab === 'expense'
-                ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <TrendingDown size={16} />
-              Análisis de Gastos
-            </div>
-          </button>
-        </div>
-
-        {/* Controls */}
-        <div className="p-4 flex flex-wrap gap-4 border-b border-white/10 bg-white/5">
-          <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-white/40" />
-            <span className="text-white/60 text-sm">Período:</span>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="px-3 py-1.5 bg-white/10 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm cursor-pointer"
-            >
-              <option value="1m">Último mes</option>
-              <option value="3m">Últimos 3 meses</option>
-              <option value="6m">Últimos 6 meses</option>
-              <option value="1y">Último año</option>
-              <option value="2y">Últimos 2 años</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => setChartType('bar')}
-              className={`p-2 rounded-lg transition-all ${
-                chartType === 'bar'
-                  ? 'bg-[#F05984] text-white shadow-lg'
-                  : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de barras"
-            >
-              <BarChart3 size={18} />
-            </button>
-            <button
-              onClick={() => setChartType('line')}
-              className={`p-2 rounded-lg transition-all ${
-                chartType === 'line'
-                  ? 'bg-[#F05984] text-white shadow-lg'
-                  : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de líneas"
-            >
-              <LineChartIcon size={18} />
-            </button>
-            <button
-              onClick={() => setChartType('pie')}
-              className={`p-2 rounded-lg transition-all ${
-                chartType === 'pie'
-                  ? 'bg-[#F05984] text-white shadow-lg'
-                  : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-              }`}
-              title="Gráfico de pastel"
-            >
-              <PieChartIcon size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {activeTab === 'comparison' && (
-            <div className="space-y-8">
-              <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                  <BarChart3 size={18} className="text-[#F05984]" />
-                  Evolución Ingresos vs Gastos
-                </h3>
-                {chartType === 'bar' && (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={filteredData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff60" />
-                      <YAxis stroke="#ffffff60" tickFormatter={(value) => `$${value}`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar dataKey="income" name="Ingresos" fill="#10b981" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey="expense" name="Gastos" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-                {chartType === 'line' && (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={filteredData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff60" />
-                      <YAxis stroke="#ffffff60" tickFormatter={(value) => `$${value}`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Line type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
-                      <Line type="monotone" dataKey="expense" name="Gastos" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-                {chartType === 'pie' && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <CustomPieChart 
-                      data={incomeCategories} 
-                      title="Distribución de Ingresos" 
-                      total={totalIncome}
-                    />
-                    <CustomPieChart 
-                      data={expenseCategories} 
-                      title="Distribución de Gastos" 
-                      total={totalExpense}
-                    />
-                  </div>
-                )}
+            <div className="mt-12">
+              <h3 className="text-white font-semibold mb-6 text-lg">Filtros Rápidos</h3>
+              <div className="space-y-5">
+                <div>
+                  <label className="text-white/60 text-sm block mb-2 font-medium">Fecha inicio</label>
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-white/60 text-sm block mb-2 font-medium">Fecha fin</label>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  />
+                </div>
+                <button
+                  onClick={() => setSelectedPeriod('custom')}
+                  className="w-full px-4 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:opacity-90 transition-all font-medium shadow-lg"
+                >
+                  Aplicar filtros
+                </button>
               </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
-              {/* Resumen trimestral */}
+      <div className="max-w-7xl mx-auto">
+        <motion.div 
+          variants={itemVariants}
+          className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl mb-6"
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05984]/15 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#BC455F]/15 rounded-full blur-3xl animate-pulse" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+                <BarChart3 size={28} className="text-white" aria-hidden="true" />
+              </div>
               <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Calendar size={18} className="text-[#F05984]" />
-                  Resumen Trimestral
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {quarterlyData.map((quarter, index) => (
-                    <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/30 transition-all">
-                      <p className="text-white/40 text-xs mb-3">{quarter.quarter}</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-green-400 text-sm">Ingresos:</span>
-                          <span className="text-white font-medium">{formatCurrency(quarter.income)}</span>
+                <h1 className="text-3xl font-bold text-white tracking-tight">Análisis y Gráficos</h1>
+                <p className="text-white/50 text-sm mt-1">Visualiza y analiza tus ingresos y gastos</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleRefresh}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
+              >
+                <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-2 rounded-xl transition-all duration-300 ${
+                  showFilters ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
+                }`}
+              >
+                <Filter size={20} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={exportAsImage}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
+              >
+                <Camera size={20} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
+              >
+                <Download size={20} />
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Summary Cards con colores del tema */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <motion.div 
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-white/50 text-sm font-medium mb-2">Ingresos Totales</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome)}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
+                    <ArrowUp size={12} className="text-green-400" />
+                    <span className="text-green-400 text-xs font-medium">+8.5%</span>
+                  </div>
+                  <span className="text-white/30 text-xs">vs año anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingUp size={24} className="text-[#F05984]" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-white/50 text-sm font-medium mb-2">Gastos Totales</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#BC455F] transition-colors">{formatCurrency(totalExpense)}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full group-hover:scale-105 transition-transform">
+                    <ArrowUp size={12} className="text-red-400" />
+                    <span className="text-red-400 text-xs font-medium">+3.2%</span>
+                  </div>
+                  <span className="text-white/30 text-xs">vs año anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingDown size={24} className="text-[#BC455F]" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
+            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-white/50 text-sm font-medium mb-2">Ahorro Total</p>
+                <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
+                    <ArrowUp size={12} className="text-green-400" />
+                    <span className="text-green-400 text-xs font-medium">+12.4%</span>
+                  </div>
+                  <span className="text-white/30 text-xs">vs año anterior</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+                <Target size={24} className="text-[#F05984]" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-white/50">Tasa de ahorro</span>
+                <span className="text-white font-semibold">{savingsRate.toFixed(1)}%</span>
+              </div>
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${savingsRate}%` }}
+                  transition={{ duration: 1 }}
+                  className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full group-hover:opacity-80 transition-opacity"
+                />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <LazyChart>
+            <CustomPieChart 
+              data={incomeCategories} 
+              title="Distribución de Ingresos" 
+              total={totalIncome}
+            />
+          </LazyChart>
+          
+          <LazyChart>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10 hover:border-[#F05984]/40 transition-all shadow-lg hover:shadow-xl"
+            >
+              <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                  <TrendingDown size={18} className="text-[#F05984]" />
+                </div>
+                Top 5 Categorías de Gastos
+              </h3>
+              <div className="space-y-5">
+                {topExpenseCategories.map((cat, idx) => {
+                  const percentage = (cat.value / totalExpense) * 100;
+                  return (
+                    <motion.div 
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="group cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110" style={{ backgroundColor: `${cat.color}20` }}>
+                            {cat.icon}
+                          </div>
+                          <span className="text-white font-medium group-hover:text-[#F05984] transition-colors">{cat.name}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-red-400 text-sm">Gastos:</span>
-                          <span className="text-white font-medium">{formatCurrency(quarter.expense)}</span>
-                        </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
-                          <span className="text-blue-400 text-sm">Ahorro:</span>
-                          <span className="text-white font-bold">{formatCurrency(quarter.savings)}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-white/50 text-sm">{percentage.toFixed(1)}%</span>
+                          <span className="text-white font-semibold">{formatCurrency(cat.value)}</span>
                         </div>
                       </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          transition={{ duration: 0.8, delay: idx * 0.1 }}
+                          className="h-full rounded-full transition-all group-hover:opacity-80"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </LazyChart>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+          <div className="flex border-b border-white/10 bg-white/5">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('comparison')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
+                activeTab === 'comparison'
+                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <BarChart3 size={16} />
+                Comparación General
+              </div>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('income')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
+                activeTab === 'income'
+                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <TrendingUp size={16} />
+                Análisis de Ingresos
+              </div>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('expense')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
+                activeTab === 'expense'
+                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <TrendingDown size={16} />
+                Análisis de Gastos
+              </div>
+            </motion.button>
+          </div>
+
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-5 border-b border-white/10 bg-white/5 overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-5 items-center">
+                  <div className="flex items-center gap-3">
+                    <Calendar size={16} className="text-white/40" />
+                    <span className="text-white/70 text-sm font-medium">Período:</span>
+                    <select
+                      value={selectedPeriod}
+                      onChange={(e) => setSelectedPeriod(e.target.value)}
+                      className="px-3 py-2 bg-white/10 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] text-sm cursor-pointer font-medium"
+                    >
+                      <option value="1m">Último mes</option>
+                      <option value="3m">Últimos 3 meses</option>
+                      <option value="6m">Últimos 6 meses</option>
+                      <option value="1y">Último año</option>
+                      <option value="2y">Últimos 2 años</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-3 ml-auto">
+                    <span className="text-white/70 text-sm font-medium">Tipo de gráfico:</span>
+                    <div className="flex gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setChartType('bar')}
+                        className={`p-2 rounded-xl transition-all ${
+                          chartType === 'bar'
+                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                        }`}
+                        title="Gráfico de barras"
+                      >
+                        <BarChart3 size={18} />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setChartType('line')}
+                        className={`p-2 rounded-xl transition-all ${
+                          chartType === 'line'
+                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                        }`}
+                        title="Gráfico de líneas"
+                      >
+                        <LineChartIcon size={18} />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setChartType('area')}
+                        className={`p-2 rounded-xl transition-all ${
+                          chartType === 'area'
+                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                        }`}
+                        title="Gráfico de área"
+                      >
+                        <Activity size={18} />
+                      </motion.button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {activeTab === 'income' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                    <TrendingUp size={18} className="text-green-400" />
-                    Evolución de Ingresos
-                  </h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={filteredData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff60" />
-                      <YAxis stroke="#ffffff60" tickFormatter={(value) => `$${value}`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="income" name="Ingresos" fill="#10b981" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+          <div className="p-6">
+            <LazyChart>
+              {activeTab === 'comparison' && (
+                <div className="space-y-8">
+                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                    <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <BarChart3 size={18} className="text-[#F05984]" />
+                      </div>
+                      Evolución Ingresos vs Gastos
+                    </h3>
+                    {chartType === 'bar' && (
+                      <ResponsiveContainer width="100%" height={420}>
+                        <BarChart data={filteredData}>
+                          <defs>
+                            <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
+                            </linearGradient>
+                            <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9}/>
+                              <stop offset="100%" stopColor="#f87171" stopOpacity={0.6}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                          <XAxis dataKey="month" stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12, fontWeight: 500 }} />
+                          <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                          <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
+                          <Bar dataKey="income" name="Ingresos" fill="url(#incomeGradient)" radius={[8, 8, 0, 0]} barSize={40} />
+                          <Bar dataKey="expense" name="Gastos" fill="url(#expenseGradient)" radius={[8, 8, 0, 0]} barSize={40} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                    {chartType === 'line' && (
+                      <ResponsiveContainer width="100%" height={420}>
+                        <LineChart data={filteredData}>
+                          <defs>
+                            <linearGradient id="incomeLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={1}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={1}/>
+                            </linearGradient>
+                            <linearGradient id="expenseLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                              <stop offset="100%" stopColor="#f87171" stopOpacity={1}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                          <XAxis dataKey="month" stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12, fontWeight: 500 }} />
+                          <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
+                          <Line type="monotone" dataKey="income" name="Ingresos" stroke="url(#incomeLineGradient)" strokeWidth={3} dot={{ fill: '#F05984', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#BC455F' }} />
+                          <Line type="monotone" dataKey="expense" name="Gastos" stroke="url(#expenseLineGradient)" strokeWidth={3} dot={{ fill: '#ef4444', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#f87171' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                    {chartType === 'area' && (
+                      <ResponsiveContainer width="100%" height={420}>
+                        <AreaChart data={filteredData}>
+                          <defs>
+                            <linearGradient id="incomeAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.4}/>
+                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.05}/>
+                            </linearGradient>
+                            <linearGradient id="expenseAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4}/>
+                              <stop offset="100%" stopColor="#f87171" stopOpacity={0.05}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                          <XAxis dataKey="month" stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12, fontWeight: 500 }} />
+                          <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
+                          <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#F05984" strokeWidth={2} fill="url(#incomeAreaGradient)" />
+                          <Area type="monotone" dataKey="expense" name="Gastos" stackId="2" stroke="#ef4444" strokeWidth={2} fill="url(#expenseAreaGradient)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <Calendar size={18} className="text-[#F05984]" />
+                      </div>
+                      Resumen Trimestral
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {quarterlyData.map((quarter, idx) => (
+                        <motion.div 
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.1 }}
+                          whileHover={{ y: -6, scale: 1.02 }}
+                          className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/40 transition-all cursor-pointer group"
+                        >
+                          <p className="text-white/40 text-xs font-medium mb-3">{quarter.quarter}</p>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-green-400 text-sm group-hover:text-[#F05984] transition-colors">Ingresos:</span>
+                              <span className="text-white font-semibold">{formatCurrency(quarter.income)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-red-400 text-sm">Gastos:</span>
+                              <span className="text-white font-semibold">{formatCurrency(quarter.expense)}</span>
+                            </div>
+                            <div className="w-full h-px bg-white/10 my-2" />
+                            <div className="flex items-center justify-between">
+                              <span className="text-blue-400 text-sm">Ahorro:</span>
+                              <span className="text-white font-bold text-lg">{formatCurrency(quarter.savings)}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                
-                <CustomPieChart 
-                  data={incomeCategories} 
-                  title="Distribución por Categoría" 
-                  total={totalIncome}
-                />
-              </div>
-            </div>
-          )}
+              )}
 
-          {activeTab === 'expense' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-5 flex items-center gap-2">
-                    <TrendingDown size={18} className="text-red-400" />
-                    Evolución de Gastos
-                  </h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={filteredData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff60" />
-                      <YAxis stroke="#ffffff60" tickFormatter={(value) => `$${value}`} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="expense" name="Gastos" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+              {activeTab === 'income' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                    <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <TrendingUp size={18} className="text-[#F05984]" />
+                      </div>
+                      Evolución de Ingresos
+                    </h3>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={filteredData}>
+                        <defs>
+                          <linearGradient id="incomeOnlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
+                            <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                        <XAxis dataKey="month" stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} />
+                        <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="income" name="Ingresos" fill="url(#incomeOnlyGradient)" radius={[8, 8, 0, 0]} barSize={50} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  <CustomPieChart 
+                    data={incomeCategories} 
+                    title="Distribución por Categoría" 
+                    total={totalIncome}
+                  />
                 </div>
-                
-                <CustomPieChart 
-                  data={expenseCategories} 
-                  title="Distribución por Categoría" 
-                  total={totalExpense}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+              )}
 
-        {/* Insights */}
-        <div className="p-5 border-t border-white/10 bg-gradient-to-r from-[#321D28]/30 to-[#6E4068]/30">
-          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <Activity size={18} className="text-[#F05984]" />
-            Insights y Recomendaciones
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-              <div className="p-2 bg-green-500/20 rounded-lg"><TrendingUp size={18} className="text-green-400" /></div>
-              <div><p className="text-white/90 text-sm font-medium mb-1">Crecimiento de ingresos</p><p className="text-white/60 text-sm">Tus ingresos han aumentado un <span className="text-green-400 font-medium">8.5%</span> respecto al año anterior</p></div>
-            </div>
-            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-              <div className="p-2 bg-red-500/20 rounded-lg"><TrendingDown size={18} className="text-red-400" /></div>
-              <div><p className="text-white/90 text-sm font-medium mb-1">Área de oportunidad</p><p className="text-white/60 text-sm">Tus gastos en ocio representan el <span className="text-red-400 font-medium">15%</span> del total</p></div>
-            </div>
-            <div className="flex items-start gap-3 bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-              <div className="p-2 bg-blue-500/20 rounded-lg"><Target size={18} className="text-blue-400" /></div>
-              <div><p className="text-white/90 text-sm font-medium mb-1">Tasa de ahorro</p><p className="text-white/60 text-sm">Tu tasa de ahorro actual es del <span className="text-blue-400 font-medium">{savingsRate.toFixed(0)}%</span>, por encima del promedio</p></div>
+              {activeTab === 'expense' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                    <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                        <TrendingDown size={18} className="text-[#F05984]" />
+                      </div>
+                      Evolución de Gastos
+                    </h3>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={filteredData}>
+                        <defs>
+                          <linearGradient id="expenseOnlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9}/>
+                            <stop offset="100%" stopColor="#f87171" stopOpacity={0.6}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                        <XAxis dataKey="month" stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} />
+                        <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="expense" name="Gastos" fill="url(#expenseOnlyGradient)" radius={[8, 8, 0, 0]} barSize={50} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  <CustomPieChart 
+                    data={expenseCategories} 
+                    title="Distribución por Categoría" 
+                    total={totalExpense}
+                  />
+                </div>
+              )}
+            </LazyChart>
+          </div>
+
+          {/* Insights rediseñados como tarjetas más elaboradas */}
+          <div className="p-6 border-t border-white/10 bg-gradient-to-r from-[#321D28]/40 to-[#6E4068]/40">
+            <h4 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
+              <div className="p-1.5 rounded-lg bg-[#F05984]/20">
+                <Activity size={18} className="text-[#F05984]" />
+              </div>
+              Insights y Recomendaciones
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <motion.div 
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp size={22} className="text-[#F05984]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Crecimiento de ingresos</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tus ingresos han aumentado un <span className="text-[#F05984] font-bold text-base">8.5%</span> respecto al año anterior
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#BC455F]/5 rounded-full blur-2xl group-hover:bg-[#BC455F]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#BC455F]/20 to-[#6E4068]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingDown size={22} className="text-[#BC455F]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Área de oportunidad</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tus gastos en ocio representan el <span className="text-[#BC455F] font-bold text-base">15%</span> del total
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <Target size={22} className="text-[#F05984]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-2 text-base">Tasa de ahorro</p>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      Tu tasa de ahorro actual es del <span className="text-[#F05984] font-bold text-base">{savingsRate.toFixed(0)}%</span>, por encima del promedio
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+
+      <style>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #F05984 #1a0f14;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1a0f14;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #F05984, #BC455F);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #BC455F, #6E4068);
+        }
+      `}</style>
+    </motion.div>
   );
 };
