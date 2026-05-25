@@ -345,12 +345,6 @@ export const SettingsPage = () => {
       name: 'Respaldo',
       icon: <Database size={20} />,
       description: 'Configuración de copias de seguridad'
-    },
-    {
-      id: 'billing',
-      name: 'Facturación',
-      icon: <CreditCard size={20} />,
-      description: 'Métodos de pago y facturación'
     }
   ];
 
@@ -1021,77 +1015,6 @@ export const SettingsPage = () => {
                   <Download size={16} />
                   <span>Exportar todos los datos</span>
                 </motion.button>
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'billing' && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-2">Plan actual</h3>
-                <p className="text-3xl font-bold text-white">Profesional</p>
-                <p className="text-white/60 text-sm mt-1">$29.99/mes</p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-all"
-                >
-                  Cambiar plan
-                </motion.button>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <CreditCard size={18} className="text-[#F05984]" />
-                  Métodos de pago
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <CreditCard size={20} className="text-white/60" />
-                      <div>
-                        <p className="text-white font-medium">Visa terminada en 4242</p>
-                        <p className="text-white/40 text-sm">Expira 12/25</p>
-                      </div>
-                    </div>
-                    <button className="text-red-400 hover:text-red-300 transition-colors">Eliminar</button>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
-                  >
-                    <Plus size={16} />
-                    <span>Añadir método de pago</span>
-                  </motion.button>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <FileText size={18} className="text-[#F05984]" />
-                  Historial de facturas
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                    <div>
-                      <p className="text-white font-medium">Factura #INV-2024-001</p>
-                      <p className="text-white/40 text-sm">15 febrero 2024</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-white">$29.99</span>
-                      <button className="text-[#F05984] hover:text-[#d14d75] transition-colors">Ver</button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                    <div>
-                      <p className="text-white font-medium">Factura #INV-2024-002</p>
-                      <p className="text-white/40 text-sm">15 enero 2024</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-white">$29.99</span>
-                      <button className="text-[#F05984] hover:text-[#d14d75] transition-colors">Ver</button>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
