@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FileText, Download, Printer, Share2, Calendar, Filter, RefreshCw,
-  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, DollarSign, BarChart3,
-  Activity, Wallet, Target, Users, Plus, X, Eye, MoreVertical, Clock,
-  CheckCircle, AlertCircle, Search, PieChart as PieChartIcon, LineChart, Save, Trash2, Edit,
-  Copy, Send, Mail, Phone, MapPin, Building2, Briefcase, Award, Gift, Sparkles,
-  ArrowUp, ArrowDown, XCircle, Calendar as CalendarIcon, User, Hash, Link,
-  Image, FileJson, FileSpreadsheet, File, FolderTree, Star, ChevronDown, ChevronUp
+  FileText, Download, Share2, Calendar, Filter, RefreshCw,
+  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, BarChart3,
+  Activity, Wallet, Target, Users, Plus, X, Search,
+  PieChart as PieChartIcon, Trash2,
+  XCircle, Star, ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 
@@ -28,9 +26,6 @@ interface Report {
   tags: string[];
   description?: string;
 }
-
-// Colores para el gráfico de pastel
-const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
 // Función para generar ID único
 const generateUniqueId = () => {
@@ -270,8 +265,8 @@ export const ReportsPage = () => {
     const newReport: Report = {
       id: generateUniqueId(),
       name: formData.name,
-      type: formData.type as any,
-      format: formData.format as any,
+      type: formData.type as Report['type'],
+      format: formData.format as Report['format'],
       dateRange: `${new Date(formData.startDate).toLocaleDateString()} - ${new Date(formData.endDate).toLocaleDateString()}`,
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -333,14 +328,6 @@ export const ReportsPage = () => {
     setCurrentPage(1);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
   const getTypeIcon = (type: string) => {
     switch(type) {
       case 'financial': return <FileText size={16} className="text-purple-400" />;
@@ -370,10 +357,10 @@ export const ReportsPage = () => {
   const getFormatIcon = (format: string) => {
     switch(format) {
       case 'pdf': return <FileText size={14} className="text-red-400" />;
-      case 'excel': return <FileSpreadsheet size={14} className="text-green-400" />;
-      case 'csv': return <FileJson size={14} className="text-blue-400" />;
-      case 'json': return <FileJson size={14} className="text-purple-400" />;
-      default: return <File size={14} />;
+      case 'excel': return <FileText size={14} className="text-green-400" />;
+      case 'csv': return <FileText size={14} className="text-blue-400" />;
+      case 'json': return <FileText size={14} className="text-purple-400" />;
+      default: return <FileText size={14} />;
     }
   };
 
