@@ -5,103 +5,25 @@ import {
   User,
   Bell,
   Shield,
-  CreditCard,
   Globe,
-  Moon,
-  Sun,
-  Languages,
-  DollarSign,
-  Percent,
-  Calendar,
-  Clock,
-  Mail,
-  Phone,
   Lock,
-  Key,
   Eye,
   EyeOff,
   Save,
   RefreshCw,
-  ChevronRight,
-  ChevronLeft,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  X,
   AlertCircle,
-  Info,
-  HelpCircle,
-  LogOut,
   Trash2,
   Download,
   Upload,
-  Printer,
-  Share2,
-  Link,
-  Unlink,
-  Smartphone,
-  Tablet,
-  Laptop,
-  Monitor,
-  Wifi,
-  WifiOff,
-  Bluetooth,
-  BluetoothConnected,
-  BluetoothOff,
-  Fingerprint,
-  Scan,
-  Camera,
-  Mic,
-  Volume2,
-  VolumeX,
-  Vibrate,
-  Battery,
-  BatteryCharging,
-  BatteryFull,
-  BatteryLow,
-  BatteryMedium,
-  BatteryWarning,
-  Server,
-  Cloud,
-  CloudOff,
   Database,
-  HardDrive,
-  Cpu,
-  Thermometer,
-  Fan,
-  Droplet,
-  Wind,
-  Zap,
-  ZapOff,
-  Sun as SunIcon,
-  Moon as MoonIcon,
-  Sparkles,
-  Palette,
-  Brush,
-  Type,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  List,
-  ListOrdered,
-  ListChecks,
-  Minus,
-  Plus,
-  MinusCircle,
-  PlusCircle,
-  XCircle,
-  CheckCircle,
-  AlertTriangle,
-  Info as InfoIcon,
-  HelpCircle as HelpCircleIcon,
-  CheckCircle as CheckCircleIcon,
+  Cloud,
   Target,
   Activity,
-  BarChart3
+  BarChart3,
+  Palette,
+  CheckCircle as CheckCircleIcon,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
 
@@ -857,7 +779,7 @@ export const SettingsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tema</label>
-                    <select value={preferences.theme} onChange={(e) => setPreferences({...preferences, theme: e.target.value as any})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.theme} onChange={(e) => setPreferences({...preferences, theme: e.target.value as PreferenceSettings['theme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="light">Claro</option>
                       <option value="dark">Oscuro</option>
                       <option value="system">Sistema</option>
@@ -874,7 +796,7 @@ export const SettingsPage = () => {
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tamaño de fuente</label>
-                    <select value={preferences.fontSize} onChange={(e) => setPreferences({...preferences, fontSize: e.target.value as any})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.fontSize} onChange={(e) => setPreferences({...preferences, fontSize: e.target.value as PreferenceSettings['fontSize']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="small">Pequeño</option>
                       <option value="medium">Mediano</option>
                       <option value="large">Grande</option>
@@ -916,7 +838,7 @@ export const SettingsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Vista por defecto</label>
-                    <select value={preferences.defaultView} onChange={(e) => setPreferences({...preferences, defaultView: e.target.value as any})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.defaultView} onChange={(e) => setPreferences({...preferences, defaultView: e.target.value as PreferenceSettings['defaultView']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="grid">Cuadrícula</option>
                       <option value="list">Lista</option>
                     </select>
@@ -953,7 +875,7 @@ export const SettingsPage = () => {
                     <>
                       <div className="bg-white/5 rounded-xl p-4">
                         <label className="text-white/60 text-sm mb-1 block">Frecuencia de respaldo</label>
-                        <select value={backup.backupFrequency} onChange={(e) => setBackup({...backup, backupFrequency: e.target.value as any})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                        <select value={backup.backupFrequency} onChange={(e) => setBackup({...backup, backupFrequency: e.target.value as BackupSettings['backupFrequency']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                           <option value="daily">Diario</option>
                           <option value="weekly">Semanal</option>
                           <option value="monthly">Mensual</option>
