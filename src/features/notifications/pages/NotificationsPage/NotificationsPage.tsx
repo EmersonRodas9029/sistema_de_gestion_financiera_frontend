@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, CheckCheck, Trash2, Settings, RefreshCw, Filter,
+  Bell, CheckCheck, Trash2, Settings, RefreshCw,
   ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle,
-  Info, Target, CreditCard, Archive, MoreVertical, BellOff, X, XCircle,
-  Mail, Volume2, VolumeX, Database, ChevronDown
+  Info, Target, CreditCard, Archive, BellOff, X, XCircle
 } from 'lucide-react';
 
 interface Notification {
@@ -76,7 +75,6 @@ export const NotificationsPage = () => {
   const [selectedType, setSelectedType] = useState<string>('todas');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
@@ -231,7 +229,6 @@ export const NotificationsPage = () => {
   };
 
   const getTypeIcon = (type: string) => {
-    const iconClass = "w-4 h-4";
     switch(type) {
       case 'goal': return <Target size={18} className="text-emerald-400" />;
       case 'transaction': return <CreditCard size={18} className="text-blue-400" />;
@@ -344,7 +341,7 @@ export const NotificationsPage = () => {
               className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl transition-all duration-300 text-yellow-400 hover:text-yellow-300"
               title="Restaurar datos"
             >
-              <Database size={20} />
+              <RefreshCw size={20} />
             </motion.button>
           </div>
         </div>
@@ -672,7 +669,7 @@ export const NotificationsPage = () => {
                 <ChevronLeft size={16} />
               </motion.button>
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum = totalPages <= 5 
+                const pageNum = totalPages <= 5 
                   ? i + 1 
                   : currentPage <= 3 
                     ? i + 1 
