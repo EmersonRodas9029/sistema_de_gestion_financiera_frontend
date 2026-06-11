@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { MainLayout } from '../shared/components/layout/MainLayout';
 import { HomePage } from '../features/home/pages/HomePage';
@@ -65,12 +65,12 @@ const ProtectedRoutes = () => {
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={<ProtectedRoutes />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
