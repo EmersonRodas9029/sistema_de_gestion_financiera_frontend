@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   Calendar,
-  Filter,
-  Search,
   Plus,
   RefreshCw,
   DollarSign,
   CreditCard,
-  BarChart3,
-  ChevronRight,
-  ChevronLeft,
-  FileText,
   CheckCircle,
   XCircle,
   Clock,
@@ -23,9 +17,6 @@ import {
   ShoppingBag,
   Home as HomeIcon,
   Users,
-  ChevronDown,
-  ChevronUp,
-  XCircle as XCircleIcon,
   X,
   Save,
   User,
@@ -33,10 +24,22 @@ import {
   Calendar as CalendarIcon,
   Target,
   Trash2,
-  Edit
+  Edit,
+  FileText
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
+import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { StatusModal } from '../../../../shared/components/ui/StatusModal';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
+import { SortBar } from '../../../../shared/components/ui/SortBar';
+import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
+
+// Suppress unused import warnings for icons used in JSX only
+void CheckCircle; void XCircle; void Clock; void AlertCircle; void CreditCard;
 
 interface Income {
   id: string;
@@ -342,7 +345,7 @@ export const IncomesPage = () => {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
-  
+
   // Calcular estadísticas
   const yearlyIncomes = incomes.filter(inc => {
     const incDate = new Date(inc.date);
@@ -352,8 +355,8 @@ export const IncomesPage = () => {
 
   const monthlyIncomes = incomes.filter(inc => {
     const incDate = new Date(inc.date);
-    return inc.status === 'completado' && 
-           incDate.getMonth() === currentMonth && 
+    return inc.status === 'completado' &&
+           incDate.getMonth() === currentMonth &&
            incDate.getFullYear() === currentYear;
   });
   const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
@@ -371,17 +374,17 @@ export const IncomesPage = () => {
   // Calcular categorías para el gráfico
   const categoryMap = new Map<string, { amount: number; count: number; color: string }>();
   let colorIndex = 0;
-  
+
   completedIncomes.forEach(inc => {
     const existing = categoryMap.get(inc.category);
     if (existing) {
       existing.amount += inc.amount;
       existing.count += 1;
     } else {
-      categoryMap.set(inc.category, { 
-        amount: inc.amount, 
-        count: 1, 
-        color: CHART_COLORS[colorIndex % CHART_COLORS.length] 
+      categoryMap.set(inc.category, {
+        amount: inc.amount,
+        count: 1,
+        color: CHART_COLORS[colorIndex % CHART_COLORS.length]
       });
       colorIndex++;
     }
@@ -486,8 +489,8 @@ export const IncomesPage = () => {
 
   const handleUpdateStatus = () => {
     if (selectedIncome && newStatus && newStatus !== selectedIncome.status) {
-      setIncomes(prevIncomes => 
-        prevIncomes.map(inc => 
+      setIncomes(prevIncomes =>
+        prevIncomes.map(inc =>
           inc.id === selectedIncome.id ? { ...inc, status: newStatus as Income['status'] } : inc
         )
       );
@@ -512,13 +515,13 @@ export const IncomesPage = () => {
     const matchesStatus = selectedStatus === 'todos' || income.status === selectedStatus;
     const matchesPaymentMethod = selectedPaymentMethod === 'todos' || income.paymentMethod === selectedPaymentMethod;
     const matchesPeriod = filterByPeriod(income.date, selectedPeriod);
-    
+
     return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod && matchesPeriod;
   });
 
   const sortedIncomes = [...filteredIncomes].sort((a, b) => {
     if (sortBy === 'date') {
-      return sortOrder === 'desc' 
+      return sortOrder === 'desc'
         ? new Date(b.date).getTime() - new Date(a.date).getTime()
         : new Date(a.date).getTime() - new Date(b.date).getTime();
     } else if (sortBy === 'amount') {
@@ -541,38 +544,16 @@ export const IncomesPage = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const hasActiveFilters = searchTerm !== '' || 
-    selectedCategory !== 'todas' || 
-    selectedStatus !== 'todos' || 
+  const hasActiveFilters = searchTerm !== '' ||
+    selectedCategory !== 'todas' ||
+    selectedStatus !== 'todos' ||
     selectedPaymentMethod !== 'todos' ||
     selectedPeriod !== 'todos';
 
-  // Skeleton Loader
-  if (isLoading) {
-    return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-        <div className="animate-pulse space-y-6">
-          <div className="flex justify-between">
-            <div className="h-8 w-48 bg-white/10 rounded-lg" />
-            <div className="h-10 w-32 bg-white/10 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-white/10 rounded-xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="h-64 bg-white/10 rounded-xl" />
-            <div className="h-64 bg-white/10 rounded-xl" />
-          </div>
-          <div className="h-96 bg-white/10 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -601,26 +582,7 @@ export const IncomesPage = () => {
           >
             <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setViewMode('table')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'table' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <FileText size={20} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <BarChart3 size={20} />
-          </motion.button>
+          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -644,7 +606,7 @@ export const IncomesPage = () => {
 
       {/* Summary Cards con gradientes mejorados */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
         >
@@ -660,7 +622,7 @@ export const IncomesPage = () => {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
@@ -669,7 +631,7 @@ export const IncomesPage = () => {
               <p className="text-white/60 text-sm">Este mes</p>
               <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalMonthlyIncome)}</p>
               <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
                 />
@@ -682,7 +644,7 @@ export const IncomesPage = () => {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
@@ -698,7 +660,7 @@ export const IncomesPage = () => {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
@@ -740,15 +702,11 @@ export const IncomesPage = () => {
                     ))}
                   </Pie>
                   <ReTooltip
-                    contentStyle={{
-                      backgroundColor: '#1a0f14',
-                      border: '1px solid #BC455F',
-                      borderRadius: '8px',
-                    }}
+                    contentStyle={tooltipStyle}
                     formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                    labelStyle={{ color: 'white' }}
+                    labelStyle={labelStyle}
                   />
-                  <Legend 
+                  <Legend
                     formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
                     wrapperStyle={{ paddingTop: '20px' }}
                     verticalAlign="bottom"
@@ -770,7 +728,7 @@ export const IncomesPage = () => {
           {lastThreeCategories.length > 0 ? (
             <div className="space-y-3">
               {lastThreeCategories.map((cat, index) => (
-                <motion.div 
+                <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -790,7 +748,7 @@ export const IncomesPage = () => {
                     </div>
                   </div>
                   <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${cat.percentage}%` }}
                       transition={{ duration: 0.8, delay: index * 0.1 }}
@@ -809,169 +767,78 @@ export const IncomesPage = () => {
 
       {/* Filters and Search */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40">
-                <Search size={18} />
-              </div>
-              <input
-                type="text"
-                placeholder="Buscar por descripción, cliente o ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar por descripción, cliente o ID..."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Categoría</label>
               <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-                <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
-                <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
-                <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
+                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                {categories.map(cat => (
+                  <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                ))}
               </select>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
+            </div>
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Estado</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
               >
-                <Filter size={18} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
-                >
-                  <XCircleIcon size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
+              <select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+              >
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
+                <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+              </select>
             </div>
           </div>
+        </SearchFilterBar>
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Categoría</label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                      {categories.map(cat => (
-                        <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
-                    <select
-                      value={selectedPaymentMethod}
-                      onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
-                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                    </select>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Sort Bar */}
-        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 text-sm">Ordenar por:</span>
-            <button
-              onClick={() => {
-                setSortBy('date');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'date' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <Calendar size={14} />
-              <span>Fecha</span>
-              {sortBy === 'date' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setSortBy('amount');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <DollarSign size={14} />
-              <span>Monto</span>
-              {sortBy === 'amount' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setSortBy('category');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'category' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <Tag size={14} />
-              <span>Categoría</span>
-              {sortBy === 'category' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-          </div>
-          <span className="text-white/40 text-sm">
-            {filteredIncomes.length} resultados
-          </span>
-        </div>
+        <SortBar
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={(field) => {
+            setSortBy(field as typeof sortBy);
+            setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+          }}
+          fields={[
+            { key: 'date', label: 'Fecha', icon: <Calendar size={14} /> },
+            { key: 'amount', label: 'Monto', icon: <DollarSign size={14} /> },
+            { key: 'category', label: 'Categoría', icon: <Tag size={14} /> },
+          ]}
+          totalResults={filteredIncomes.length}
+        />
 
         {/* Tabla con scrollbar personalizado */}
         <div className="overflow-x-auto custom-scrollbar">
@@ -1109,7 +976,7 @@ export const IncomesPage = () => {
                         {income.status}
                       </span>
                     </div>
-                    
+
                     <div className="space-y-2 mb-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Categoría:</span>
@@ -1169,339 +1036,195 @@ export const IncomesPage = () => {
           </AnimatePresence>
         </div>
 
-        {/* Pagination */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/40 text-sm">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredIncomes.length)} de {filteredIncomes.length} ingresos
-          </p>
-          <div className="flex gap-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-            </motion.button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                    currentPage === pageNum
-                      ? 'bg-[#F05984] text-white shadow-md'
-                      : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                  }`}
-                >
-                  {pageNum}
-                </motion.button>
-              );
-            })}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-            </motion.button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredIncomes.length}
+          itemsPerPage={itemsPerPage}
+          label="ingresos"
+          onPageChange={setCurrentPage}
+        />
       </motion.div>
 
-      {/* Modal para crear nuevo ingreso - Mejorado */}
+      {/* Modal para crear nuevo ingreso */}
       <AnimatePresence>
-        {showCreateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
-                    <TrendingUp size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Nuevo Ingreso</h2>
-                    <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo ingreso</p>
-                  </div>
+        <ModalOverlay
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Nuevo Ingreso"
+          subtitle="Completa los campos para registrar un nuevo ingreso"
+          icon={<TrendingUp size={20} className="text-white" />}
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
+                <div className="relative">
+                  <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                    placeholder="Ej: Pago de nómina"
+                    required
+                  />
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  required
                 >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
+                  <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
+                  {categories.map(cat => (
+                    <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
-
-              <div className="p-6">
-                <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
-                      <div className="relative">
-                        <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.description}
-                          onChange={(e) => setFormData({...formData, description: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-                          placeholder="Ej: Pago de nómina"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formData.amount}
-                          onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-                          placeholder="0.00"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                      <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                        required
-                      >
-                        <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                        {categories.map(cat => (
-                          <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
-                      <div className="relative">
-                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="date"
-                          value={formData.date}
-                          onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
-                      <select
-                        value={formData.paymentMethod}
-                        onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                      >
-                        <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                        <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                        <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                        <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                      >
-                        <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                        <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                        <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
-                      <div className="relative">
-                        <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.client}
-                          onChange={(e) => setFormData({...formData, client: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                          placeholder="Nombre del cliente"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
-                      <div className="relative">
-                        <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="text"
-                          value={formData.invoice}
-                          onChange={(e) => setFormData({...formData, invoice: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                          placeholder="INV-2024-001"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                      rows={3}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                      placeholder="Notas adicionales sobre este ingreso..."
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="button"
-                      onClick={() => setShowCreateModal(false)}
-                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium"
-                    >
-                      <Save size={18} />
-                      <span>Guardar Ingreso</span>
-                    </motion.button>
-                  </div>
-                </form>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
+                <div className="relative">
+                  <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                    required
+                  />
+                </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                <select
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                >
+                  <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                  <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                  <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                  <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                >
+                  <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                  <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                  <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    value={formData.client}
+                    onChange={(e) => setFormData({...formData, client: e.target.value})}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                    placeholder="Nombre del cliente"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
+                <div className="relative">
+                  <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    value={formData.invoice}
+                    onChange={(e) => setFormData({...formData, invoice: e.target.value})}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                    placeholder="INV-2024-001"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                rows={3}
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                placeholder="Notas adicionales sobre este ingreso..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
+              >
+                Cancelar
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium"
+              >
+                <Save size={18} />
+                <span>Guardar Ingreso</span>
+              </motion.button>
+            </div>
+          </form>
+        </ModalOverlay>
       </AnimatePresence>
 
       {/* Modal para editar estado */}
       <AnimatePresence>
-        {showEditStatusModal && selectedIncome && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
-            >
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Edit size={20} className="text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Editar Estado</h2>
-                    <p className="text-white/40 text-sm">Cambia el estado del ingreso</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowEditStatusModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Ingreso</label>
-                    <p className="text-white font-medium">{selectedIncome.description}</p>
-                    <p className="text-white/40 text-sm mt-1">{formatCurrency(selectedIncome.amount)}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowEditStatusModal(false)}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all"
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleUpdateStatus}
-                      className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all"
-                    >
-                      Actualizar Estado
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        <StatusModal
+          isOpen={showEditStatusModal && !!selectedIncome}
+          onClose={() => setShowEditStatusModal(false)}
+          itemLabel="ingreso"
+          itemName={selectedIncome?.description ?? ''}
+          itemAmount={selectedIncome?.amount ?? 0}
+          currentStatus={newStatus}
+          onStatusChange={setNewStatus}
+          onConfirm={handleUpdateStatus}
+        />
       </AnimatePresence>
 
     </motion.div>

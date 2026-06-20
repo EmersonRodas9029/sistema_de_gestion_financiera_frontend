@@ -1,27 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  TrendingDown, 
+import {
+  TrendingDown,
   Calendar,
-  Filter,
-  Search,
   Plus,
   RefreshCw,
   DollarSign,
   CreditCard,
   Wallet,
-  BarChart3,
-  ChevronRight,
-  ChevronLeft,
-  FileText,
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
   Tag,
   Home as HomeIcon,
-  ChevronDown,
-  ChevronUp,
   Utensils,
   Zap,
   Car,
@@ -41,10 +33,22 @@ import {
   PieChart,
   Info,
   Building,
-  Film
+  Film,
+  FileText
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
+import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { StatusModal } from '../../../../shared/components/ui/StatusModal';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
+import { SortBar } from '../../../../shared/components/ui/SortBar';
+import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
+
+// Suppress unused import warnings
+void CheckCircle; void XCircle; void Clock; void AlertCircle; void CreditCard; void Wallet; void labelStyle;
 
 interface Expense {
   id: string;
@@ -690,29 +694,7 @@ export const ExpensesPage = () => {
     showDeductibleOnly ||
     showNoReceiptOnly;
 
-  // Skeleton Loader
-  if (isLoading) {
-    return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-        <div className="animate-pulse space-y-6">
-          <div className="flex justify-between">
-            <div className="h-8 w-48 bg-white/10 rounded-lg" />
-            <div className="h-10 w-32 bg-white/10 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-white/10 rounded-xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="h-64 bg-white/10 rounded-xl" />
-            <div className="h-64 bg-white/10 rounded-xl" />
-          </div>
-          <div className="h-96 bg-white/10 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <motion.div 
@@ -744,26 +726,7 @@ export const ExpensesPage = () => {
           >
             <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setViewMode('table')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'table' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <FileText size={20} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-            }`}
-          >
-            <BarChart3 size={20} />
-          </motion.button>
+          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -898,7 +861,7 @@ export const ExpensesPage = () => {
                     <Cell fill="#6B7280" />
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #10B981', borderRadius: '8px', fontSize: '10px', padding: '4px 8px' }}
+                    contentStyle={{ ...tooltipStyle, border: '1px solid #10B981', fontSize: '10px', padding: '4px 8px' }}
                     formatter={(value: number) => [formatCurrency(value), '']}
                   />
                 </RePieChart>
@@ -1051,7 +1014,7 @@ export const ExpensesPage = () => {
                   allowDecimals={false}
                 />
                 <ReTooltip
-                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  contentStyle={tooltipStyle}
                   formatter={(value: number) => [formatCurrency(value), 'Gastos']}
                   labelStyle={{ color: '#ffffff' }}
                 />
@@ -1095,7 +1058,7 @@ export const ExpensesPage = () => {
                   allowDecimals={false}
                 />
                 <ReTooltip
-                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  contentStyle={tooltipStyle}
                   formatter={(value: number) => [formatCurrency(value), 'Gastos']}
                   labelStyle={{ color: '#ffffff' }}
                 />
@@ -1142,7 +1105,7 @@ export const ExpensesPage = () => {
                   ))}
                 </Pie>
                 <ReTooltip
-                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  contentStyle={tooltipStyle}
                   formatter={(value: number) => [formatCurrency(value), 'Monto']}
                 />
                 <Legend 
@@ -1217,188 +1180,104 @@ export const ExpensesPage = () => {
 
       {/* Filters and Search */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar por descripción, proveedor o ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-                <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
-                <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
-                <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
-              </select>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
-              >
-                <Filter size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowNoReceiptOnly(!showNoReceiptOnly)}
-                className={`px-3 py-2 rounded-lg transition-colors text-sm ${
-                  showNoReceiptOnly ? 'bg-red-500/30 text-red-400 border border-red-500/50' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
-              >
-                Sin recibo
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
+        <div>
+          <SearchFilterBar
+            searchTerm={searchTerm}
+            onSearch={setSearchTerm}
+            selectedPeriod={selectedPeriod}
+            onPeriodChange={setSelectedPeriod}
+            showFilters={showFilters}
+            onToggleFilters={() => setShowFilters(!showFilters)}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearAllFilters}
+            placeholder="Buscar por descripción, proveedor o ID..."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-white/60 text-xs mb-1 block">Categoría</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                 >
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
+                  <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                  {categories.map(cat => (
+                    <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-xs mb-1 block">Estado</label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                >
+                  <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                  <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
+                  <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
+                  <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
+                <select
+                  value={selectedPaymentMethod}
+                  onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                >
+                  <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
+                  <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                  <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                  <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                  <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                </select>
+              </div>
             </div>
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDeductibleOnly}
+                  onChange={(e) => setShowDeductibleOnly(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
+                />
+                <span className="text-white/60 text-sm">Mostrar solo gastos deducibles</span>
+              </label>
+            </div>
+          </SearchFilterBar>
+          {/* Extra filter: Sin recibo */}
+          <div className="px-4 pb-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowNoReceiptOnly(!showNoReceiptOnly)}
+              className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                showNoReceiptOnly ? 'bg-red-500/30 text-red-400 border border-red-500/50' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              Sin recibo
+            </motion.button>
           </div>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Categoría</label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                      {categories.map(cat => (
-                        <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
-                    <select
-                      value={selectedPaymentMethod}
-                      onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
-                      <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                      <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                      <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                      <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showDeductibleOnly}
-                      onChange={(e) => setShowDeductibleOnly(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5"
-                    />
-                    <span className="text-white/60 text-sm">Mostrar solo gastos deducibles</span>
-                  </label>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
-        {/* Sort Bar */}
-        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 text-sm">Ordenar por:</span>
-            <button
-              onClick={() => {
-                setSortBy('date');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'date' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <Calendar size={14} />
-              <span>Fecha</span>
-              {sortBy === 'date' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setSortBy('amount');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <DollarSign size={14} />
-              <span>Monto</span>
-              {sortBy === 'amount' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setSortBy('category');
-                setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-              }}
-              className={`flex items-center gap-1 text-sm transition-colors ${
-                sortBy === 'category' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              <Tag size={14} />
-              <span>Categoría</span>
-              {sortBy === 'category' && (
-                sortOrder === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />
-              )}
-            </button>
-          </div>
-          <span className="text-white/40 text-sm">
-            {filteredExpenses.length} resultados
-          </span>
-        </div>
+        <SortBar
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={(field) => {
+            setSortBy(field as typeof sortBy);
+            setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+          }}
+          fields={[
+            { key: 'date', label: 'Fecha', icon: <Calendar size={14} /> },
+            { key: 'amount', label: 'Monto', icon: <DollarSign size={14} /> },
+            { key: 'category', label: 'Categoría', icon: <Tag size={14} /> },
+          ]}
+          totalResults={filteredExpenses.length}
+        />
 
         {/* Table View */}
         <AnimatePresence mode="wait">
@@ -1677,98 +1556,26 @@ export const ExpensesPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Pagination */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between">
-          <p className="text-white/40 text-sm">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredExpenses.length)} de {filteredExpenses.length} gastos
-          </p>
-          <div className="flex gap-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-            </motion.button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                    currentPage === pageNum
-                      ? 'bg-[#F05984] text-white shadow-md'
-                      : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                  }`}
-                >
-                  {pageNum}
-                </motion.button>
-              );
-            })}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-            </motion.button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredExpenses.length}
+          itemsPerPage={itemsPerPage}
+          label="gastos"
+          onPageChange={setCurrentPage}
+        />
       </motion.div>
 
       {/* Modal para crear nuevo gasto */}
       <AnimatePresence>
-        {showCreateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
-                    <TrendingDown size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Nuevo Gasto</h2>
-                    <p className="text-white/40 text-sm">Completa los campos para registrar un nuevo gasto</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-
-              <div className="p-6">
+        <ModalOverlay
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Nuevo Gasto"
+          subtitle="Completa los campos para registrar un nuevo gasto"
+          icon={<TrendingDown size={20} className="text-white" />}
+        >
+          <div>
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1979,92 +1786,22 @@ export const ExpensesPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+          </div>
+        </ModalOverlay>
       </AnimatePresence>
 
       {/* Modal para editar estado */}
       <AnimatePresence>
-        {showEditStatusModal && selectedExpense && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
-            >
-              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Edit size={20} className="text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Editar Estado</h2>
-                    <p className="text-white/40 text-sm">Cambia el estado del gasto</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowEditStatusModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Gasto</label>
-                    <p className="text-white font-medium">{selectedExpense.description}</p>
-                    <p className="text-white/40 text-sm mt-1">{formatCurrency(selectedExpense.amount)}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Nuevo Estado</label>
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                      <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                      <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowEditStatusModal(false)}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleUpdateStatus}
-                      className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      Actualizar Estado
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        <StatusModal
+          isOpen={showEditStatusModal && !!selectedExpense}
+          onClose={() => setShowEditStatusModal(false)}
+          itemLabel="gasto"
+          itemName={selectedExpense?.description ?? ''}
+          itemAmount={selectedExpense?.amount ?? 0}
+          currentStatus={newStatus}
+          onStatusChange={setNewStatus}
+          onConfirm={handleUpdateStatus}
+        />
       </AnimatePresence>
 
     </motion.div>

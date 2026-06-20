@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Download, Share2, Calendar, Filter, RefreshCw,
-  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, BarChart3,
+  TrendingUp, TrendingDown, BarChart3,
   Activity, Wallet, Target, Users, Plus, X, Search,
   PieChart as PieChartIcon, Trash2,
   XCircle, Star, ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 
 interface Report {
   id: string;
@@ -354,29 +358,7 @@ export const ReportsPage = () => {
 
   const hasActiveFilters = searchTerm !== '' || selectedType !== 'todos' || selectedFormat !== 'todos' || showFavoritesOnly || dateRange.start || dateRange.end;
 
-  // Skeleton Loader
-  if (isLoading) {
-    return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-        <div className="animate-pulse space-y-6">
-          <div className="flex justify-between">
-            <div className="h-8 w-48 bg-white/10 rounded-lg" />
-            <div className="h-10 w-32 bg-white/10 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-white/10 rounded-xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80 bg-white/10 rounded-xl" />
-            <div className="h-80 bg-white/10 rounded-xl" />
-          </div>
-          <div className="h-96 bg-white/10 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <motion.div 
@@ -552,7 +534,7 @@ export const ReportsPage = () => {
                   ))}
                 </Pie>
                 <ReTooltip
-                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  contentStyle={tooltipStyle}
                   formatter={(value: number) => [value, 'reportes']}
                   labelStyle={{ color: 'white' }}
                 />
@@ -1003,96 +985,28 @@ export const ReportsPage = () => {
 
         {/* Pagination */}
         {filteredReports.length > 0 && (
-          <div className="p-4 border-t border-white/10 flex items-center justify-between">
-            <p className="text-white/40 text-sm">
-              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredReports.length)} de {filteredReports.length} reportes
-            </p>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-              </motion.button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
-                  <motion.button
-                    key={i}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                      currentPage === pageNum
-                        ? 'bg-[#F05984] text-white shadow-md'
-                        : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {pageNum}
-                  </motion.button>
-                );
-              })}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={16} />
-              </motion.button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredReports.length}
+            itemsPerPage={itemsPerPage}
+            label="reportes"
+            onPageChange={setCurrentPage}
+          />
         )}
       </motion.div>
 
-      {/* Modal para generar reporte - Mejorado con animación */}
+      {/* Modal para generar reporte */}
       <AnimatePresence>
-        {showGenerateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-md shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg shadow-lg">
-                    <FileText size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Generar Reporte</h2>
-                    <p className="text-white/40 text-sm">Crea un nuevo reporte personalizado</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowGenerateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-              <div className="p-6">
+        <ModalOverlay
+          isOpen={showGenerateModal}
+          onClose={() => setShowGenerateModal(false)}
+          title="Generar Reporte"
+          subtitle="Crea un nuevo reporte personalizado"
+          icon={<FileText size={20} className="text-white" />}
+          maxWidth="max-w-md"
+        >
+          <div>
                 <div className="space-y-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Nombre del reporte</label>
@@ -1185,10 +1099,8 @@ export const ReportsPage = () => {
                     </motion.button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+          </div>
+        </ModalOverlay>
       </AnimatePresence>
 
       {/* Modal de confirmación de eliminación - Mejorado con animación */}

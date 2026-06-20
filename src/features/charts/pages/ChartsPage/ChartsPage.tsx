@@ -6,6 +6,7 @@ import {
   AreaChart, Area
 } from 'recharts';
 import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
+import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import {
   TrendingUp,
   TrendingDown, 
@@ -323,24 +324,7 @@ export const ChartsPage = () => {
 
   const topExpenseCategories = [...expenseCategories].sort((a, b) => b.value - a.value).slice(0, 5);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-        <div className="animate-pulse space-y-6">
-          <div className="flex justify-between">
-            <div className="h-8 w-48 bg-white/10 rounded-lg" />
-            <div className="h-10 w-32 bg-white/10 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-white/10 rounded-xl" />
-            ))}
-          </div>
-          <div className="h-96 bg-white/10 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <motion.div 

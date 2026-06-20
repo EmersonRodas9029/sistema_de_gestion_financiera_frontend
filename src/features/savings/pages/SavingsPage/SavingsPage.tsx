@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Target, Plus, Search, Edit, Trash2, ChevronRight, ChevronLeft,
+import {
+  Target, Plus, Search, Edit, Trash2,
   Calendar, TrendingUp, PieChart as PieChartIcon, BarChart3, RefreshCw,
   Filter, Home as HomeIcon, Gift, BookOpen, AlertCircle, CheckCircle, Clock,
   X, Save, Flag, Crown, DollarSign, Activity, XCircle,
   Car, Heart, ChevronDown, ChevronUp, PiggyBank, Shield, Plane, Laptop
 } from 'lucide-react';
 import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
+
+void AlertCircle; void CheckCircle; void Clock; void labelStyle;
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend,
   LineChart, Line, XAxis, YAxis, CartesianGrid
@@ -615,29 +621,7 @@ export const SavingsPage = () => {
 
   const hasActiveFilters = searchTerm !== '' || selectedStatus !== 'todos' || selectedPriority !== 'todas';
 
-  // Skeleton Loader
-  if (isLoading) {
-    return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
-        <div className="animate-pulse space-y-6">
-          <div className="flex justify-between">
-            <div className="h-8 w-48 bg-white/10 rounded-lg" />
-            <div className="h-10 w-32 bg-white/10 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-white/10 rounded-xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80 bg-white/10 rounded-xl" />
-            <div className="h-80 bg-white/10 rounded-xl" />
-          </div>
-          <div className="h-96 bg-white/10 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <motion.div 
@@ -824,7 +808,7 @@ export const SavingsPage = () => {
                   ))}
                 </Pie>
                 <ReTooltip
-                  contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+                  contentStyle={tooltipStyle}
                   formatter={(value: number) => [formatCurrency(value), 'Meta']}
                   labelStyle={{ color: 'white' }}
                 />
@@ -904,7 +888,7 @@ export const SavingsPage = () => {
               width={65}
             />
             <ReTooltip
-              contentStyle={{ backgroundColor: '#1a0f14', border: '1px solid #F05984', borderRadius: '8px' }}
+              contentStyle={tooltipStyle}
               formatter={(value: number) => [formatCurrency(value), 'Ahorrado']}
               labelStyle={{ color: '#ffffff' }}
             />
@@ -1302,98 +1286,29 @@ export const SavingsPage = () => {
           </motion.div>
         )}
 
-        {/* Pagination */}
         {filteredGoals.length > 0 && (
-          <div className="p-4 border-t border-white/10 flex items-center justify-between">
-            <p className="text-white/40 text-sm">
-              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredGoals.length)} de {filteredGoals.length} metas
-            </p>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-              </motion.button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
-                  <motion.button
-                    key={i}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                      currentPage === pageNum
-                        ? 'bg-[#F05984] text-white shadow-md'
-                        : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {pageNum}
-                  </motion.button>
-                );
-              })}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={16} />
-              </motion.button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredGoals.length}
+            itemsPerPage={itemsPerPage}
+            label="metas"
+            onPageChange={setCurrentPage}
+          />
         )}
       </motion.div>
 
-      {/* Modal para crear nueva meta - Mejorado con animación */}
+      {/* Modal para crear nueva meta */}
       <AnimatePresence>
-        {showCreateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg shadow-lg">
-                    <PiggyBank size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Nueva Meta de Ahorro</h2>
-                    <p className="text-white/40 text-sm">Define un nuevo objetivo de ahorro</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-              <div className="p-6">
+        <ModalOverlay
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Nueva Meta de Ahorro"
+          subtitle="Define un nuevo objetivo de ahorro"
+          icon={<PiggyBank size={20} className="text-white" />}
+          maxWidth="max-w-2xl"
+        >
+          <div>
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateGoal(); }} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1491,47 +1406,21 @@ export const SavingsPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+          </div>
+        </ModalOverlay>
       </AnimatePresence>
 
-      {/* Modal para editar meta - Mejorado con animación */}
+      {/* Modal para editar meta */}
       <AnimatePresence>
-        {showEditModal && selectedGoal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Edit size={20} className="text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Editar Meta</h2>
-                    <p className="text-white/40 text-sm">Modifica los datos de la meta</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowEditModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-              <div className="p-6">
+        <ModalOverlay
+          isOpen={showEditModal && !!selectedGoal}
+          onClose={() => setShowEditModal(false)}
+          title="Editar Meta"
+          subtitle="Modifica los datos de la meta"
+          icon={<Edit size={20} className="text-white" />}
+          maxWidth="max-w-md"
+        >
+          <div>
                 <form onSubmit={(e) => { e.preventDefault(); handleUpdateGoal(); }} className="space-y-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Nombre</label>
@@ -1580,10 +1469,8 @@ export const SavingsPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+          </div>
+        </ModalOverlay>
       </AnimatePresence>
 
       {/* Modal para editar estado - Mejorado con animación */}
