@@ -34,6 +34,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface Client {
   id: string;
@@ -71,14 +72,11 @@ interface Client {
 }
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `CLI-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultClients = (): Client[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'María González',
     email: 'maria.gonzalez@techsolutions.com',
     phone: '+34 612 345 678',
@@ -111,7 +109,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Juan Pérez',
     email: 'juan.perez@gmail.com',
     phone: '+34 634 567 890',
@@ -139,7 +137,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Carlos Rodríguez',
     email: 'carlos.rodriguez@constructora.com',
     phone: '+34 645 678 901',
@@ -171,7 +169,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Ana Martínez',
     email: 'ana.martinez@estudio.com',
     phone: '+34 656 789 012',
@@ -199,7 +197,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Roberto Sánchez',
     email: 'roberto.sanchez@hotmail.com',
     phone: '+34 667 890 123',
@@ -227,7 +225,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Laura Torres',
     email: 'laura.torres@innovatech.com',
     phone: '+34 678 901 234',
@@ -257,7 +255,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'David Fernández',
     email: 'david.fernandez@abogados.com',
     phone: '+34 689 012 345',
@@ -286,7 +284,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-01-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Patricia Gómez',
     email: 'patricia.gomez@fitness.com',
     phone: '+34 690 123 456',
@@ -314,7 +312,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Javier Ruiz',
     email: 'javier.ruiz@transportes.com',
     phone: '+34 601 234 567',
@@ -345,7 +343,7 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-01-30'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('CLI'),
     name: 'Sofía Díaz',
     email: 'sofia.diaz@marketing.com',
     phone: '+34 612 345 678',
@@ -375,16 +373,6 @@ const getDefaultClients = (): Client[] => [
     updatedAt: '2024-02-23'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const ClientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -554,7 +542,7 @@ export const ClientsPage = () => {
 
   const handleCreateClient = () => {
     const newClient: Client = {
-      id: generateUniqueId(),
+      id: generateUniqueId('CLI'),
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
@@ -698,22 +686,6 @@ export const ClientsPage = () => {
     setSelectedStatus('todos');
     setSelectedPlan('todos');
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -1776,27 +1748,6 @@ export const ClientsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

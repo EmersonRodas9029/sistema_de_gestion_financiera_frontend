@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
+import { generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import {
   Bell, CheckCheck, Trash2, Settings, RefreshCw,
   ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle,
   Info, Target, CreditCard, Archive, BellOff, X, XCircle
@@ -27,34 +28,19 @@ interface NotificationSettings {
   retentionDays: number;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
-
-const generateUniqueId = () => `NOT-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-
 const getDefaultNotifications = (): Notification[] => [
-  { id: generateUniqueId(), type: 'goal', title: '¡Meta de ahorro alcanzada!', message: 'Has alcanzado el 50% de tu meta "Fondo de Emergencia".', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver meta' },
-  { id: generateUniqueId(), type: 'transaction', title: 'Pago recibido', message: 'Has recibido un pago de $2,500.00 de María González', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/incomes', actionLabel: 'Ver transacción' },
-  { id: generateUniqueId(), type: 'reminder', title: 'Recordatorio de pago', message: 'Mañana vence el pago de tu tarjeta de crédito.', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalles' },
-  { id: generateUniqueId(), type: 'warning', title: 'Gasto inusual detectado', message: 'Se ha detectado un gasto inusual de $1,200.00.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Revisar' },
-  { id: generateUniqueId(), type: 'info', title: 'Actualización del sistema', message: 'Hemos actualizado nuestra plataforma con nuevas características.', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/changelog', actionLabel: 'Ver novedades' },
-  { id: generateUniqueId(), type: 'goal', title: 'Meta próxima a vencer', message: 'Tu meta "Vacaciones Europa" vence en 30 días.', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver progreso' },
-  { id: generateUniqueId(), type: 'transaction', title: 'Transferencia programada', message: 'Se ha programado una transferencia de $500.00 para mañana.', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/wallet', actionLabel: 'Ver programación' },
-  { id: generateUniqueId(), type: 'warning', title: 'Límite de gasto alcanzado', message: 'Has alcanzado el 80% de tu límite en "Alimentación".', timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: false },
-  { id: generateUniqueId(), type: 'success', title: '¡Meta completada!', message: '¡Felicidades! Has completado tu meta "Boda".', timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver detalles' },
-  { id: generateUniqueId(), type: 'reminder', title: 'Revisión mensual', message: 'Es momento de revisar tus finanzas del mes.', timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/analytics', actionLabel: 'Revisar' },
-  { id: generateUniqueId(), type: 'info', title: 'Nuevo artículo disponible', message: '5 consejos para ahorrar más este año', timestamp: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/blog/5-tips', actionLabel: 'Leer artículo' },
-  { id: generateUniqueId(), type: 'transaction', title: 'Pago realizado', message: 'Se ha realizado el pago de $156.75 en "Supermercado".', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalle' }
+  { id: generateUniqueId('NOT'), type: 'goal', title: '¡Meta de ahorro alcanzada!', message: 'Has alcanzado el 50% de tu meta "Fondo de Emergencia".', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver meta' },
+  { id: generateUniqueId('NOT'), type: 'transaction', title: 'Pago recibido', message: 'Has recibido un pago de $2,500.00 de María González', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/incomes', actionLabel: 'Ver transacción' },
+  { id: generateUniqueId('NOT'), type: 'reminder', title: 'Recordatorio de pago', message: 'Mañana vence el pago de tu tarjeta de crédito.', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalles' },
+  { id: generateUniqueId('NOT'), type: 'warning', title: 'Gasto inusual detectado', message: 'Se ha detectado un gasto inusual de $1,200.00.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Revisar' },
+  { id: generateUniqueId('NOT'), type: 'info', title: 'Actualización del sistema', message: 'Hemos actualizado nuestra plataforma con nuevas características.', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/changelog', actionLabel: 'Ver novedades' },
+  { id: generateUniqueId('NOT'), type: 'goal', title: 'Meta próxima a vencer', message: 'Tu meta "Vacaciones Europa" vence en 30 días.', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver progreso' },
+  { id: generateUniqueId('NOT'), type: 'transaction', title: 'Transferencia programada', message: 'Se ha programado una transferencia de $500.00 para mañana.', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/wallet', actionLabel: 'Ver programación' },
+  { id: generateUniqueId('NOT'), type: 'warning', title: 'Límite de gasto alcanzado', message: 'Has alcanzado el 80% de tu límite en "Alimentación".', timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: false },
+  { id: generateUniqueId('NOT'), type: 'success', title: '¡Meta completada!', message: '¡Felicidades! Has completado tu meta "Boda".', timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/savings', actionLabel: 'Ver detalles' },
+  { id: generateUniqueId('NOT'), type: 'reminder', title: 'Revisión mensual', message: 'Es momento de revisar tus finanzas del mes.', timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), read: false, archived: false, actionable: true, actionUrl: '/analytics', actionLabel: 'Revisar' },
+  { id: generateUniqueId('NOT'), type: 'info', title: 'Nuevo artículo disponible', message: '5 consejos para ahorrar más este año', timestamp: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/blog/5-tips', actionLabel: 'Leer artículo' },
+  { id: generateUniqueId('NOT'), type: 'transaction', title: 'Pago realizado', message: 'Se ha realizado el pago de $156.75 en "Supermercado".', timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), read: true, archived: false, actionable: true, actionUrl: '/expenses', actionLabel: 'Ver detalle' }
 ];
 
 const getDefaultSettings = (): NotificationSettings => ({ pushEnabled: true, soundEnabled: true, emailEnabled: false, retentionDays: 30 });
@@ -855,26 +841,6 @@ export const NotificationsPage = () => {
         )}
       </AnimatePresence>
 
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

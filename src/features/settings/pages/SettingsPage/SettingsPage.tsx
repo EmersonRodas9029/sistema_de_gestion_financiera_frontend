@@ -26,6 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
+import { containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface SettingsSection {
   id: string;
@@ -88,16 +89,6 @@ interface BackupSettings {
   backupSize: string;
   includeAttachments: boolean;
 }
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 // Datos iniciales por defecto
 const getDefaultProfile = (): ProfileSettings => ({
@@ -1027,27 +1018,6 @@ export const SettingsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

@@ -4,128 +4,65 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sistema de Gestión Financiera is a React + TypeScript financial management application with a modern dark theme UI. The app helps users track income, expenses, budgets, goals, and provides financial analytics.
+Sistema de Gestión Financiera is a React + TypeScript financial management app with a dark theme. Users track income, expenses, budgets, goals, savings, and analytics. UI text is in Spanish; currency uses `es-ES` locale with USD.
 
-## Tech Stack
-
-- **React 19** with TypeScript
-- **Vite** for build tooling
-- **Tailwind CSS** for styling
-- **React Router** for navigation
-- **Framer Motion** for animations
-- **Recharts** for data visualization
-- **Zustand** for state management
-- **React Hook Form** with Zod for form validation
-- **Axios** for API calls
-- **Lucide React** for icons
-
-## Development Commands
+## Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run linter
-npm run lint
-
-# Preview production build
-npm run preview
+npm run dev       # start dev server (Vite)
+npm run build     # tsc -b && vite build
+npm run lint      # ESLint
+npm run preview   # preview production build
 ```
+
+No test runner is configured.
 
 ## Architecture
 
-### Feature-Based Structure
+### Router
 
-The codebase follows a feature-based organization under `src/features/`:
+Uses `HashRouter` (not `BrowserRouter`) — relevant for links, redirects, and the Vercel `vercel.json` rewrite. Routes live in `src/app/App.tsx`. `REQUIRE_AUTH = true` at the top of that file gates all protected routes.
 
-```
-src/features/
-├── auth/           # Authentication (login, register, protected routes)
-├── home/           # Dashboard/home page
-├── incomes/        # Income tracking
-├── expenses/       # Expense tracking
-├── categories/     # Category management
-├── goals/          # Financial goals
-├── budgets/        # Budget management
-├── savings/        # Savings tracking
-├── recurring-expenses/  # Recurring/subscription expenses
-├── clients/        # Client management (admin)
-├── reports/        # Financial reports (admin)
-├── charts/         # Analytics/charts
-├── notifications/  # Notifications
-└── settings/       # User settings
-```
+### Auth
 
-Each feature typically contains:
-- `components/` - Feature-specific components
-- `pages/` - Page components
-- `services/` - API calls and business logic
-- `hooks/` - Custom React hooks
-- `store/` - Zustand stores (if needed)
+Not a real auth system — stored entirely in `localStorage`:
+- `isAuthenticated` (`"true"/"false"`)
+- `userRole` (`"admin" | "client"`)
+- `userName` (string)
 
-### Shared Components
+`ProtectedRoutes` in `App.tsx` reads these directly and redirects to `/login` when unauthenticated.
 
-Located in `src/shared/components/`:
-- `layout/` - MainLayout, LeftBar, MobileLeftBar
-- `ui/` - Reusable UI components (Button, Card, Input, Modal, Table)
-- `charts/` - Chart components
-- `forms/` - Form components
+### Feature structure
 
-### Routing
+`src/features/<feature>/` with subdirs: `components/`, `pages/`, `services/`, `hooks/`, `store/` (not all features use every subdir). Pages follow the pattern `pages/FooPage/FooPage.tsx` + `pages/FooPage/index.tsx` (re-export).
 
-Routes are defined in `src/app/App.tsx`. Authentication is handled via `localStorage` (check `isAuthenticated`, `userRole`, `userName`).
+Most feature data is **hardcoded mock data** inside the page component — no real API calls yet. `src/features/*/services/index.ts` files exist but are mostly stubs.
 
-### Theme & Styling
+### API
 
-- **Dark theme** with gradient backgrounds (`#1a0f14` base color)
-- **Glass morphism** effects using `glass-effect` class
-- **Brand colors**: `#F05984` (primary pink), `#BC455F` (secondary), `#6E4068` (tertiary)
-- Custom styles in `src/index.css` including responsive utilities
+`src/lib/config.ts` exports `config.apiUrl` (env `VITE_API_URL`, default `http://localhost:3000/api`). `QueryClientProvider` wraps the app in `main.tsx`; React Query is set up but barely used — most pages fetch nothing.
 
-### State Management
+### Shared
 
-- **Zustand** for global state (see `src/shared/store/`)
-- **React Hook Form** for form state
-- **React Query** (TanStack Query) for server state
+- `src/shared/components/layout/` — `MainLayout`, `LeftBar`, `MobileLeftBar`
+- `src/shared/components/ui/` — `Button`, `Card`, `Input`, `Modal`, `Table`
+- `src/styles/globals.css` + `src/index.css` — global styles and custom utilities
 
-### API Configuration
+### Styling
 
-API base URL is configured in `src/lib/config.ts`. Default: `http://localhost:3000/api`
+Tailwind CSS with a custom dark theme. Key conventions:
+- Background base: `#1a0f14`; brand pink: `#F05984`; secondary: `#BC455F`; tertiary: `#6E4068`
+- Glass morphism via `glass-effect` CSS class
+- `lg:` prefix for desktop layouts; left sidebar hidden on mobile behind a hamburger
 
-## Key Patterns
+### Notable dependencies
 
-### Authentication Flow
+- `framer-motion` — page and list animations (used heavily in most pages)
+- `@dnd-kit/core` + `@dnd-kit/sortable` — drag-to-reorder on the home dashboard (`SortableItem.tsx`)
+- `react-hot-toast` — toast notifications
+- `date-fns` — date formatting/manipulation
+- `@headlessui/react` — accessible primitives (dropdowns, dialogs)
 
-1. User credentials stored in `localStorage`:
-   - `isAuthenticated`: boolean
-   - `userRole`: 'admin' | 'client'
-   - `userName`: string
+## Admin vs Client
 
-2. Protected routes check these values and redirect to `/login` if not authenticated
-
-### Responsive Design
-
-- Mobile-first approach with Tailwind breakpoints
-- LeftBar is hidden on mobile, accessible via hamburger menu
-- Use `lg:` prefix for desktop-specific styles
-- Custom responsive utilities in `src/index.css`
-
-### Chart Components
-
-Charts use Recharts library with custom styling:
-- Area, Line, and Bar charts for time-series data
-- Pie charts for category distribution
-- Custom tooltips with dark theme styling
-
-## Important Notes
-
-- The app uses Spanish language for UI text
-- All currency formatting uses `es-ES` locale with USD currency
-- Mock data is used in many components (replace with real API calls)
-- The `REQUIRE_AUTH` constant in `App.tsx` controls authentication enforcement
+`/admin`, `/admin/clients`, and `/admin/reports` are admin-only routes. Role is read from `localStorage.userRole` at render time — no server-side enforcement.

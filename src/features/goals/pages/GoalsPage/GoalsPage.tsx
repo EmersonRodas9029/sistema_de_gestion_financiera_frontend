@@ -7,9 +7,10 @@ import {
   X, Save, Flag, Crown, Wallet, CreditCard, DollarSign, Activity, XCircle,
   Car, Heart, ShoppingBag, ChevronDown, ChevronUp, LineChart as LineChartIcon
 } from 'lucide-react';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, 
-  XAxis, YAxis, CartesianGrid, LineChart, Line 
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend,
+  XAxis, YAxis, CartesianGrid, LineChart, Line
 } from 'recharts';
 
 interface Goal {
@@ -50,14 +51,11 @@ const monthlyTrends = [
 ];
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `GOAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultGoals = (): Goal[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Fondo de Emergencia',
     description: 'Ahorrar para imprevistos y emergencias',
     type: 'emergency',
@@ -80,7 +78,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Vacaciones a Europa',
     description: 'Viaje de 15 días por Europa',
     type: 'travel',
@@ -102,7 +100,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Compra de Auto',
     description: 'Ahorrar para un auto nuevo',
     type: 'purchase',
@@ -125,7 +123,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Inversión en CETES',
     description: 'Inversión en instrumentos de deuda',
     type: 'investment',
@@ -148,7 +146,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Pago de Deuda TC',
     description: 'Liquidar deuda de tarjeta de crédito',
     type: 'debt',
@@ -171,7 +169,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Maestría',
     description: 'Ahorrar para una maestría en el extranjero',
     type: 'education',
@@ -193,7 +191,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Fondo para Casa',
     description: 'Enganche para comprar una casa',
     type: 'purchase',
@@ -216,7 +214,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Ahorro para Bodas',
     description: 'Ahorrar para la boda',
     type: 'savings',
@@ -238,7 +236,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Jubilación',
     description: 'Fondo para el retiro',
     type: 'retirement',
@@ -261,7 +259,7 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('GOAL'),
     name: 'Comprar iPhone',
     description: 'Ahorrar para un iPhone nuevo',
     type: 'purchase',
@@ -283,16 +281,6 @@ const getDefaultGoals = (): Goal[] => [
     updatedAt: '2024-02-23'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const GoalsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -482,7 +470,7 @@ export const GoalsPage = () => {
 
   const handleCreateGoal = () => {
     const newGoal: Goal = {
-      id: generateUniqueId(),
+      id: generateUniqueId('GOAL'),
       name: formData.name,
       description: formData.description || undefined,
       type: formData.type as Goal['type'],
@@ -585,22 +573,6 @@ export const GoalsPage = () => {
     setSelectedStatus('todos');
     setSelectedPriority('todas');
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -1733,27 +1705,6 @@ export const GoalsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

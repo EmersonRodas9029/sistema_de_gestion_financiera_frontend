@@ -44,6 +44,7 @@ import {
   Film
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
 
 interface Expense {
   id: string;
@@ -89,11 +90,7 @@ interface WeeklyTrend {
   amount: number;
 }
 
-
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `EXP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos de presupuesto por categoría
 const categoryBudgets: CategoryBudget[] = [
@@ -128,7 +125,7 @@ const weeklyTrends: WeeklyTrend[] = [
 // Datos iniciales por defecto
 const getDefaultExpenses = (): Expense[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Supermercado Mensual',
     amount: 350.75,
     category: 'Alimentación',
@@ -151,7 +148,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'ninguna'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Pago de alquiler',
     amount: 1200.00,
     category: 'Vivienda',
@@ -174,7 +171,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'total'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Electricidad',
     amount: 85.50,
     category: 'Servicios',
@@ -197,7 +194,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'total'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Internet y telefonía',
     amount: 65.99,
     category: 'Servicios',
@@ -220,7 +217,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'total'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Gasolina',
     amount: 65.00,
     category: 'Transporte',
@@ -241,7 +238,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'ninguna'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Cena restaurante',
     amount: 45.80,
     category: 'Ocio',
@@ -261,7 +258,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'ninguna'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Gimnasio',
     amount: 45.00,
     category: 'Salud',
@@ -283,7 +280,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'ninguna'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Ropa',
     amount: 120.50,
     category: 'Compras',
@@ -304,7 +301,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'ninguna'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Factura pendiente - Agua',
     amount: 45.30,
     category: 'Servicios',
@@ -327,7 +324,7 @@ const getDefaultExpenses = (): Expense[] => [
     deductionType: 'total'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('EXP'),
     description: 'Seguro de coche',
     amount: 450.00,
     category: 'Seguros',
@@ -353,16 +350,6 @@ const getDefaultExpenses = (): Expense[] => [
 
 // Colores para el gráfico de pastel
 const CHART_COLORS = ['#F59E0B', '#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#EF4444', '#EC4899', '#6366F1'];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const ExpensesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -544,32 +531,6 @@ export const ExpensesPage = () => {
   const top5Categories = categories.slice(0, 5);
 
   // Función para filtrar por período
-  const filterByPeriod = (date: string, period: string): boolean => {
-    if (period === 'todos') return true;
-    
-    const expenseDate = new Date(date);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    switch(period) {
-      case 'este-mes': {
-        return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-      }
-      case 'este-semana': {
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(today);
-        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
-        return expenseDate >= startOfWeek && expenseDate <= endOfWeek;
-      }
-      case 'este-ano': {
-        return expenseDate.getFullYear() === currentYear;
-      }
-      default:
-        return true;
-    }
-  };
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -584,7 +545,7 @@ export const ExpensesPage = () => {
 
   const handleCreateExpense = () => {
     const newExpense: Expense = {
-      id: generateUniqueId(),
+      id: generateUniqueId('EXP'),
       description: formData.description,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -692,52 +653,6 @@ export const ExpensesPage = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'completado':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'pendiente':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'programado':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'cancelado':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'completado':
-        return <CheckCircle size={14} />;
-      case 'pendiente':
-        return <Clock size={14} />;
-      case 'programado':
-        return <Calendar size={14} />;
-      case 'cancelado':
-        return <XCircle size={14} />;
-      default:
-        return <AlertCircle size={14} />;
-    }
-  };
-
   const getPaymentMethodIcon = (method: string) => {
     switch(method) {
       case 'efectivo':
@@ -750,23 +665,6 @@ export const ExpensesPage = () => {
         return <FileText size={14} />;
       default:
         return <CreditCard size={14} />;
-    }
-  };
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch(method) {
-      case 'efectivo':
-        return 'Efectivo';
-      case 'tarjeta':
-        return 'Tarjeta';
-      case 'transferencia':
-        return 'Transferencia';
-      case 'cheque':
-        return 'Cheque';
-      case 'otro':
-        return 'Otro';
-      default:
-        return method;
     }
   };
 
@@ -2169,27 +2067,6 @@ export const ExpensesPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

@@ -8,6 +8,7 @@ import {
   XCircle, Star, ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface Report {
   id: string;
@@ -28,14 +29,11 @@ interface Report {
 }
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `RPT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultReports = (): Report[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Reporte Financiero Q1 2024',
     type: 'financial',
     format: 'pdf',
@@ -52,7 +50,7 @@ const getDefaultReports = (): Report[] => [
     description: 'Reporte completo del primer trimestre 2024'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Análisis de Ingresos - Febrero 2024',
     type: 'income',
     format: 'excel',
@@ -69,7 +67,7 @@ const getDefaultReports = (): Report[] => [
     description: 'Análisis detallado de ingresos de febrero'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Reporte de Gastos - Enero 2024',
     type: 'expense',
     format: 'pdf',
@@ -86,7 +84,7 @@ const getDefaultReports = (): Report[] => [
     description: 'Reporte completo de gastos de enero'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Reporte de Clientes - Q1 2024',
     type: 'client',
     format: 'excel',
@@ -102,7 +100,7 @@ const getDefaultReports = (): Report[] => [
     description: 'Análisis de clientes del primer trimestre'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Presupuesto vs Real - Marzo 2024',
     type: 'budget',
     format: 'pdf',
@@ -118,7 +116,7 @@ const getDefaultReports = (): Report[] => [
     description: 'Comparativa entre presupuesto y real'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REP'),
     name: 'Metas Financieras - Reporte Anual',
     type: 'goal',
     format: 'pdf',
@@ -134,16 +132,6 @@ const getDefaultReports = (): Report[] => [
     description: 'Seguimiento de metas financieras 2024'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const ReportsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -263,7 +251,7 @@ export const ReportsPage = () => {
 
   const handleGenerateReport = () => {
     const newReport: Report = {
-      id: generateUniqueId(),
+      id: generateUniqueId('REP'),
       name: formData.name,
       type: formData.type as Report['type'],
       format: formData.format as Report['format'],
@@ -1265,27 +1253,6 @@ export const ReportsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

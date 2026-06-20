@@ -36,6 +36,7 @@ import {
   Edit
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
 
 interface Income {
   id: string;
@@ -69,14 +70,11 @@ interface CategorySummary {
 }
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto con IDs únicos
 const getDefaultIncomes = (): Income[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago de nómina - Febrero',
     amount: 2500.00,
     category: 'Salario',
@@ -96,7 +94,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['salario', 'mensual', 'fijo']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago de cliente - Proyecto Web',
     amount: 3500.00,
     category: 'Servicios profesionales',
@@ -114,7 +112,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['servicios', 'proyecto']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Venta de productos',
     amount: 1250.50,
     category: 'Ventas',
@@ -131,7 +129,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['ventas', 'digital']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago de alquiler oficina',
     amount: 1200.00,
     category: 'Ingresos pasivos',
@@ -149,7 +147,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['alquiler', 'pasivo']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Consultoría empresarial',
     amount: 850.00,
     category: 'Consultoría',
@@ -166,7 +164,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['consultoría']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago pendiente - Proyecto App',
     amount: 2340.00,
     category: 'Servicios profesionales',
@@ -183,7 +181,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['servicios', 'pendiente']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Membresía Premium',
     amount: 1250.00,
     category: 'Suscripciones',
@@ -201,7 +199,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['suscripción']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Venta en efectivo',
     amount: 500.00,
     category: 'Ventas',
@@ -216,7 +214,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['ventas', 'efectivo']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago con cheque - Atrasado',
     amount: 750.00,
     category: 'Servicios profesionales',
@@ -232,7 +230,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['servicios', 'cheque']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Bono anual',
     amount: 3000.00,
     category: 'Salario',
@@ -248,7 +246,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['salario', 'bono']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Pago de nómina - Marzo',
     amount: 2500.00,
     category: 'Salario',
@@ -263,7 +261,7 @@ const getDefaultIncomes = (): Income[] => [
     tags: ['salario']
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('INC'),
     description: 'Dividendos',
     amount: 500.00,
     category: 'Ingresos pasivos',
@@ -281,16 +279,6 @@ const getDefaultIncomes = (): Income[] => [
 
 // Colores para el gráfico de pastel
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const IncomesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -443,33 +431,6 @@ export const IncomesPage = () => {
   // Obtener solo las últimas 3 categorías usadas (más recientes por monto)
   const lastThreeCategories = categories.slice(0, 3);
 
-  const filterByPeriod = (date: string, period: string): boolean => {
-    if (period === 'todos') return true;
-    
-    const incomeDate = new Date(date);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
-    switch(period) {
-      case 'este-mes': {
-        return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
-      }
-      case 'este-semana': {
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(today);
-        endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
-        return incomeDate >= startOfWeek && incomeDate <= endOfWeek;
-      }
-      case 'este-ano': {
-        return incomeDate.getFullYear() === currentYear;
-      }
-      default:
-        return true;
-    }
-  };
-
   const clearAllFilters = () => {
     setSearchTerm('');
     setSelectedCategory('todas');
@@ -481,7 +442,7 @@ export const IncomesPage = () => {
 
   const handleCreateIncome = () => {
     const newIncome: Income = {
-      id: generateUniqueId(),
+      id: generateUniqueId('INC'),
       description: formData.description,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -578,69 +539,6 @@ export const IncomesPage = () => {
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'completado':
-        return 'bg-green-500/20 text-green-400';
-      case 'pendiente':
-        return 'bg-yellow-500/20 text-yellow-400';
-      case 'programado':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'cancelado':
-        return 'bg-red-500/20 text-red-400';
-      default:
-        return 'bg-gray-500/20 text-gray-400';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'completado':
-        return <CheckCircle size={14} />;
-      case 'pendiente':
-        return <Clock size={14} />;
-      case 'programado':
-        return <Calendar size={14} />;
-      case 'cancelado':
-        return <XCircle size={14} />;
-      default:
-        return <AlertCircle size={14} />;
-    }
-  };
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch(method) {
-      case 'efectivo':
-        return 'Efectivo';
-      case 'tarjeta':
-        return 'Tarjeta';
-      case 'transferencia':
-        return 'Transferencia';
-      case 'cheque':
-        return 'Cheque';
-      case 'otro':
-        return 'Otro';
-      default:
-        return method;
-    }
   };
 
   const hasActiveFilters = searchTerm !== '' || 
@@ -1606,27 +1504,6 @@ export const IncomesPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

@@ -37,6 +37,7 @@ import {
   PieChart
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { formatCurrency, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface Budget {
   id: string;
@@ -74,14 +75,11 @@ interface CategoryBudget {
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `BUD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultBudgets = (): Budget[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Alimentación',
     category: 'Alimentación',
     amount: 600.00,
@@ -98,7 +96,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Vivienda',
     category: 'Vivienda',
     amount: 1200.00,
@@ -115,7 +113,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Transporte',
     category: 'Transporte',
     amount: 200.00,
@@ -132,7 +130,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Entretenimiento',
     category: 'Entretenimiento',
     amount: 150.00,
@@ -149,7 +147,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Salud',
     category: 'Salud',
     amount: 200.00,
@@ -166,7 +164,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Compras',
     category: 'Compras',
     amount: 300.00,
@@ -183,7 +181,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Servicios',
     category: 'Servicios',
     amount: 300.00,
@@ -200,7 +198,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Educación',
     category: 'Educación',
     amount: 200.00,
@@ -217,7 +215,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Ahorro',
     category: 'Ahorro',
     amount: 500.00,
@@ -234,7 +232,7 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('BUD'),
     name: 'Presupuesto Inversiones',
     category: 'Inversiones',
     amount: 300.00,
@@ -251,16 +249,6 @@ const getDefaultBudgets = (): Budget[] => [
     updatedAt: '2024-03-15'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const BudgetsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -444,7 +432,7 @@ export const BudgetsPage = () => {
 
   const handleCreateBudget = () => {
     const newBudget: Budget = {
-      id: generateUniqueId(),
+      id: generateUniqueId('BUD'),
       name: formData.name,
       category: formData.category,
       amount: parseFloat(formData.amount),
@@ -527,14 +515,6 @@ export const BudgetsPage = () => {
     setSelectedPeriod('todos');
     setSelectedStatus('todos');
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -1469,27 +1449,6 @@ export const BudgetsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

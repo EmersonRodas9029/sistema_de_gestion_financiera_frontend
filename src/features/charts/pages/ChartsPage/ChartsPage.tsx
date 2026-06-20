@@ -5,8 +5,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
-import { 
-  TrendingUp, 
+import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
+import {
+  TrendingUp,
   TrendingDown, 
   Calendar, 
   Download, 
@@ -92,16 +93,6 @@ const quarterlyData = [
   { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
   { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 interface TooltipPayload {
   name: string;
@@ -991,26 +982,6 @@ export const ChartsPage = () => {
         </motion.div>
       </div>
 
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

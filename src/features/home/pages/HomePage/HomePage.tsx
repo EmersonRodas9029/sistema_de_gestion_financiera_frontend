@@ -30,6 +30,7 @@ import {
   Cell,
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface QuickOption {
   id: string;
@@ -97,16 +98,6 @@ const healthMetrics = [
   { name: 'Capacidad de Ahorro', value: 72, color: '#BC455F' },
   { name: 'Estabilidad', value: 68, color: '#6E4068' },
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 type ChartPeriod = 'week' | 'month';
 

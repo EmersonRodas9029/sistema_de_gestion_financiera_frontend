@@ -35,6 +35,7 @@ import {
   PieChart
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getPaymentMethodLabel } from '../../../../shared/utils';
 
 interface RecurringExpense {
   id: string;
@@ -75,14 +76,11 @@ interface PaymentHistory {
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultExpenses = (): RecurringExpense[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Alquiler',
     description: 'Alquiler del apartamento',
     amount: 1200.00,
@@ -104,7 +102,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Netflix',
     description: 'Suscripción mensual',
     amount: 15.99,
@@ -124,7 +122,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Electricidad',
     description: 'Factura de luz',
     amount: 85.50,
@@ -143,7 +141,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Internet',
     description: 'Fibra óptica 300Mb',
     amount: 49.99,
@@ -162,7 +160,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Gimnasio',
     description: 'Membresía mensual',
     amount: 45.00,
@@ -181,7 +179,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Seguro de Coche',
     description: 'Seguro a todo riesgo',
     amount: 450.00,
@@ -200,7 +198,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Spotify',
     description: 'Suscripción familiar',
     amount: 14.99,
@@ -219,7 +217,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Agua',
     description: 'Factura del agua',
     amount: 35.80,
@@ -238,7 +236,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Amazon Prime',
     description: 'Suscripción anual',
     amount: 49.99,
@@ -257,7 +255,7 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('REC'),
     name: 'Limpieza',
     description: 'Servicio de limpieza semanal',
     amount: 80.00,
@@ -276,16 +274,6 @@ const getDefaultExpenses = (): RecurringExpense[] => [
     updatedAt: '2024-02-23'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const RecurringExpensesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -492,7 +480,7 @@ export const RecurringExpensesPage = () => {
     if (formData.frequency === 'quarterly') nextPayment.setMonth(nextPayment.getMonth() + 3);
 
     const newExpense: RecurringExpense = {
-      id: generateUniqueId(),
+      id: generateUniqueId('REC'),
       name: formData.name,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -563,22 +551,6 @@ export const RecurringExpensesPage = () => {
     setSelectedFrequency('todos');
     setSelectedStatus('todos');
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getFrequencyLabel = (frequency: string) => {
@@ -1488,27 +1460,6 @@ export const RecurringExpensesPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };

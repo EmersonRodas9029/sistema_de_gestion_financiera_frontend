@@ -7,7 +7,8 @@ import {
   X, Save, Flag, Crown, DollarSign, Activity, XCircle,
   Car, Heart, ChevronDown, ChevronUp, PiggyBank, Shield, Plane, Laptop
 } from 'lucide-react';
-import { 
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend,
   LineChart, Line, XAxis, YAxis, CartesianGrid
 } from 'recharts';
@@ -46,14 +47,11 @@ const monthlyTrends = [
 ];
 
 // Función para generar ID único
-const generateUniqueId = () => {
-  return `SAV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
 
 // Datos iniciales por defecto
 const getDefaultSavingsGoals = (): SavingsGoal[] => [
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Fondo de Emergencia',
     description: 'Ahorrar para imprevistos y emergencias',
     type: 'emergency',
@@ -72,7 +70,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Vacaciones Europa',
     description: 'Viaje de 15 días por Europa',
     type: 'travel',
@@ -91,7 +89,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Compra de Auto',
     description: 'Ahorrar para un auto nuevo',
     type: 'car',
@@ -110,7 +108,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Fondo de Inversión',
     description: 'Ahorrar para invertir',
     type: 'investment',
@@ -129,7 +127,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Maestría',
     description: 'Ahorrar para una maestría',
     type: 'education',
@@ -148,7 +146,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Enganche para Casa',
     description: 'Ahorrar para el enganche de una casa',
     type: 'house',
@@ -167,7 +165,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Boda',
     description: 'Ahorrar para la boda',
     type: 'wedding',
@@ -186,7 +184,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-03-15'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Jubilación',
     description: 'Fondo para el retiro',
     type: 'retirement',
@@ -205,7 +203,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'iPhone 15 Pro',
     description: 'Ahorrar para un iPhone nuevo',
     type: 'purchase',
@@ -224,7 +222,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Gimnasio Anual',
     description: 'Membresía anual del gimnasio',
     type: 'custom',
@@ -243,7 +241,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Curso de Inglés',
     description: 'Curso intensivo de inglés',
     type: 'education',
@@ -262,7 +260,7 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   },
   {
-    id: generateUniqueId(),
+    id: generateUniqueId('SAV'),
     name: 'Viaje a Japón',
     description: 'Ahorrar para viaje a Japón',
     type: 'travel',
@@ -281,16 +279,6 @@ const getDefaultSavingsGoals = (): SavingsGoal[] => [
     updatedAt: '2024-02-23'
   }
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
 
 export const SavingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -466,7 +454,7 @@ export const SavingsPage = () => {
 
   const handleCreateGoal = () => {
     const newGoal: SavingsGoal = {
-      id: generateUniqueId(),
+      id: generateUniqueId('SAV'),
       name: formData.name,
       description: formData.description || undefined,
       type: formData.type as SavingsGoal['type'],
@@ -567,22 +555,6 @@ export const SavingsPage = () => {
     setSelectedStatus('todos');
     setSelectedPriority('todas');
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -1689,27 +1661,6 @@ export const SavingsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Estilos CSS para el scrollbar personalizado */}
-      <style>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #F05984 #1a0f14;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #1a0f14;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #F05984, #BC455F);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #BC455F, #6E4068);
-        }
-      `}</style>
     </motion.div>
   );
 };
