@@ -33,7 +33,7 @@ import {
   PieChart
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getPaymentMethodLabel } from '../../../../shared/utils';
+import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';

@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
-import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import {
   TrendingUp,

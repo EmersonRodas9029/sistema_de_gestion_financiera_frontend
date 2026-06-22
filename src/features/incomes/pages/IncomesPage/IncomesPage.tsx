@@ -17,7 +17,6 @@ import {
   ShoppingBag,
   Home as HomeIcon,
   Users,
-  X,
   Save,
   User,
   Hash,

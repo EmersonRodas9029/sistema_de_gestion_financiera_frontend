@@ -7,7 +7,6 @@ import {
   CreditCard, 
   PieChart,
   ArrowRight,
-  Star,
   Users,
   Target
 } from 'lucide-react';

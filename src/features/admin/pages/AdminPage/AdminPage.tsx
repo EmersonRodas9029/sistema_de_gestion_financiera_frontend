@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { 
   Users, 
-  FileText, 
-  TrendingUp, 
   PieChart,
-  Calendar,
   Download,
   Filter,
   Search,

@@ -30,7 +30,7 @@ import {
   Cell,
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
+import {  containerVariants, itemVariants } from '../../../../shared/utils';
 
 interface QuickOption {
   id: string;
