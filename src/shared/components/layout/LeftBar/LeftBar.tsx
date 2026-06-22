@@ -3,7 +3,6 @@ import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
   LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
 } from 'lucide-react';
-import styles from './LeftBar.module.css';
 
 interface MenuItem {
   path: string;
