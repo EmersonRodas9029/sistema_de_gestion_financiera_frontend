@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
   LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
@@ -21,6 +21,7 @@ interface LeftBarProps {
 }
 
 export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate }: LeftBarProps) => {
+  const navigate = useNavigate();
   const unreadNotifications = 3;
 
   const menuItems: MenuItem[] = [
@@ -123,7 +124,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
         <button
           onClick={() => {
             onNavigate?.();
-            window.location.href = '/notifications';
+            navigate('/notifications');
           }}
           className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white"
         >
@@ -141,7 +142,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
             localStorage.removeItem('userRole');
             localStorage.removeItem('userName');
             onNavigate?.();
-            window.location.href = '/login';
+            navigate('/login');
           }}
           className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300"
         >

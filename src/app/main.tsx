@@ -5,6 +5,11 @@ import App from './App'
 import '../index.css'
 import '../styles/globals.css'
 
+// ponytail: redirect bare pathnames to hash equivalents so HashRouter doesn't stack on top of them
+if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+  window.location.replace('/' + '#' + window.location.pathname);
+}
+
 const queryClient = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
