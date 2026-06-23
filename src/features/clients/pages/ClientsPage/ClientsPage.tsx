@@ -11,7 +11,6 @@ import { usuariosService, clientesService, type ApiUsuario } from '../../service
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
-import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 
 interface Usuario {
   id: string;
@@ -52,6 +51,20 @@ const toUsuario = (a: ApiUsuario): Usuario => ({
 const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all";
 const selectStyle = { backgroundColor: 'rgba(255,255,255,0.05)', color: 'white' };
 const optStyle   = { backgroundColor: '#1a0f14', color: 'white' };
+
+const RolTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; color: string } }> }) => {
+  if (!active || !payload?.length) return null;
+  const { name, value, color } = payload[0].payload;
+  return (
+    <div className="bg-[#2a1520] border border-white/20 rounded-xl px-3 py-2.5 shadow-2xl pointer-events-none">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+        <span className="text-white font-semibold text-sm">{name}</span>
+      </div>
+      <p className="text-white/50 text-xs pl-4">{value} usuarios</p>
+    </div>
+  );
+};
 
 export const ClientsPage = () => {
   const [searchTerm, setSearchTerm]       = useState('');
@@ -261,13 +274,13 @@ export const ClientsPage = () => {
           <div className="flex flex-col sm:flex-row items-center gap-6">
 
             {/* Donut + total centrado */}
-            <div className="relative flex-shrink-0">
-              <PieChart width={150} height={150}>
+            <div className="relative flex-shrink-0" style={{ overflow: 'visible' }}>
+              <PieChart width={150} height={150} style={{ overflow: 'visible' }}>
                 <Pie data={rolData} cx="50%" cy="50%" innerRadius={46} outerRadius={68}
                   paddingAngle={3} dataKey="value" animationDuration={900}>
                   {rolData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
                 </Pie>
-                <ReTooltip contentStyle={tooltipStyle} formatter={(v: number) => [v, 'usuarios']} />
+                <ReTooltip content={<RolTooltip />} wrapperStyle={{ zIndex: 50 }} />
               </PieChart>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-bold text-white leading-none">{totalUsuarios}</span>
