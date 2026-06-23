@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, UserPlus, Search, Filter, RefreshCw, Edit, Trash2,
+  Users, UserPlus, Search, Filter, Edit, Trash2,
   ChevronDown, ChevronUp, BarChart3, Save, CheckCircle, XCircle,
   Shield, User, MailIcon,
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip as ReTooltip } from 'recharts';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { usuariosService, clientesService, type ApiUsuario } from '../../services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
@@ -58,7 +58,6 @@ export const ClientsPage = () => {
   const [selectedRol, setSelectedRol]     = useState<string>('todos');
   const [selectedActivo, setSelectedActivo] = useState<string>('todos');
   const [viewMode, setViewMode]           = useState<'grid' | 'list'>('grid');
-  const [isRefreshing, setIsRefreshing]   = useState(false);
   const [isLoading, setIsLoading]         = useState(true);
   const [showFilters, setShowFilters]     = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -124,8 +123,6 @@ export const ClientsPage = () => {
   const totalPages = Math.ceil(sorted.length / itemsPerPage);
   const paginated  = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleRefresh = async () => { setIsRefreshing(true); await fetchUsuarios(); setIsRefreshing(false); };
-
   const handleCreate = async () => {
     const errs: Record<string, string> = {};
     if (createForm.username.length < 3) errs.username = 'Mínimo 3 caracteres';
@@ -180,10 +177,8 @@ export const ClientsPage = () => {
         documentoIdentidad: editForm.documentoIdentidad || undefined,
         tipoDocumento:     editForm.tipoDocumento || undefined,
       });
-      setUsuarios(prev => prev.map(u =>
-        u.id === selectedUsuario.id ? { ...u, cliente: { ...u.cliente!, ...editForm } } : u
-      ));
       setShowEditModal(false);
+      await fetchUsuarios();
     } catch {
       setError('Error al actualizar el cliente.');
     }
@@ -194,11 +189,10 @@ export const ClientsPage = () => {
     try {
       if (u.rol === 'CLIENTE' && u.cliente?.id) {
         await clientesService.remove(u.cliente.id);
-        setUsuarios(prev => prev.map(x => x.id === u.id ? { ...x, activo: false } : x));
       } else {
         await usuariosService.remove(u.id);
-        setUsuarios(prev => prev.filter(x => x.id !== u.id));
       }
+      await fetchUsuarios();
     } catch {
       setError('Error al desactivar el usuario.');
     }
@@ -236,25 +230,6 @@ export const ClientsPage = () => {
               <p className="text-white/50 text-sm mt-1">Gestiona los usuarios del sistema</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleRefresh}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white/80 hover:text-white">
-              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
-              <BarChart3 size={20} />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('list')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
-              <Users size={20} />
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all">
-              <UserPlus size={20} />
-              <span className="hidden sm:inline font-medium">Nuevo Usuario</span>
-            </motion.button>
-          </div>
         </div>
       </motion.div>
 
@@ -281,24 +256,79 @@ export const ClientsPage = () => {
 
       {/* Pie chart */}
       {rolData.length > 0 && (
-        <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <h3 className="text-white font-semibold mb-4">Distribución por Rol</h3>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={rolData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" animationDuration={800}>
+        <motion.div variants={itemVariants}
+          className="bg-gradient-to-br from-[#321D28] to-[#1a0f14] rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+
+            {/* Donut + total centrado */}
+            <div className="relative flex-shrink-0">
+              <PieChart width={150} height={150}>
+                <Pie data={rolData} cx="50%" cy="50%" innerRadius={46} outerRadius={68}
+                  paddingAngle={3} dataKey="value" animationDuration={900}>
                   {rolData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
                 </Pie>
                 <ReTooltip contentStyle={tooltipStyle} formatter={(v: number) => [v, 'usuarios']} />
-                <Legend formatter={v => <span className="text-white/70 text-xs">{v}</span>} />
               </PieChart>
-            </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold text-white leading-none">{totalUsuarios}</span>
+                <span className="text-[10px] text-white/40 mt-0.5">usuarios</span>
+              </div>
+            </div>
+
+            {/* Leyenda con barras */}
+            <div className="flex-1 w-full">
+              <p className="text-white font-semibold text-sm mb-4">Distribución por Rol</p>
+              <div className="space-y-4">
+                {rolData.map(d => {
+                  const pct = Math.round((d.value / totalUsuarios) * 100);
+                  return (
+                    <div key={d.name}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                          <span className="text-white/70 text-sm">{d.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-bold text-sm">{d.value}</span>
+                          <span className="text-white/40 text-xs w-8 text-right">{pct}%</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div className="h-full rounded-full"
+                          style={{ backgroundColor: d.color }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.9, ease: 'easeOut' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         </motion.div>
       )}
 
       {/* Search + list */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
+          <div className="flex gap-1.5">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
+              <BarChart3 size={18} />
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
+              <Users size={18} />
+            </motion.button>
+          </div>
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:shadow-lg hover:shadow-[#F05984]/25 transition-all text-sm font-medium">
+            <UserPlus size={16} />
+            <span className="hidden sm:inline">Nuevo Usuario</span>
+          </motion.button>
+        </div>
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -395,10 +425,6 @@ export const ClientsPage = () => {
                         )}
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${u.activo ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                      {u.activo ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                      {u.activo ? 'Activo' : 'Inactivo'}
-                    </span>
                   </div>
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center gap-2 text-sm">
@@ -412,19 +438,25 @@ export const ClientsPage = () => {
                       <span className={`text-xs font-medium ${u.rol === 'CLIENTE' ? 'text-[#F05984]' : 'text-purple-400'}`}>{u.rol}</span>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-1 pt-2 border-t border-white/10">
-                    {u.rol === 'CLIENTE' && u.cliente && (
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${u.activo ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                      {u.activo ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                    <div className="flex gap-1">
+                      {u.rol === 'CLIENTE' && u.cliente && (
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => handleEditOpen(u)}
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar perfil cliente">
+                          <Edit size={14} />
+                        </motion.button>
+                      )}
                       <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEditOpen(u)}
-                        className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar perfil cliente">
-                        <Edit size={14} />
+                        onClick={() => handleDelete(u)}
+                        className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar">
+                        <Trash2 size={14} />
                       </motion.button>
-                    )}
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      onClick={() => handleDelete(u)}
-                      className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar">
-                      <Trash2 size={14} />
-                    </motion.button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -450,26 +482,28 @@ export const ClientsPage = () => {
                         {u.cliente?.nombreCompleto && u.cliente.nombreCompleto !== u.username && (
                           <span className="text-white/40 text-xs">({u.cliente.nombreCompleto})</span>
                         )}
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${u.activo ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                          {u.activo ? 'Activo' : 'Inactivo'}
-                        </span>
                         <span className={`px-2 py-0.5 rounded-full text-xs ${u.rol === 'CLIENTE' ? 'bg-[#F05984]/20 text-[#F05984]' : 'bg-purple-500/20 text-purple-400'}`}>
                           {u.rol}
                         </span>
                       </div>
                       <p className="text-white/50 text-xs mt-0.5">{u.email}</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {u.rol === 'CLIENTE' && u.cliente && (
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${u.activo ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                        {u.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {u.rol === 'CLIENTE' && u.cliente && (
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400">
+                            <Edit size={16} />
+                          </motion.button>
+                        )}
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400">
-                          <Edit size={16} />
+                          onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400">
+                          <Trash2 size={16} />
                         </motion.button>
-                      )}
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400">
-                        <Trash2 size={16} />
-                      </motion.button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
