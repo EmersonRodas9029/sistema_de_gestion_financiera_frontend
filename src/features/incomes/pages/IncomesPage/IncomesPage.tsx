@@ -4,532 +4,219 @@ import {
   TrendingUp,
   Calendar,
   Plus,
-  RefreshCw,
+  Repeat,
   DollarSign,
-  CreditCard,
   CheckCircle,
   XCircle,
-  Clock,
-  AlertCircle,
   Tag,
-  Briefcase,
-  Laptop,
-  ShoppingBag,
-  Home as HomeIcon,
-  Users,
   Save,
-  User,
-  Hash,
-  Calendar as CalendarIcon,
-  Target,
-  Trash2,
   Edit,
-  FileText
+  Trash2,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod } from '../../../../shared/utils';
+import { ingresosService, type ApiIngreso } from '../../services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
-import { StatusModal } from '../../../../shared/components/ui/StatusModal';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
 
-// Suppress unused import warnings for icons used in JSX only
-void CheckCircle; void XCircle; void Clock; void AlertCircle; void CreditCard;
+type Tipo       = 'ESTABLE' | 'VOLATIL';
+type Metodo     = 'EFECTIVO' | 'TRANSFERENCIA' | 'CHEQUE' | 'OTRO';
+type Frecuencia = 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'ANUAL';
 
-interface Income {
+interface Ingreso {
   id: string;
-  description: string;
-  amount: number;
-  category: string;
-  subcategory?: string;
-  date: string;
-  paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'cheque' | 'otro';
-  status: 'completado' | 'pendiente' | 'programado' | 'cancelado';
-  client?: string;
-  clientId?: string;
-  project?: string;
-  invoice?: string;
-  notes?: string;
-  attachments?: number;
-  recurring: boolean;
-  recurringFrequency?: 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'anual';
-  tax: number;
-  tags: string[];
+  clienteId: number;
+  monto: number;
+  fecha: string;
+  tipo: Tipo;
+  fuente?: string;
+  descripcion?: string;
+  metodoRecepcion?: Metodo;
+  esRecurrente: boolean;
+  frecuencia?: Frecuencia;
+  activo: boolean;
 }
 
-interface CategorySummary {
-  name: string;
-  amount: number;
-  percentage: number;
-  color: string;
-  icon: React.ReactNode;
-  count: number;
-  chartColor: string;
-}
+const toIngreso = (a: ApiIngreso): Ingreso => ({
+  id: String(a.id ?? ''),
+  clienteId: Number(a.clienteId ?? 0),
+  monto: Number(a.monto ?? 0),
+  fecha: a.fecha ?? '',
+  tipo: (a.tipo as Tipo) ?? 'ESTABLE',
+  fuente: a.fuente,
+  descripcion: a.descripcion,
+  metodoRecepcion: a.metodoRecepcion as Metodo | undefined,
+  esRecurrente: a.esRecurrente ?? false,
+  frecuencia: a.frecuencia as Frecuencia | undefined,
+  activo: a.activo !== false,
+});
 
-// Función para generar ID único
+const METODO_LABEL: Record<Metodo, string> = {
+  EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', CHEQUE: 'Cheque', OTRO: 'Otro',
+};
+const FRECUENCIA_LABEL: Record<Frecuencia, string> = {
+  DIARIO: 'Diario', SEMANAL: 'Semanal', MENSUAL: 'Mensual', ANUAL: 'Anual',
+};
 
-// Datos iniciales por defecto con IDs únicos
-const getDefaultIncomes = (): Income[] => [
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago de nómina - Febrero',
-    amount: 2500.00,
-    category: 'Salario',
-    subcategory: 'Salario mensual',
-    date: '2024-02-23',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'Tech Solutions S.L.',
-    clientId: 'CLI-001',
-    project: 'Desarrollo Web',
-    invoice: 'INV-2024-001',
-    notes: 'Pago correspondiente a nómina de febrero',
-    attachments: 2,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.15,
-    tags: ['salario', 'mensual', 'fijo']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago de cliente - Proyecto Web',
-    amount: 3500.00,
-    category: 'Servicios profesionales',
-    subcategory: 'Desarrollo web',
-    date: '2024-02-22',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'María González',
-    clientId: 'CLI-002',
-    project: 'Rediseño Web',
-    invoice: 'INV-2024-002',
-    attachments: 3,
-    recurring: false,
-    tax: 0.21,
-    tags: ['servicios', 'proyecto']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Venta de productos',
-    amount: 1250.50,
-    category: 'Ventas',
-    subcategory: 'Productos digitales',
-    date: '2024-02-21',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    client: 'Juan Pérez',
-    clientId: 'CLI-003',
-    invoice: 'INV-2024-003',
-    attachments: 1,
-    recurring: false,
-    tax: 0.21,
-    tags: ['ventas', 'digital']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago de alquiler oficina',
-    amount: 1200.00,
-    category: 'Ingresos pasivos',
-    subcategory: 'Alquiler',
-    date: '2024-02-20',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'Empresa ABC',
-    clientId: 'CLI-004',
-    invoice: 'INV-2024-004',
-    attachments: 0,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.15,
-    tags: ['alquiler', 'pasivo']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Consultoría empresarial',
-    amount: 850.00,
-    category: 'Consultoría',
-    subcategory: 'Consultoría financiera',
-    date: '2024-02-19',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'Ana Martínez',
-    clientId: 'CLI-005',
-    invoice: 'INV-2024-005',
-    attachments: 1,
-    recurring: false,
-    tax: 0.21,
-    tags: ['consultoría']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago pendiente - Proyecto App',
-    amount: 2340.00,
-    category: 'Servicios profesionales',
-    date: '2024-03-01',
-    paymentMethod: 'transferencia',
-    status: 'pendiente',
-    client: 'Roberto Sánchez',
-    clientId: 'CLI-006',
-    project: 'Desarrollo App',
-    invoice: 'INV-2024-006',
-    attachments: 0,
-    recurring: false,
-    tax: 0.21,
-    tags: ['servicios', 'pendiente']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Membresía Premium',
-    amount: 1250.00,
-    category: 'Suscripciones',
-    subcategory: 'Membresía anual',
-    date: '2024-03-15',
-    paymentMethod: 'tarjeta',
-    status: 'programado',
-    client: 'Laura Torres',
-    clientId: 'CLI-007',
-    invoice: 'INV-2024-007',
-    attachments: 0,
-    recurring: true,
-    recurringFrequency: 'anual',
-    tax: 0.21,
-    tags: ['suscripción']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Venta en efectivo',
-    amount: 500.00,
-    category: 'Ventas',
-    date: '2024-02-18',
-    paymentMethod: 'efectivo',
-    status: 'completado',
-    client: 'Cliente Anónimo',
-    invoice: 'INV-2024-008',
-    attachments: 0,
-    recurring: false,
-    tax: 0.21,
-    tags: ['ventas', 'efectivo']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago con cheque - Atrasado',
-    amount: 750.00,
-    category: 'Servicios profesionales',
-    date: '2024-02-17',
-    paymentMethod: 'cheque',
-    status: 'pendiente',
-    client: 'Empresa XYZ',
-    clientId: 'CLI-009',
-    invoice: 'INV-2024-009',
-    attachments: 1,
-    recurring: false,
-    tax: 0.21,
-    tags: ['servicios', 'cheque']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Bono anual',
-    amount: 3000.00,
-    category: 'Salario',
-    date: '2024-02-16',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'Tech Solutions S.L.',
-    clientId: 'CLI-001',
-    invoice: 'INV-2024-010',
-    attachments: 0,
-    recurring: false,
-    tax: 0.15,
-    tags: ['salario', 'bono']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Pago de nómina - Marzo',
-    amount: 2500.00,
-    category: 'Salario',
-    date: '2024-03-25',
-    paymentMethod: 'transferencia',
-    status: 'programado',
-    client: 'Tech Solutions S.L.',
-    invoice: 'INV-2024-011',
-    attachments: 0,
-    recurring: true,
-    tax: 0.15,
-    tags: ['salario']
-  },
-  {
-    id: generateUniqueId('INC'),
-    description: 'Dividendos',
-    amount: 500.00,
-    category: 'Ingresos pasivos',
-    date: '2023-12-15',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: 'Inversiones',
-    invoice: 'INV-2023-012',
-    attachments: 0,
-    recurring: false,
-    tax: 0.19,
-    tags: ['dividendos']
-  }
-];
+const TIPO_COLOR: Record<Tipo, string> = { ESTABLE: '#10B981', VOLATIL: '#F59E0B' };
+const TIPO_GRADIENT: Record<Tipo, string> = {
+  ESTABLE: 'from-green-500 to-green-600',
+  VOLATIL: 'from-amber-500 to-orange-500',
+};
 
-// Colores para el gráfico de pastel
-const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
+const inputCls    = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all";
+const selectStyle = { backgroundColor: 'rgba(255,255,255,0.05)', color: 'white' };
+const optStyle    = { backgroundColor: '#1a0f14', color: 'white' };
+
+const emptyCreate = () => ({
+  clienteId: '', monto: '',
+  fecha: new Date().toISOString().split('T')[0],
+  tipo: 'ESTABLE', fuente: '', descripcion: '',
+  metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '',
+});
+
+const Toggle = ({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) => (
+  <label className="flex items-center gap-3 cursor-pointer">
+    <div className={`w-10 h-5 rounded-full transition-colors relative ${value ? 'bg-[#F05984]' : 'bg-white/20'}`}
+      onClick={() => onChange(!value)}>
+      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : ''}`} />
+    </div>
+    <span className="text-white/60 text-sm">{label}</span>
+  </label>
+);
+
+const FrecuenciaSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <div>
+    <label className="text-white/60 text-sm mb-1.5 block">Frecuencia</label>
+    <select value={value} onChange={e => onChange(e.target.value)} className={inputCls} style={selectStyle}>
+      <option value=""        style={optStyle}>— Sin especificar —</option>
+      <option value="DIARIO"  style={optStyle}>Diario</option>
+      <option value="SEMANAL" style={optStyle}>Semanal</option>
+      <option value="MENSUAL" style={optStyle}>Mensual</option>
+      <option value="ANUAL"   style={optStyle}>Anual</option>
+    </select>
+  </div>
+);
 
 export const IncomesPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('todas');
-  const [selectedStatus, setSelectedStatus] = useState<string>('todos');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [ingresos, setIngresos]   = useState<Ingreso[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [selectedTipo, setSelectedTipo]     = useState<string>('todos');
+  const [selectedActivo, setSelectedActivo] = useState<string>('todos');
+  const [selectedMetodo, setSelectedMetodo] = useState<string>('todos');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
+  const [showFilters, setShowFilters]       = useState(false);
+  const [viewMode, setViewMode]             = useState<'table' | 'grid'>('table');
+  const [sortBy, setSortBy]                 = useState<string>('date');
+  const [sortOrder, setSortOrder]           = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage]       = useState(1);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
-  const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
-  const [newStatus, setNewStatus] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [formData, setFormData] = useState({
-    description: '',
-    amount: '',
-    category: '',
-    date: new Date().toISOString().split('T')[0],
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    client: '',
-    invoice: '',
-    notes: ''
+  const [showEditModal, setShowEditModal]     = useState(false);
+  const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
+  const [createForm, setCreateForm] = useState(emptyCreate());
+  const [editForm, setEditForm]     = useState({
+    monto: '', fecha: '', tipo: 'ESTABLE', fuente: '', descripcion: '',
+    metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '', activo: true,
   });
 
   const itemsPerPage = 6;
 
-  // Cargar datos desde localStorage o usar datos por defecto
-  const [incomes, setIncomes] = useState<Income[]>(() => {
+  const fetchIngresos = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const saved = localStorage.getItem('incomes');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-      return getDefaultIncomes();
-    } catch (error) {
-      console.error('Error loading incomes:', error);
-      return getDefaultIncomes();
+      const list = await ingresosService.getAll();
+      // IngresoList solo devuelve campos básicos; getById trae el registro completo
+      const detailed = await Promise.all(
+        list.map(item => ingresosService.getById(item.id!).catch(() => item))
+      );
+      setIngresos(detailed.map(toIngreso));
+    } catch {
+      setError('No se pudo conectar con el servidor.');
+    } finally {
+      setIsLoading(false);
     }
-  });
+  };
 
-  // Simular carga inicial
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
-  }, []);
+  useEffect(() => { fetchIngresos(); }, []);
 
-  // Guardar en localStorage cuando cambien los ingresos
-  useEffect(() => {
-    localStorage.setItem('incomes', JSON.stringify(incomes));
-  }, [incomes]);
-
-  // Obtener la fecha actual
+  // Stats
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  // Calcular estadísticas
-  const yearlyIncomes = incomes.filter(inc => {
-    const incDate = new Date(inc.date);
-    return inc.status === 'completado' && incDate.getFullYear() === currentYear;
-  });
-  const totalYearlyIncome = yearlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+  const yearlyIngresos = ingresos.filter(i => new Date(i.fecha).getFullYear() === currentYear);
+  const totalYearlyIncome = yearlyIngresos.reduce((s, i) => s + i.monto, 0);
 
-  const monthlyIncomes = incomes.filter(inc => {
-    const incDate = new Date(inc.date);
-    return inc.status === 'completado' &&
-           incDate.getMonth() === currentMonth &&
-           incDate.getFullYear() === currentYear;
+  const monthlyIngresos = ingresos.filter(i => {
+    const d = new Date(i.fecha);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
-  const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+  const totalMonthlyIncome = monthlyIngresos.reduce((s, i) => s + i.monto, 0);
 
-  const pendingIncomes = incomes.filter(inc => inc.status === 'pendiente');
-  const totalPending = pendingIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+  const recurrentesIngresos = ingresos.filter(i => i.esRecurrente);
+  const totalRecurrentes = recurrentesIngresos.reduce((s, i) => s + i.monto, 0);
 
   const monthlyGoal = 5000;
   const monthlyProgress = (totalMonthlyIncome / monthlyGoal) * 100;
 
-  const completedIncomes = incomes.filter(inc => inc.status === 'completado');
-  const totalCompletedAmount = completedIncomes.reduce((sum, inc) => sum + inc.amount, 0);
-  const averageTicket = completedIncomes.length > 0 ? totalCompletedAmount / completedIncomes.length : 0;
+  const averageTicket = ingresos.length > 0
+    ? ingresos.reduce((s, i) => s + i.monto, 0) / ingresos.length : 0;
 
-  // Calcular categorías para el gráfico
-  const categoryMap = new Map<string, { amount: number; count: number; color: string }>();
-  let colorIndex = 0;
+  // Pie chart data
+  const totalMontoAll = ingresos.reduce((s, i) => s + i.monto, 0);
+  const tipoSummary = (
+    [
+      { tipo: 'ESTABLE' as Tipo, name: 'Estables',  icon: <TrendingUp size={16} /> },
+      { tipo: 'VOLATIL' as Tipo, name: 'Volátiles', icon: <Zap size={16} /> },
+    ] as const
+  ).map(t => {
+    const items = ingresos.filter(i => i.tipo === t.tipo);
+    const amount = items.reduce((s, i) => s + i.monto, 0);
+    return {
+      name: t.name, tipo: t.tipo, icon: t.icon,
+      amount, count: items.length,
+      percentage: totalMontoAll > 0 ? (amount / totalMontoAll) * 100 : 0,
+      color: TIPO_GRADIENT[t.tipo],
+      chartColor: TIPO_COLOR[t.tipo],
+    };
+  }).filter(t => t.count > 0);
 
-  completedIncomes.forEach(inc => {
-    const existing = categoryMap.get(inc.category);
-    if (existing) {
-      existing.amount += inc.amount;
-      existing.count += 1;
-    } else {
-      categoryMap.set(inc.category, {
-        amount: inc.amount,
-        count: 1,
-        color: CHART_COLORS[colorIndex % CHART_COLORS.length]
-      });
-      colorIndex++;
-    }
-  });
-
-  const pieChartData = Array.from(categoryMap.entries()).map(([name, data]) => ({
-    name,
-    value: data.amount,
-    color: data.color,
-    count: data.count
+  const pieChartData = tipoSummary.map(t => ({
+    name: t.name, value: t.amount, color: t.chartColor, count: t.count,
   }));
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'Salario': 'from-green-500 to-green-600',
-      'Servicios profesionales': 'from-blue-500 to-blue-600',
-      'Ventas': 'from-purple-500 to-purple-600',
-      'Ingresos pasivos': 'from-orange-500 to-orange-600',
-      'Consultoría': 'from-pink-500 to-pink-600',
-      'Suscripciones': 'from-indigo-500 to-indigo-600'
-    };
-    return colors[category] || 'from-gray-500 to-gray-600';
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, React.ReactNode> = {
-      'Salario': <Briefcase size={16} />,
-      'Servicios profesionales': <Laptop size={16} />,
-      'Ventas': <ShoppingBag size={16} />,
-      'Ingresos pasivos': <HomeIcon size={16} />,
-      'Consultoría': <Users size={16} />,
-      'Suscripciones': <CreditCard size={16} />
-    };
-    return icons[category] || <Tag size={16} />;
-  };
-
-  const categories: CategorySummary[] = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
-    name,
-    amount: data.amount,
-    percentage: totalCompletedAmount > 0 ? (data.amount / totalCompletedAmount) * 100 : 0,
-    color: getCategoryColor(name),
-    icon: getCategoryIcon(name),
-    count: data.count,
-    chartColor: CHART_COLORS[idx % CHART_COLORS.length]
-  })).sort((a, b) => b.amount - a.amount);
-
-  // Obtener solo las últimas 3 categorías usadas (más recientes por monto)
-  const lastThreeCategories = categories.slice(0, 3);
-
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('todas');
-    setSelectedStatus('todos');
-    setSelectedPaymentMethod('todos');
-    setSelectedPeriod('todos');
-    setCurrentPage(1);
-  };
-
-  const handleCreateIncome = () => {
-    const newIncome: Income = {
-      id: generateUniqueId('INC'),
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      category: formData.category,
-      date: formData.date,
-      paymentMethod: formData.paymentMethod as Income['paymentMethod'],
-      status: formData.status as Income['status'],
-      client: formData.client || undefined,
-      invoice: formData.invoice || undefined,
-      notes: formData.notes || undefined,
-      recurring: false,
-      tax: 0.21,
-      tags: []
-    };
-
-    setIncomes(prevIncomes => [newIncome, ...prevIncomes]);
-    setShowCreateModal(false);
-    setFormData({
-      description: '',
-      amount: '',
-      category: '',
-      date: new Date().toISOString().split('T')[0],
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      client: '',
-      invoice: '',
-      notes: ''
-    });
-  };
-
-  const handleDeleteIncome = (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
-      setIncomes(prevIncomes => prevIncomes.filter(inc => inc.id !== id));
-    }
-  };
-
-  const handleEditStatus = (income: Income) => {
-    setSelectedIncome(income);
-    setNewStatus(income.status);
-    setShowEditStatusModal(true);
-  };
-
-  const handleUpdateStatus = () => {
-    if (selectedIncome && newStatus && newStatus !== selectedIncome.status) {
-      setIncomes(prevIncomes =>
-        prevIncomes.map(inc =>
-          inc.id === selectedIncome.id ? { ...inc, status: newStatus as Income['status'] } : inc
-        )
-      );
-    }
-    setShowEditStatusModal(false);
-    setSelectedIncome(null);
-    setNewStatus('');
-  };
-
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
-      localStorage.removeItem('incomes');
-      setIncomes(getDefaultIncomes());
-    }
-  };
-
-  const filteredIncomes = incomes.filter(income => {
-    const matchesSearch = income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         income.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         income.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'todas' || income.category === selectedCategory;
-    const matchesStatus = selectedStatus === 'todos' || income.status === selectedStatus;
-    const matchesPaymentMethod = selectedPaymentMethod === 'todos' || income.paymentMethod === selectedPaymentMethod;
-    const matchesPeriod = filterByPeriod(income.date, selectedPeriod);
-
-    return matchesSearch && matchesCategory && matchesStatus && matchesPaymentMethod && matchesPeriod;
+  // Filters
+  const filteredIncomes = ingresos.filter(i => {
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = (i.descripcion ?? '').toLowerCase().includes(q) ||
+                          (i.fuente ?? '').toLowerCase().includes(q) ||
+                          String(i.clienteId).includes(q);
+    const matchesTipo   = selectedTipo === 'todos' || i.tipo === selectedTipo;
+    const matchesActivo = selectedActivo === 'todos' ||
+                          (selectedActivo === 'activo' ? i.activo : !i.activo);
+    const matchesMetodo = selectedMetodo === 'todos' || (i.metodoRecepcion ?? '') === selectedMetodo;
+    const matchesPeriod = filterByPeriod(i.fecha, selectedPeriod);
+    return matchesSearch && matchesTipo && matchesActivo && matchesMetodo && matchesPeriod;
   });
 
   const sortedIncomes = [...filteredIncomes].sort((a, b) => {
-    if (sortBy === 'date') {
-      return sortOrder === 'desc'
-        ? new Date(b.date).getTime() - new Date(a.date).getTime()
-        : new Date(a.date).getTime() - new Date(b.date).getTime();
-    } else if (sortBy === 'amount') {
-      return sortOrder === 'desc' ? b.amount - a.amount : a.amount - b.amount;
-    } else {
-      return sortOrder === 'desc'
-        ? b.category.localeCompare(a.category)
-        : a.category.localeCompare(b.category);
-    }
+    if (sortBy === 'date')   return sortOrder === 'desc'
+      ? new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      : new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+    if (sortBy === 'amount') return sortOrder === 'desc' ? b.monto - a.monto : a.monto - b.monto;
+    return sortOrder === 'desc' ? b.tipo.localeCompare(a.tipo) : a.tipo.localeCompare(b.tipo);
   });
 
   const totalPages = Math.ceil(sortedIncomes.length / itemsPerPage);
@@ -538,26 +225,96 @@ export const IncomesPage = () => {
     currentPage * itemsPerPage
   );
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
+  const hasActiveFilters = searchTerm !== '' || selectedTipo !== 'todos' ||
+    selectedActivo !== 'todos' || selectedMetodo !== 'todos' || selectedPeriod !== 'todos';
+
+  const clearAllFilters = () => {
+    setSearchTerm(''); setSelectedTipo('todos');
+    setSelectedActivo('todos'); setSelectedMetodo('todos');
+    setSelectedPeriod('todos'); setCurrentPage(1);
   };
 
-  const hasActiveFilters = searchTerm !== '' ||
-    selectedCategory !== 'todas' ||
-    selectedStatus !== 'todos' ||
-    selectedPaymentMethod !== 'todos' ||
-    selectedPeriod !== 'todos';
+  // Handlers
+  const handleCreate = async () => {
+    try {
+      await ingresosService.create({
+        clienteId:       Number(createForm.clienteId),
+        monto:           Number(createForm.monto),
+        fecha:           createForm.fecha,
+        tipo:            createForm.tipo,
+        fuente:          createForm.fuente || undefined,
+        descripcion:     createForm.descripcion || undefined,
+        metodoRecepcion: createForm.metodoRecepcion || undefined,
+        esRecurrente:    createForm.esRecurrente,
+        frecuencia:      createForm.esRecurrente && createForm.frecuencia ? createForm.frecuencia : undefined,
+      });
+      await fetchIngresos();
+      setShowCreateModal(false);
+      setCreateForm(emptyCreate());
+    } catch {
+      setError('Error al crear el ingreso.');
+    }
+  };
+
+  const handleEditOpen = (ingreso: Ingreso) => {
+    setSelectedIngreso(ingreso);
+    setEditForm({
+      monto:           String(ingreso.monto),
+      fecha:           ingreso.fecha,
+      tipo:            ingreso.tipo,
+      fuente:          ingreso.fuente ?? '',
+      descripcion:     ingreso.descripcion ?? '',
+      metodoRecepcion: ingreso.metodoRecepcion,
+      esRecurrente:    ingreso.esRecurrente,
+      frecuencia:      ingreso.frecuencia ?? '',
+      activo:          ingreso.activo,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedIngreso) return;
+    try {
+      await ingresosService.update(selectedIngreso.id, {
+        monto:           Number(editForm.monto),
+        fecha:           editForm.fecha,
+        tipo:            editForm.tipo,
+        fuente:          editForm.fuente || undefined,
+        descripcion:     editForm.descripcion || undefined,
+        metodoRecepcion: editForm.metodoRecepcion || undefined,
+        esRecurrente:    editForm.esRecurrente,
+        frecuencia:      editForm.esRecurrente && editForm.frecuencia ? editForm.frecuencia : undefined,
+        activo:          editForm.activo,
+      });
+      setShowEditModal(false);
+      await fetchIngresos();
+    } catch {
+      setError('Error al actualizar el ingreso.');
+    }
+  };
+
+  const handleDelete = async (ingreso: Ingreso) => {
+    if (!window.confirm('¿Eliminar este ingreso?')) return;
+    try {
+      await ingresosService.remove(ingreso.id);
+      await fetchIngresos();
+    } catch {
+      setError('Error al eliminar el ingreso.');
+    }
+  };
 
   if (isLoading) return <PageSkeleton />;
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <p className="text-red-400">{error}</p>
+      <button onClick={fetchIngresos} className="px-4 py-2 bg-[#F05984] text-white rounded-lg">Reintentar</button>
+    </div>
+  );
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6 min-h-screen p-6"
-      style={{ backgroundColor: '#1a0f14' }}
+      variants={containerVariants} initial="hidden" animate="visible"
+      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -565,45 +322,24 @@ export const IncomesPage = () => {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-white">Ingresos</h1>
             <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {incomes.length} registros
+              {ingresos.length} registros
             </span>
           </div>
-          <p className="text-white/60 text-sm mt-1">
-            Gestiona y controla todos tus ingresos
-          </p>
+          <p className="text-white/60 text-sm mt-1">Gestiona y controla todos tus ingresos</p>
         </div>
         <div className="flex gap-2">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleRefresh}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-          >
-            <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-          </motion.button>
-          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateModal(true)}
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => { setCreateForm(emptyCreate()); setShowCreateModal(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <Plus size={20} />
             <span className="hidden sm:inline">Nuevo Ingreso</span>
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={resetData}
-            className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300"
-            title="Restaurar datos por defecto"
-          >
-            <RefreshCw size={20} />
-          </motion.button>
         </div>
       </motion.div>
 
-      {/* Summary Cards con gradientes mejorados */}
+      {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
@@ -649,12 +385,12 @@ export const IncomesPage = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/60 text-sm">Pendiente por cobrar</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(totalPending)}</p>
-              <p className="text-white/40 text-xs mt-1">{pendingIncomes.length} facturas pendientes</p>
+              <p className="text-white/60 text-sm">Recurrentes</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(totalRecurrentes)}</p>
+              <p className="text-white/40 text-xs mt-1">{recurrentesIngresos.length} ingresos recurrentes</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20">
-              <Clock size={20} className="text-yellow-400" />
+            <div className="p-3 rounded-xl bg-blue-500/20">
+              <Repeat size={20} className="text-blue-400" />
             </div>
           </div>
         </motion.div>
@@ -667,18 +403,17 @@ export const IncomesPage = () => {
             <div>
               <p className="text-white/60 text-sm">Ticket Promedio</p>
               <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
-              <p className="text-white/40 text-xs mt-1">{completedIncomes.length} transacciones</p>
+              <p className="text-white/40 text-xs mt-1">{ingresos.length} transacciones</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/20">
-              <Target size={20} className="text-blue-400" />
+            <div className="p-3 rounded-xl bg-purple-500/20">
+              <DollarSign size={20} className="text-purple-400" />
             </div>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* Gráfico de Pastel y Categorías - Corregido */}
+      {/* Pie chart + tipo summary */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart - Corregido para que no se corte */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-3 text-sm">Distribución de Ingresos</h3>
           <div className="w-full h-[280px]">
@@ -686,15 +421,9 @@ export const IncomesPage = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                    animationBegin={0}
-                    animationDuration={800}
+                    data={pieChartData} cx="50%" cy="50%"
+                    innerRadius={60} outerRadius={90} paddingAngle={2}
+                    dataKey="value" animationBegin={0} animationDuration={800}
                   >
                     {pieChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
@@ -715,20 +444,19 @@ export const IncomesPage = () => {
               </ResponsiveContainer>
             ) : (
               <div className="h-[250px] flex items-center justify-center">
-                <p className="text-white/40 text-center text-sm">No hay datos de ingresos completados</p>
+                <p className="text-white/40 text-center text-sm">No hay datos de ingresos</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Categories Summary - Solo últimas 3 */}
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-3 text-sm">Categorías destacadas</h3>
-          {lastThreeCategories.length > 0 ? (
+          {tipoSummary.length > 0 ? (
             <div className="space-y-3">
-              {lastThreeCategories.map((cat, index) => (
+              {tipoSummary.map((t, index) => (
                 <motion.div
-                  key={index}
+                  key={t.tipo}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -736,125 +464,107 @@ export const IncomesPage = () => {
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                        {cat.icon}
+                      <div className={`p-1 rounded-lg bg-gradient-to-r ${t.color} bg-opacity-20`}>
+                        {t.icon}
                       </div>
-                      <span className="text-white text-xs font-medium">{cat.name}</span>
+                      <span className="text-white text-xs font-medium">{t.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
-                      <span className="text-white text-xs font-semibold">{formatCurrency(cat.amount)}</span>
+                      <span className="text-white/50 text-xs">{t.percentage.toFixed(1)}%</span>
+                      <span className="text-white text-xs font-semibold">{formatCurrency(t.amount)}</span>
                     </div>
                   </div>
                   <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${cat.percentage}%` }}
+                      animate={{ width: `${t.percentage}%` }}
                       transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+                      className={`h-full bg-gradient-to-r ${t.color} rounded-full`}
                     />
                   </div>
-                  <p className="text-white/30 text-[10px] mt-1">{cat.count} transacciones</p>
+                  <p className="text-white/30 text-[10px] mt-1">{t.count} transacciones</p>
                 </motion.div>
               ))}
             </div>
           ) : (
-            <p className="text-white/40 text-center py-6 text-sm">No hay datos de ingresos completados</p>
+            <p className="text-white/40 text-center py-6 text-sm">No hay datos de ingresos</p>
           )}
         </div>
       </motion.div>
 
-      {/* Filters and Search */}
+      {/* Search + list */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+        <div className="flex items-center px-4 pt-4 pb-3 border-b border-white/10">
+          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
+        </div>
         <SearchFilterBar
-          searchTerm={searchTerm}
-          onSearch={setSearchTerm}
-          selectedPeriod={selectedPeriod}
-          onPeriodChange={setSelectedPeriod}
-          showFilters={showFilters}
-          onToggleFilters={() => setShowFilters(!showFilters)}
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={clearAllFilters}
-          placeholder="Buscar por descripción, cliente o ID..."
+          searchTerm={searchTerm} onSearch={setSearchTerm}
+          selectedPeriod={selectedPeriod} onPeriodChange={setSelectedPeriod}
+          showFilters={showFilters} onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters} onClearFilters={clearAllFilters}
+          placeholder="Buscar por descripción, fuente o cliente ID..."
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-white/60 text-xs mb-1 block">Categoría</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+              <label className="text-white/60 text-xs mb-1 block">Tipo</label>
+              <select value={selectedTipo} onChange={e => setSelectedTipo(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                {categories.map(cat => (
-                  <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                ))}
+                style={selectStyle}>
+                <option value="todos"   style={optStyle}>Todos los tipos</option>
+                <option value="ESTABLE" style={optStyle}>Estable</option>
+                <option value="VOLATIL" style={optStyle}>Volátil</option>
               </select>
             </div>
             <div>
               <label className="text-white/60 text-xs mb-1 block">Estado</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+              <select value={selectedActivo} onChange={e => setSelectedActivo(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                style={selectStyle}>
+                <option value="todos"    style={optStyle}>Todos los estados</option>
+                <option value="activo"   style={optStyle}>Activo</option>
+                <option value="inactivo" style={optStyle}>Inactivo</option>
               </select>
             </div>
             <div>
-              <label className="text-white/60 text-xs mb-1 block">Método de pago</label>
-              <select
-                value={selectedPaymentMethod}
-                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+              <label className="text-white/60 text-xs mb-1 block">Método de recepción</label>
+              <select value={selectedMetodo} onChange={e => setSelectedMetodo(e.target.value)}
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
-                <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                style={selectStyle}>
+                <option value="todos"         style={optStyle}>Todos los métodos</option>
+                <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
+                <option value="TRANSFERENCIA" style={optStyle}>Transferencia</option>
+                <option value="CHEQUE"        style={optStyle}>Cheque</option>
+                <option value="OTRO"          style={optStyle}>Otro</option>
               </select>
             </div>
           </div>
         </SearchFilterBar>
 
         <SortBar
-          sortBy={sortBy}
-          sortOrder={sortOrder}
+          sortBy={sortBy} sortOrder={sortOrder}
           onSort={(field) => {
-            setSortBy(field as typeof sortBy);
+            setSortBy(field);
             setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
           }}
           fields={[
-            { key: 'date', label: 'Fecha', icon: <Calendar size={14} /> },
-            { key: 'amount', label: 'Monto', icon: <DollarSign size={14} /> },
-            { key: 'category', label: 'Categoría', icon: <Tag size={14} /> },
+            { key: 'date',     label: 'Fecha',  icon: <Calendar size={14} /> },
+            { key: 'amount',   label: 'Monto',  icon: <DollarSign size={14} /> },
+            { key: 'category', label: 'Tipo',   icon: <Tag size={14} /> },
           ]}
           totalResults={filteredIncomes.length}
         />
 
-        {/* Tabla con scrollbar personalizado */}
-        <div className="overflow-x-auto custom-scrollbar">
+        <div className="overflow-x-auto overflow-y-auto max-h-[520px] custom-scrollbar">
           <AnimatePresence mode="wait">
             {viewMode === 'table' ? (
-              <motion.div
-                key="table"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <table className="w-full">
+              <motion.div key="table"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b border-white/10">
                       <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">ID</th>
                       <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Descripción</th>
-                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
+                      <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Tipo</th>
                       <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Cliente</th>
                       <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Fecha</th>
                       <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Método</th>
@@ -864,81 +574,67 @@ export const IncomesPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedIncomes.map((income, index) => (
+                    {paginatedIncomes.map((ingreso, index) => (
                       <motion.tr
-                        key={income.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        key={ingreso.id}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.03 }}
                         className="border-b border-white/5 hover:bg-white/5 transition-colors group"
                       >
                         <td className="py-3 px-4">
-                          <span className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</span>
+                          <span className="text-white/40 text-xs font-mono">{ingreso.id}</span>
                         </td>
                         <td className="py-3 px-4">
                           <div>
-                            <p className="text-white font-medium">{income.description}</p>
-                            {income.notes && (
-                              <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{income.notes.substring(0, 40)}...</p>
+                            <p className="text-white font-medium">{ingreso.descripcion ?? '—'}</p>
+                            {ingreso.fuente && (
+                              <p className="text-white/40 text-xs mt-0.5">{ingreso.fuente}</p>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-white text-sm">{income.category}</span>
-                            {income.recurring && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ingreso.tipo === 'ESTABLE' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                              {ingreso.tipo}
+                            </span>
+                            {ingreso.esRecurrente && ingreso.frecuencia && (
                               <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">
-                                recurrente
+                                {FRECUENCIA_LABEL[ingreso.frecuencia]}
                               </span>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          {income.client ? (
-                            <div>
-                              <p className="text-white text-sm">{income.client}</p>
-                              <p className="text-white/40 text-xs">{income.clientId}</p>
-                            </div>
-                          ) : (
-                            <span className="text-white/40 text-sm">-</span>
-                          )}
+                          <span className="text-white/60 text-sm"># {ingreso.clienteId}</span>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-white/40" />
-                            <span className="text-white text-sm">{formatDate(income.date)}</span>
+                            <span className="text-white text-sm">{formatDate(ingreso.fecha)}</span>
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-white text-sm capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
+                          <span className="text-white text-sm">{ingreso.metodoRecepcion ? METODO_LABEL[ingreso.metodoRecepcion] : '—'}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(income.status)}`}>
-                            {getStatusIcon(income.status)}
-                            {income.status}
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ingreso.activo ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                            {ingreso.activo ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                            {ingreso.activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <span className="text-white font-bold">{formatCurrency(income.amount)}</span>
+                          <span className="text-white font-bold">{formatCurrency(ingreso.monto)}</span>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleEditStatus(income)}
-                              className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
-                              title="Editar estado"
-                            >
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={() => handleEditOpen(ingreso)}
+                              className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400" title="Editar">
                               <Edit size={16} />
                             </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleDeleteIncome(income.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
-                              title="Eliminar"
-                            >
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDelete(ingreso)}
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400" title="Eliminar">
                               <Trash2 size={16} />
                             </motion.button>
                           </div>
@@ -949,85 +645,67 @@ export const IncomesPage = () => {
                 </table>
               </motion.div>
             ) : (
-              <motion.div
-                key="grid"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+              <motion.div key="grid"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
                 className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                {paginatedIncomes.map((income, index) => (
+                {paginatedIncomes.map((ingreso, index) => (
                   <motion.div
-                    key={income.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    key={ingreso.id}
+                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
                     className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="text-white/40 text-xs font-mono">{income.id.slice(-8)}</p>
-                        <h3 className="text-white font-medium mt-1">{income.description}</h3>
+                        <p className="text-white/40 text-xs font-mono">{ingreso.id}</p>
+                        <h3 className="text-white font-medium mt-1">{ingreso.descripcion ?? '—'}</h3>
+                        {ingreso.fuente && (
+                          <p className="text-white/40 text-xs mt-0.5">{ingreso.fuente}</p>
+                        )}
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(income.status)}`}>
-                        {getStatusIcon(income.status)}
-                        {income.status}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${ingreso.tipo === 'ESTABLE' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                        {ingreso.tipo}
                       </span>
                     </div>
 
                     <div className="space-y-2 mb-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/60">Categoría:</span>
-                        <span className="text-white">{income.category}</span>
+                        <span className="text-white/60">Cliente:</span>
+                        <span className="text-white"># {ingreso.clienteId}</span>
                       </div>
-                      {income.client && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-white/60">Cliente:</span>
-                          <span className="text-white">{income.client}</span>
-                        </div>
-                      )}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Fecha:</span>
-                        <span className="text-white">{formatDate(income.date)}</span>
+                        <span className="text-white">{formatDate(ingreso.fecha)}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Método:</span>
-                        <span className="text-white capitalize">{getPaymentMethodLabel(income.paymentMethod)}</span>
+                        <span className="text-white">{METODO_LABEL[ingreso.metodoRecepcion]}</span>
                       </div>
+                      {ingreso.esRecurrente && ingreso.frecuencia && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-white/60">Frecuencia:</span>
+                          <span className="text-blue-400 text-xs">{FRECUENCIA_LABEL[ingreso.frecuencia]}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                      <span className="text-lg font-bold text-white">{formatCurrency(income.amount)}</span>
+                      <span className="text-lg font-bold text-white">{formatCurrency(ingreso.monto)}</span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditStatus(income)}
-                          className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400"
-                        >
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => handleEditOpen(ingreso)}
+                          className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400">
                           <Edit size={16} />
                         </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteIncome(income.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400"
-                        >
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDelete(ingreso)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400">
                           <Trash2 size={16} />
                         </motion.button>
                       </div>
                     </div>
-
-                    {income.tags && income.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {income.tags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-white/10 text-white/60 px-2 py-0.5 rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </motion.div>
                 ))}
               </motion.div>
@@ -1036,196 +714,191 @@ export const IncomesPage = () => {
         </div>
 
         <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredIncomes.length}
-          itemsPerPage={itemsPerPage}
-          label="ingresos"
-          onPageChange={setCurrentPage}
+          currentPage={currentPage} totalPages={totalPages}
+          totalItems={filteredIncomes.length} itemsPerPage={itemsPerPage}
+          label="ingresos" onPageChange={setCurrentPage}
         />
       </motion.div>
 
-      {/* Modal para crear nuevo ingreso */}
+      {/* Modal: crear ingreso */}
       <AnimatePresence>
-        <ModalOverlay
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          title="Nuevo Ingreso"
-          subtitle="Completa los campos para registrar un nuevo ingreso"
-          icon={<TrendingUp size={20} className="text-white" />}
-        >
-          <form onSubmit={(e) => { e.preventDefault(); handleCreateIncome(); }} className="space-y-5">
+        <ModalOverlay isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}
+          title="Nuevo Ingreso" subtitle="Completa los campos para registrar un nuevo ingreso"
+          icon={<FileText size={20} className="text-white" />}>
+          <form onSubmit={e => { e.preventDefault(); handleCreate(); }} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
-                <div className="relative">
-                  <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-                    placeholder="Ej: Pago de nómina"
-                    required
-                  />
-                </div>
+                <label className="text-white/60 text-sm mb-1.5 block">Cliente ID *</label>
+                <input type="number" value={createForm.clienteId}
+                  onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
+                  className={inputCls} placeholder="ID del cliente" required />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
-                <div className="relative">
-                  <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
+                <input type="number" step="0.01" value={createForm.monto}
+                  onChange={e => setCreateForm({...createForm, monto: e.target.value})}
+                  className={inputCls} placeholder="0.00" required />
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                  required
-                >
-                  <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                  {categories.map(cat => (
-                    <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
-                <div className="relative">
-                  <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
-                <select
-                  value={formData.paymentMethod}
-                  onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                >
-                  <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                  <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                  <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                  <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                </select>
+                <input type="date" value={createForm.fecha}
+                  onChange={e => setCreateForm({...createForm, fecha: e.target.value})}
+                  className={inputCls} required />
               </div>
               <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Estado</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                >
-                  <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                  <option value="pendiente" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Pendiente</option>
-                  <option value="programado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Programado</option>
+                <label className="text-white/60 text-sm mb-1.5 block">Tipo *</label>
+                <select value={createForm.tipo}
+                  onChange={e => setCreateForm({...createForm, tipo: e.target.value})}
+                  className={inputCls} style={selectStyle}>
+                  <option value="ESTABLE" style={optStyle}>Estable</option>
+                  <option value="VOLATIL" style={optStyle}>Volátil</option>
                 </select>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Cliente / Empresa</label>
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input
-                    type="text"
-                    value={formData.client}
-                    onChange={(e) => setFormData({...formData, client: e.target.value})}
-                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                    placeholder="Nombre del cliente"
-                  />
-                </div>
+                <label className="text-white/60 text-sm mb-1.5 block">Fuente</label>
+                <input type="text" value={createForm.fuente}
+                  onChange={e => setCreateForm({...createForm, fuente: e.target.value})}
+                  className={inputCls} placeholder="Ej: Salario empresa X" />
               </div>
               <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Factura / Referencia</label>
-                <div className="relative">
-                  <Hash size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input
-                    type="text"
-                    value={formData.invoice}
-                    onChange={(e) => setFormData({...formData, invoice: e.target.value})}
-                    className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                    placeholder="INV-2024-001"
-                  />
-                </div>
+                <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
+                <input type="text" value={createForm.descripcion}
+                  onChange={e => setCreateForm({...createForm, descripcion: e.target.value})}
+                  className={inputCls} placeholder="Descripción libre" />
               </div>
             </div>
-
-            <div>
-              <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                rows={3}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                placeholder="Notas adicionales sobre este ingreso..."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Método de recepción</label>
+                <select value={createForm.metodoRecepcion}
+                  onChange={e => setCreateForm({...createForm, metodoRecepcion: e.target.value})}
+                  className={inputCls} style={selectStyle}>
+                  <option value="TRANSFERENCIA" style={optStyle}>Transferencia</option>
+                  <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
+                  <option value="CHEQUE"        style={optStyle}>Cheque</option>
+                  <option value="OTRO"          style={optStyle}>Otro</option>
+                </select>
+              </div>
+              <div className="flex items-end pb-1">
+                <Toggle value={createForm.esRecurrente}
+                  onChange={v => setCreateForm({...createForm, esRecurrente: v})}
+                  label="Recurrente" />
+              </div>
             </div>
-
+            <AnimatePresence>
+              {createForm.esRecurrente && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <FrecuenciaSelect value={createForm.frecuencia}
+                    onChange={v => setCreateForm({...createForm, frecuencia: v})} />
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
-              >
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button"
+                onClick={() => { setShowCreateModal(false); setCreateForm(emptyCreate()); }}
+                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
                 Cancelar
               </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium"
-              >
-                <Save size={18} />
-                <span>Guardar Ingreso</span>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium">
+                <Save size={18} /><span>Guardar Ingreso</span>
               </motion.button>
             </div>
           </form>
         </ModalOverlay>
       </AnimatePresence>
 
-      {/* Modal para editar estado */}
+      {/* Modal: editar ingreso */}
       <AnimatePresence>
-        <StatusModal
-          isOpen={showEditStatusModal && !!selectedIncome}
-          onClose={() => setShowEditStatusModal(false)}
-          itemLabel="ingreso"
-          itemName={selectedIncome?.description ?? ''}
-          itemAmount={selectedIncome?.amount ?? 0}
-          currentStatus={newStatus}
-          onStatusChange={setNewStatus}
-          onConfirm={handleUpdateStatus}
-        />
+        <ModalOverlay isOpen={showEditModal && !!selectedIngreso} onClose={() => setShowEditModal(false)}
+          title="Editar Ingreso" subtitle={`Ingreso #${selectedIngreso?.id}`}
+          icon={<Edit size={20} className="text-white" />}>
+          <form onSubmit={e => { e.preventDefault(); handleEditSave(); }} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Monto</label>
+                <input type="number" step="0.01" value={editForm.monto}
+                  onChange={e => setEditForm({...editForm, monto: e.target.value})} className={inputCls} />
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Fecha</label>
+                <input type="date" value={editForm.fecha}
+                  onChange={e => setEditForm({...editForm, fecha: e.target.value})} className={inputCls} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Tipo</label>
+                <select value={editForm.tipo}
+                  onChange={e => setEditForm({...editForm, tipo: e.target.value})}
+                  className={inputCls} style={selectStyle}>
+                  <option value="ESTABLE" style={optStyle}>Estable</option>
+                  <option value="VOLATIL" style={optStyle}>Volátil</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Método de recepción</label>
+                <select value={editForm.metodoRecepcion}
+                  onChange={e => setEditForm({...editForm, metodoRecepcion: e.target.value})}
+                  className={inputCls} style={selectStyle}>
+                  <option value="TRANSFERENCIA" style={optStyle}>Transferencia</option>
+                  <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
+                  <option value="CHEQUE"        style={optStyle}>Cheque</option>
+                  <option value="OTRO"          style={optStyle}>Otro</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Fuente</label>
+                <input type="text" value={editForm.fuente}
+                  onChange={e => setEditForm({...editForm, fuente: e.target.value})} className={inputCls} />
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
+                <input type="text" value={editForm.descripcion}
+                  onChange={e => setEditForm({...editForm, descripcion: e.target.value})} className={inputCls} />
+              </div>
+            </div>
+            <div className="flex items-center gap-6 pt-1">
+              <Toggle value={editForm.esRecurrente}
+                onChange={v => setEditForm({...editForm, esRecurrente: v})} label="Recurrente" />
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className={`w-10 h-5 rounded-full transition-colors relative ${editForm.activo ? 'bg-green-500' : 'bg-white/20'}`}
+                  onClick={() => setEditForm({...editForm, activo: !editForm.activo})}>
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${editForm.activo ? 'translate-x-5' : ''}`} />
+                </div>
+                <span className="text-white/60 text-sm">Activo</span>
+              </label>
+            </div>
+            <AnimatePresence>
+              {editForm.esRecurrente && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <FrecuenciaSelect value={editForm.frecuencia}
+                    onChange={v => setEditForm({...editForm, frecuencia: v})} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button"
+                onClick={() => setShowEditModal(false)}
+                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
+                Cancelar
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium">
+                <Save size={18} /><span>Guardar Cambios</span>
+              </motion.button>
+            </div>
+          </form>
+        </ModalOverlay>
       </AnimatePresence>
-
     </motion.div>
   );
 };
