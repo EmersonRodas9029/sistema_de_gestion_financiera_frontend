@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { categoriasService, type ApiCategoria } from '../../services';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderTree,
@@ -12,7 +14,6 @@ import {
   TrendingDown,
   TrendingUp,
   BarChart3,
-  RefreshCw,
   Filter,
   Home as HomeIcon,
   Utensils,
@@ -74,9 +75,43 @@ interface Category {
 // Colores para el gráfico de pastel
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
-// Función para generar ID único
-const generateUniqueId = () => {
-  return `CAT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// ponytail: tipo no existe en la API, se codifica como "expense:utensils" en el campo icono
+const encodeIcono = (type: string, icon: string) => `${type}:${icon}`;
+const decodeIcono = (icono: string): { type: 'income' | 'expense'; icon: string } => {
+  const i = icono.indexOf(':');
+  return i > -1
+    ? { type: icono.slice(0, i) as 'income' | 'expense', icon: icono.slice(i + 1) }
+    : { type: 'expense', icon: icono };
+};
+
+const HEX_TO_TW: Record<string, string> = {
+  '#F59E0B': 'from-amber-500 to-amber-600',
+  '#3B82F6': 'from-blue-500 to-blue-600',
+  '#10B981': 'from-emerald-500 to-emerald-600',
+  '#F43F5E': 'from-rose-500 to-rose-600',
+  '#8B5CF6': 'from-violet-500 to-violet-600',
+  '#EC4899': 'from-pink-500 to-pink-600',
+  '#6366F1': 'from-indigo-500 to-indigo-600',
+};
+const hexToTw = (hex: string) => HEX_TO_TW[hex] ?? 'from-amber-500 to-amber-600';
+
+const toCategory = (api: ApiCategoria): Category => {
+  const { type, icon } = decodeIcono(api.icono ?? 'expense:home');
+  return {
+    id: String(api.id),
+    name: api.nombre ?? '',
+    type,
+    icon,
+    color: hexToTw(api.color ?? '#F59E0B'),
+    description: api.descripcion,
+    budget: api.presupuestoMensual,
+    spent: 0,
+    transactions: 0,
+    totalAmount: 0,
+    isActive: api.activa ?? true,
+    createdAt: api.fechaCreacion ?? new Date().toISOString(),
+    updatedAt: api.fechaModificacion ?? new Date().toISOString(),
+  };
 };
 
 // Mapa de iconos disponibles
@@ -111,205 +146,6 @@ const iconMap: { [key: string]: React.ReactNode } = {
   home2: <Home size={20} />
 };
 
-// Datos iniciales por defecto
-const getDefaultCategories = (): Category[] => [
-  {
-    id: generateUniqueId(),
-    name: 'Alimentación',
-    type: 'expense',
-    icon: 'utensils',
-    color: 'from-amber-500 to-amber-600',
-    description: 'Supermercado, restaurantes, comida rápida',
-    budget: 600,
-    spent: 350.75,
-    transactions: 24,
-    totalAmount: 4250.50,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Vivienda',
-    type: 'expense',
-    icon: 'home',
-    color: 'from-blue-500 to-blue-600',
-    description: 'Alquiler, hipoteca, mantenimiento del hogar',
-    budget: 1200,
-    spent: 1200.00,
-    transactions: 12,
-    totalAmount: 14400.00,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Servicios',
-    type: 'expense',
-    icon: 'zap',
-    color: 'from-cyan-500 to-cyan-600',
-    description: 'Electricidad, agua, gas, internet, teléfono',
-    budget: 300,
-    spent: 196.79,
-    transactions: 18,
-    totalAmount: 2361.48,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Transporte',
-    type: 'expense',
-    icon: 'car',
-    color: 'from-emerald-500 to-emerald-600',
-    description: 'Combustible, mantenimiento, taxis, transporte público',
-    budget: 200,
-    spent: 65.00,
-    transactions: 8,
-    totalAmount: 1560.00,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Salud',
-    type: 'expense',
-    icon: 'heart',
-    color: 'from-rose-500 to-rose-600',
-    description: 'Seguros médicos, farmacia, consultas médicas',
-    budget: 200,
-    spent: 45.00,
-    transactions: 4,
-    totalAmount: 890.00,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Entretenimiento',
-    type: 'expense',
-    icon: 'film',
-    color: 'from-violet-500 to-violet-600',
-    description: 'Cine, conciertos, entretenimiento, hobbies',
-    budget: 150,
-    spent: 45.80,
-    transactions: 6,
-    totalAmount: 875.40,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Compras',
-    type: 'expense',
-    icon: 'shopping',
-    color: 'from-pink-500 to-pink-600',
-    description: 'Ropa, electrónicos, hogar',
-    budget: 300,
-    spent: 120.50,
-    transactions: 7,
-    totalAmount: 2140.00,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Educación',
-    type: 'expense',
-    icon: 'book',
-    color: 'from-indigo-500 to-indigo-600',
-    description: 'Cursos, libros, formación',
-    budget: 200,
-    spent: 0,
-    transactions: 3,
-    totalAmount: 650.00,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  // Categorías de Ingresos
-  {
-    id: generateUniqueId(),
-    name: 'Salario',
-    type: 'income',
-    icon: 'briefcase',
-    color: 'from-emerald-500 to-emerald-600',
-    description: 'Ingresos por salario y nóminas',
-    budget: 3000,
-    spent: 3000,
-    transactions: 12,
-    totalAmount: 32500,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Servicios profesionales',
-    type: 'income',
-    icon: 'laptop',
-    color: 'from-blue-500 to-blue-600',
-    description: 'Consultoría, freelance, servicios',
-    budget: 2000,
-    spent: 1850,
-    transactions: 8,
-    totalAmount: 18450,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Ventas',
-    type: 'income',
-    icon: 'shopping',
-    color: 'from-purple-500 to-purple-600',
-    description: 'Ventas de productos',
-    budget: 1500,
-    spent: 1250,
-    transactions: 15,
-    totalAmount: 12500,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Ingresos pasivos',
-    type: 'income',
-    icon: 'gift',
-    color: 'from-orange-500 to-orange-600',
-    description: 'Dividendos, alquileres, intereses',
-    budget: 1000,
-    spent: 850,
-    transactions: 6,
-    totalAmount: 8500,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  },
-  {
-    id: generateUniqueId(),
-    name: 'Inversiones',
-    type: 'income',
-    icon: 'trending-up',
-    color: 'from-cyan-500 to-cyan-600',
-    description: 'Ganancias de inversiones',
-    budget: 1000,
-    spent: 0,
-    transactions: 2,
-    totalAmount: 3500,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-23'
-  }
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -324,7 +160,6 @@ const itemVariants = {
 export const CategoriesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -337,10 +172,11 @@ export const CategoriesPage = () => {
     isActive: true
   });
   const [formData, setFormData] = useState({
+    clienteId: '',
     name: '',
     type: 'expense',
     icon: 'utensils',
-    color: 'from-amber-500 to-amber-600',
+    color: '#F59E0B',
     description: '',
     budget: '',
     isActive: true
@@ -354,32 +190,25 @@ export const CategoriesPage = () => {
 
   const itemsPerPage = 6;
 
-  // Cargar datos desde localStorage o usar datos por defecto
-  const [categories, setCategories] = useState<Category[]>(() => {
-    try {
-      const saved = localStorage.getItem('categories');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-      return getDefaultCategories();
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      return getDefaultCategories();
-    }
-  });
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  // Simular carga inicial
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+  const fetchCategories = useCallback(async (clienteId: number) => {
+    setIsLoading(true);
+    try {
+      const list = await categoriasService.getByCliente(clienteId);
+      const full = await Promise.all(
+        list.map(item => categoriasService.getById(item.id!).catch(() => item))
+      );
+      setCategories(full.map(toCategory));
+    } catch (e) {
+      console.error('Error cargando categorías:', e);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Guardar en localStorage cuando cambien las categorías
-  useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
-  }, [categories]);
+  const [activeClienteId, setActiveClienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
+  useEffect(() => { if (activeClienteId) fetchCategories(activeClienteId); else setIsLoading(false); }, [fetchCategories, activeClienteId]);
 
   // Categorías de Gastos
   const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -457,39 +286,27 @@ export const CategoriesPage = () => {
     currentPage * itemsPerPage
   );
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
 
-  const handleCreateCategory = () => {
-    const newCategory: Category = {
-      id: generateUniqueId(),
-      name: formData.name,
-      type: formData.type as 'income' | 'expense',
-      icon: formData.icon,
-      color: formData.color,
-      description: formData.description || undefined,
-      budget: formData.budget ? parseFloat(formData.budget) : undefined,
-      spent: 0,
-      transactions: 0,
-      totalAmount: 0,
-      isActive: formData.isActive,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setCategories(prev => [newCategory, ...prev]);
-    setShowCreateModal(false);
-    setFormData({
-      name: '',
-      type: 'expense',
-      icon: 'utensils',
-      color: 'from-amber-500 to-amber-600',
-      description: '',
-      budget: '',
-      isActive: true
-    });
+  const handleCreateCategory = async () => {
+    try {
+      const clienteId = Number(formData.clienteId);
+      await categoriasService.create({
+        clienteId,
+        nombre: formData.name,
+        descripcion: formData.description || undefined,
+        color: formData.color,
+        icono: encodeIcono(formData.type, formData.icon),
+        presupuestoMensual: formData.budget ? parseFloat(formData.budget) : undefined,
+      });
+      localStorage.setItem('clienteId', String(clienteId));
+      setActiveClienteId(clienteId);
+      await fetchCategories(clienteId);
+      setShowCreateModal(false);
+      setFormData({ clienteId: '', name: '', type: 'expense', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
+      toast.success('Categoría creada');
+    } catch (e) {
+      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    }
   };
 
   const handleEditCategory = (category: Category) => {
@@ -503,36 +320,36 @@ export const CategoriesPage = () => {
     setShowEditModal(true);
   };
 
-  const handleUpdateCategory = () => {
-    if (selectedCategory) {
-      const updatedCategories = categories.map(c => 
-        c.id === selectedCategory.id ? {
-          ...c,
-          name: editFormData.name,
-          description: editFormData.description || undefined,
-          budget: editFormData.budget ? parseFloat(editFormData.budget) : undefined,
-          isActive: editFormData.isActive,
-          updatedAt: new Date().toISOString()
-        } : c
-      );
-      setCategories(updatedCategories);
+  const handleUpdateCategory = async () => {
+    if (!selectedCategory) return;
+    try {
+      await categoriasService.update(Number(selectedCategory.id), {
+        nombre: editFormData.name,
+        descripcion: editFormData.description || undefined,
+        presupuestoMensual: editFormData.budget ? parseFloat(editFormData.budget) : undefined,
+        activa: editFormData.isActive,
+      });
+      await fetchCategories(activeClienteId);
       setShowEditModal(false);
       setSelectedCategory(null);
+      toast.success('Categoría actualizada');
+    } catch (e) {
+      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
   };
 
-  const handleDeleteCategory = (id: string) => {
+  const handleDeleteCategory = async (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta categoría?')) {
-      setCategories(prev => prev.filter(c => c.id !== id));
+      try {
+        await categoriasService.remove(Number(id));
+        await fetchCategories(activeClienteId);
+        toast.success('Categoría eliminada');
+      } catch (e) {
+        toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      }
     }
   };
 
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
-      localStorage.removeItem('categories');
-      setCategories(getDefaultCategories());
-    }
-  };
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -613,48 +430,11 @@ export const CategoriesPage = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleRefresh}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
-            >
-              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
-              }`}
-            >
-              <BarChart3 size={20} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
-              }`}
-            >
-              <FolderTree size={20} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nueva Categoría</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={resetData}
-              className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl transition-all duration-300 text-yellow-400 hover:text-yellow-300 backdrop-blur-sm"
-              title="Restaurar datos por defecto"
-            >
-              <RefreshCw size={20} />
             </motion.button>
           </div>
         </div>
@@ -823,6 +603,29 @@ export const CategoriesPage = () => {
 
       {/* Filters and Search con panel colapsable */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+        {/* Fila de vista — encima del buscador */}
+        <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-white/10">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+            }`}
+          >
+            <BarChart3 size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+            }`}
+          >
+            <FolderTree size={20} />
+          </motion.button>
+        </div>
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -976,17 +779,16 @@ export const CategoriesPage = () => {
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <AnimatePresence>
-                    {paginatedExpenseCategories.map((category, index) => {
+                    {paginatedExpenseCategories.map((category) => {
                       const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
                       const isOverBudget = budgetPercentage >= 90;
                       const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
                       return (
                         <motion.div
                           key={category.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ delay: index * 0.05 }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
                           whileHover={{ y: -4, scale: 1.02 }}
                           className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
                             category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-rose-500/20 opacity-60 hover:opacity-100'
@@ -1083,17 +885,16 @@ export const CategoriesPage = () => {
               ) : (
                 <div className="space-y-2">
                   <AnimatePresence>
-                    {paginatedExpenseCategories.map((category, index) => {
+                    {paginatedExpenseCategories.map((category) => {
                       const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
                       const isOverBudget = budgetPercentage >= 90;
                       const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
                       return (
                         <motion.div
                           key={category.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ delay: index * 0.03 }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
                           whileHover={{ scale: 1.01 }}
                           className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
                             category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-rose-500/20 opacity-60 hover:opacity-100'
@@ -1185,13 +986,12 @@ export const CategoriesPage = () => {
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <AnimatePresence>
-                    {paginatedIncomeCategories.map((category, index) => (
+                    {paginatedIncomeCategories.map((category) => (
                       <motion.div
                         key={category.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ delay: index * 0.05 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         whileHover={{ y: -4, scale: 1.02 }}
                         className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
                           category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
@@ -1255,13 +1055,12 @@ export const CategoriesPage = () => {
               ) : (
                 <div className="space-y-2">
                   <AnimatePresence>
-                    {paginatedIncomeCategories.map((category, index) => (
+                    {paginatedIncomeCategories.map((category) => (
                       <motion.div
                         key={category.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: index * 0.03 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         whileHover={{ scale: 1.01 }}
                         className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
                           category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
@@ -1411,6 +1210,10 @@ export const CategoriesPage = () => {
               </div>
               <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-5">
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Cliente ID *</label>
+                    <input type="number" value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="ID del cliente" required />
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Nombre *</label>
@@ -1443,11 +1246,13 @@ export const CategoriesPage = () => {
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Color</label>
                       <select value={formData.color} onChange={(e) => setFormData({...formData, color: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="from-amber-500 to-amber-600">Amarillo</option>
-                        <option value="from-blue-500 to-blue-600">Azul</option>
-                        <option value="from-emerald-500 to-emerald-600">Verde</option>
-                        <option value="from-rose-500 to-rose-600">Rojo</option>
-                        <option value="from-violet-500 to-violet-600">Púrpura</option>
+                        <option value="#F59E0B">Amarillo</option>
+                        <option value="#3B82F6">Azul</option>
+                        <option value="#10B981">Verde</option>
+                        <option value="#F43F5E">Rojo</option>
+                        <option value="#8B5CF6">Púrpura</option>
+                        <option value="#EC4899">Rosa</option>
+                        <option value="#6366F1">Índigo</option>
                       </select>
                     </div>
                   </div>
