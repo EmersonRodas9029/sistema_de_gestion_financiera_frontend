@@ -121,8 +121,10 @@ export const ClientsPage = () => {
   ].filter(d => d.value > 0);
 
   const filtered = usuarios.filter(u => {
-    const matchSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const matchSearch = u.username.toLowerCase().includes(q) ||
+                        u.email.toLowerCase().includes(q) ||
+                        (u.cliente?.nombreCompleto ?? '').toLowerCase().includes(q);
     const matchRol    = selectedRol === 'todos' || u.rol === selectedRol;
     const matchActivo = selectedActivo === 'todos' || (selectedActivo === 'activo' ? u.activo : !u.activo);
     return matchSearch && matchRol && matchActivo;
@@ -243,6 +245,12 @@ export const ClientsPage = () => {
               <p className="text-white/50 text-sm mt-1">Gestiona los usuarios del sistema</p>
             </div>
           </div>
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/30 transition-all font-medium self-start lg:self-auto">
+            <UserPlus size={18} />
+            <span>Nuevo Usuario</span>
+          </motion.button>
         </div>
       </motion.div>
 
@@ -336,11 +344,6 @@ export const ClientsPage = () => {
               <Users size={18} />
             </motion.button>
           </div>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:shadow-lg hover:shadow-[#F05984]/25 transition-all text-sm font-medium">
-            <UserPlus size={16} />
-            <span className="hidden sm:inline">Nuevo Usuario</span>
-          </motion.button>
         </div>
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -428,7 +431,7 @@ export const ClientsPage = () => {
                   className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all hover:shadow-xl">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r flex items-center justify-center text-white font-bold text-lg shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
                         {u.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -486,7 +489,7 @@ export const ClientsPage = () => {
                   exit={{ opacity: 0, x: 20 }} transition={{ delay: i * 0.03 }} whileHover={{ scale: 1.01 }}
                   className="bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border border-white/10 hover:border-[#F05984]/30 transition-all hover:shadow-lg">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold shadow-lg">
+                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-r flex items-center justify-center text-white font-bold shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
                       {u.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
