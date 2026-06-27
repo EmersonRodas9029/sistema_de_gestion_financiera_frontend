@@ -25,6 +25,7 @@ export interface ApiUsuario {
 const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
 
 export const clientesService = {
+  getAll: (): Promise<ApiCliente[]> => fetch(`${config.apiUrl}/clientes`).then(json),
   update: (id: string | number, data: Partial<ApiCliente>): Promise<ApiCliente> =>
     fetch(`${config.apiUrl}/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
   remove: (id: string | number): Promise<void> =>

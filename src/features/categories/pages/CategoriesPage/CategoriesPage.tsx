@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { categoriasService, type ApiCategoria } from '../../services';
+import { clientesService } from '../../../clients/services';
+import { gastosService } from '../../../expenses/services';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderTree,
@@ -162,6 +164,7 @@ export const CategoriesPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -195,11 +198,29 @@ export const CategoriesPage = () => {
   const fetchCategories = useCallback(async (clienteId: number) => {
     setIsLoading(true);
     try {
-      const list = await categoriasService.getByCliente(clienteId);
-      const full = await Promise.all(
-        list.map(item => categoriasService.getById(item.id!).catch(() => item))
-      );
-      setCategories(full.map(toCategory));
+      const [list, gastosList] = await Promise.all([
+        categoriasService.getByCliente(clienteId),
+        gastosService.getAll(),
+      ]);
+      const [fullCats, fullGastos] = await Promise.all([
+        Promise.all(list.map(item => categoriasService.getById(item.id!).catch(() => item))),
+        Promise.all(gastosList.map(g => gastosService.getById(g.id!).catch(() => g))),
+      ]);
+
+      // Agregar gastos activos de este cliente por categoriaId
+      const byCategoria = new Map<number, { spent: number; transactions: number }>();
+      fullGastos.forEach(g => {
+        if (g.clienteId !== clienteId || !g.activo) return;
+        const id = g.categoriaId!;
+        const cur = byCategoria.get(id) ?? { spent: 0, transactions: 0 };
+        byCategoria.set(id, { spent: cur.spent + (g.monto ?? 0), transactions: cur.transactions + 1 });
+      });
+
+      setCategories(fullCats.map(api => {
+        const cat = toCategory(api);
+        const agg = byCategoria.get(Number(api.id));
+        return agg ? { ...cat, spent: agg.spent, transactions: agg.transactions, totalAmount: agg.spent } : cat;
+      }));
     } catch (e) {
       console.error('Error cargando categorías:', e);
     } finally {
@@ -209,6 +230,13 @@ export const CategoriesPage = () => {
 
   const [activeClienteId, setActiveClienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
   useEffect(() => { if (activeClienteId) fetchCategories(activeClienteId); else setIsLoading(false); }, [fetchCategories, activeClienteId]);
+
+  useEffect(() => {
+    if (!showCreateModal) return;
+    clientesService.getAll().then(clientes => {
+      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+    }).catch(() => {});
+  }, [showCreateModal]);
 
   // Categorías de Gastos
   const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -1211,8 +1239,15 @@ export const CategoriesPage = () => {
               <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-5">
                   <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Cliente ID *</label>
-                    <input type="number" value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="ID del cliente" required />
+                    <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
+                    <select value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})}
+                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                      style={{ backgroundColor: '#1a0f14', color: 'white' }} required>
+                      <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                      {clientesList.map(c => (
+                        <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
