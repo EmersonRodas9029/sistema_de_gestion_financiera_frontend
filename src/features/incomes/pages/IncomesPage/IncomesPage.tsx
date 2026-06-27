@@ -18,6 +18,7 @@ import {
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod } from '../../../../shared/utils';
 import { ingresosService, type ApiIngreso } from '../../services';
+import { clientesService } from '../../../clients/services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -121,6 +122,7 @@ export const IncomesPage = () => {
   const [sortOrder, setSortOrder]           = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage]       = useState(1);
 
+  const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal]     = useState(false);
   const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
@@ -150,6 +152,13 @@ export const IncomesPage = () => {
   };
 
   useEffect(() => { fetchIngresos(); }, []);
+
+  useEffect(() => {
+    if (!showCreateModal) return;
+    clientesService.getAll().then(clientes => {
+      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+    }).catch(() => {});
+  }, [showCreateModal]);
 
   // Stats
   const now = new Date();
@@ -728,10 +737,15 @@ export const IncomesPage = () => {
           <form onSubmit={e => { e.preventDefault(); handleCreate(); }} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-white/60 text-sm mb-1.5 block">Cliente ID *</label>
-                <input type="number" value={createForm.clienteId}
+                <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
+                <select value={createForm.clienteId}
                   onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
-                  className={inputCls} placeholder="ID del cliente" required />
+                  className={inputCls} style={selectStyle} required>
+                  <option value="" style={optStyle}>Seleccionar cliente</option>
+                  {clientesList.map(c => (
+                    <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>

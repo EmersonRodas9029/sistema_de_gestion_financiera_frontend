@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { gastosService, type ApiGasto } from '../../services';
+import { clientesService as clientesSvc } from '../../../clients/services';
+import { categoriasService, type ApiCategoria } from '../../../categories/services';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingDown,
   Calendar,
   Plus,
-  RefreshCw,
   DollarSign,
   CreditCard,
   Wallet,
@@ -36,7 +39,7 @@ import {
   FileText
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { formatCurrency, formatDate, generateUniqueId, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -75,281 +78,30 @@ interface Expense {
   deductionType?: 'parcial' | 'total' | 'ninguna';
 }
 
-interface CategoryBudget {
-  name: string;
-  budget: number;
-  actual: number;
-  percentage: number;
-  color: string;
-}
+// Mapeo método de pago frontend ↔ API
+const PM_TO_API: Record<string, string> = {
+  efectivo: 'EFECTIVO', tarjeta: 'TARJETA_DEBITO',
+  transferencia: 'TRANSFERENCIA', cheque: 'CHEQUE', otro: 'OTRO',
+};
+const PM_FROM_API: Record<string, Expense['paymentMethod']> = {
+  EFECTIVO: 'efectivo', TARJETA_DEBITO: 'tarjeta', TARJETA_CREDITO: 'tarjeta',
+  TRANSFERENCIA: 'transferencia', CHEQUE: 'cheque', OTRO: 'otro',
+};
 
-interface MonthlyTrend {
-  month: string;
-  amount: number;
-}
-
-interface WeeklyTrend {
-  week: string;
-  amount: number;
-}
-
-// Función para generar ID único
-
-// Datos de presupuesto por categoría
-const categoryBudgets: CategoryBudget[] = [
-  { name: 'Alimentación', budget: 500, actual: 350.75, percentage: 70.15, color: '#F59E0B' },
-  { name: 'Vivienda', budget: 1300, actual: 1200, percentage: 92.31, color: '#3B82F6' },
-  { name: 'Servicios', budget: 250, actual: 196.79, percentage: 78.72, color: '#06B6D4' },
-  { name: 'Transporte', budget: 200, actual: 65, percentage: 32.5, color: '#10B981' },
-  { name: 'Ocio', budget: 150, actual: 45.8, percentage: 30.53, color: '#8B5CF6' },
-  { name: 'Salud', budget: 100, actual: 45, percentage: 45, color: '#EF4444' },
-  { name: 'Compras', budget: 200, actual: 120.5, percentage: 60.25, color: '#EC4899' },
-  { name: 'Seguros', budget: 500, actual: 450, percentage: 90, color: '#6366F1' },
-];
-
-// Datos de tendencia mensual
-const monthlyTrends: MonthlyTrend[] = [
-  { month: 'Sep', amount: 1850 },
-  { month: 'Oct', amount: 1920 },
-  { month: 'Nov', amount: 1780 },
-  { month: 'Dic', amount: 2100 },
-  { month: 'Ene', amount: 1950 },
-  { month: 'Feb', amount: 2020 },
-];
-
-// Datos de tendencia semanal
-const weeklyTrends: WeeklyTrend[] = [
-  { week: 'Sem 1', amount: 450 },
-  { week: 'Sem 2', amount: 520 },
-  { week: 'Sem 3', amount: 480 },
-  { week: 'Sem 4', amount: 610 },
-];
-
-// Datos iniciales por defecto
-const getDefaultExpenses = (): Expense[] => [
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Supermercado Mensual',
-    amount: 350.75,
-    category: 'Alimentación',
-    subcategory: 'Supermercado',
-    date: '2024-02-23',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'Mercadona',
-    vendorId: 'VEN-001',
-    invoice: 'FAC-2024-001',
-    notes: 'Compra mensual de alimentos',
-    attachments: 1,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.10,
-    deductible: false,
-    tags: ['alimentación', 'hogar', 'mensual'],
-    receipt: true,
-    fiscalCategory: 'Consumo',
-    deductionType: 'ninguna'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Pago de alquiler',
-    amount: 1200.00,
-    category: 'Vivienda',
-    subcategory: 'Alquiler',
-    date: '2024-02-22',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    vendor: 'Inmobiliaria Pérez',
-    vendorId: 'VEN-002',
-    invoice: 'FAC-2024-002',
-    notes: 'Alquiler del mes de febrero',
-    attachments: 2,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.21,
-    deductible: true,
-    tags: ['vivienda', 'alquiler', 'fijo'],
-    receipt: true,
-    fiscalCategory: 'Vivienda',
-    deductionType: 'total'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Electricidad',
-    amount: 85.50,
-    category: 'Servicios',
-    subcategory: 'Electricidad',
-    date: '2024-02-21',
-    paymentMethod: 'transferencia',
-    status: 'completado',
-    vendor: 'Endesa',
-    vendorId: 'VEN-003',
-    invoice: 'FAC-2024-003',
-    notes: 'Factura de luz febrero',
-    attachments: 1,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.21,
-    deductible: true,
-    tags: ['servicios', 'electricidad', 'hogar'],
-    receipt: true,
-    fiscalCategory: 'Servicios',
-    deductionType: 'total'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Internet y telefonía',
-    amount: 65.99,
-    category: 'Servicios',
-    subcategory: 'Internet',
-    date: '2024-02-20',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'Movistar',
-    vendorId: 'VEN-004',
-    invoice: 'FAC-2024-004',
-    notes: 'Fibra + móvil',
-    attachments: 1,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.21,
-    deductible: true,
-    tags: ['internet', 'telefonía', 'hogar'],
-    receipt: true,
-    fiscalCategory: 'Servicios',
-    deductionType: 'total'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Gasolina',
-    amount: 65.00,
-    category: 'Transporte',
-    subcategory: 'Combustible',
-    date: '2024-02-19',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'Repsol',
-    vendorId: 'VEN-005',
-    notes: 'Llenar depósito',
-    attachments: 0,
-    recurring: false,
-    tax: 0.21,
-    deductible: false,
-    tags: ['transporte', 'combustible', 'coche'],
-    receipt: true,
-    fiscalCategory: 'Transporte',
-    deductionType: 'ninguna'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Cena restaurante',
-    amount: 45.80,
-    category: 'Ocio',
-    subcategory: 'Restaurantes',
-    date: '2024-02-18',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'La Tagliatella',
-    notes: 'Cena familiar',
-    attachments: 0,
-    recurring: false,
-    tax: 0.10,
-    deductible: false,
-    tags: ['ocio', 'restaurante', 'familia'],
-    receipt: false,
-    fiscalCategory: 'Ocio',
-    deductionType: 'ninguna'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Gimnasio',
-    amount: 45.00,
-    category: 'Salud',
-    subcategory: 'Deporte',
-    date: '2024-02-17',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'Basic Fit',
-    vendorId: 'VEN-006',
-    notes: 'Cuota mensual gimnasio',
-    attachments: 0,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.10,
-    deductible: false,
-    tags: ['salud', 'deporte', 'suscripción'],
-    receipt: true,
-    fiscalCategory: 'Salud',
-    deductionType: 'ninguna'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Ropa',
-    amount: 120.50,
-    category: 'Compras',
-    subcategory: 'Ropa',
-    date: '2024-02-16',
-    paymentMethod: 'tarjeta',
-    status: 'completado',
-    vendor: 'Zara',
-    vendorId: 'VEN-007',
-    notes: 'Compra de ropa',
-    attachments: 0,
-    recurring: false,
-    tax: 0.21,
-    deductible: false,
-    tags: ['compras', 'ropa', 'personal'],
-    receipt: false,
-    fiscalCategory: 'Compras',
-    deductionType: 'ninguna'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Factura pendiente - Agua',
-    amount: 45.30,
-    category: 'Servicios',
-    subcategory: 'Agua',
-    date: '2024-03-05',
-    paymentMethod: 'transferencia',
-    status: 'pendiente',
-    vendor: 'Aguas de Barcelona',
-    vendorId: 'VEN-008',
-    invoice: 'FAC-2024-009',
-    notes: 'Factura de agua pendiente',
-    attachments: 0,
-    recurring: true,
-    recurringFrequency: 'mensual',
-    tax: 0.10,
-    deductible: true,
-    tags: ['servicios', 'agua', 'pendiente'],
-    receipt: false,
-    fiscalCategory: 'Servicios',
-    deductionType: 'total'
-  },
-  {
-    id: generateUniqueId('EXP'),
-    description: 'Seguro de coche',
-    amount: 450.00,
-    category: 'Seguros',
-    subcategory: 'Coche',
-    date: '2024-03-15',
-    paymentMethod: 'tarjeta',
-    status: 'programado',
-    vendor: 'Mapfre',
-    vendorId: 'VEN-009',
-    invoice: 'FAC-2024-010',
-    notes: 'Seguro anual programado',
-    attachments: 2,
-    recurring: true,
-    recurringFrequency: 'anual',
-    tax: 0.21,
-    deductible: true,
-    tags: ['seguros', 'coche', 'anual'],
-    receipt: false,
-    fiscalCategory: 'Seguros',
-    deductionType: 'total'
-  }
-];
+const toExpense = (api: ApiGasto): Expense => ({
+  id: String(api.id),
+  description: api.descripcion ?? '',
+  amount: api.monto ?? 0,
+  category: String(api.categoriaId ?? ''),
+  date: api.fecha ?? '',
+  paymentMethod: PM_FROM_API[api.metodoPago ?? ''] ?? 'otro',
+  status: api.activo ? 'completado' : 'cancelado',
+  recurring: api.esRecurrente ?? false,
+  recurringFrequency: api.frecuencia?.toLowerCase() as Expense['recurringFrequency'],
+  tax: 0,
+  deductible: false,
+  tags: [],
+});
 
 // Colores para el gráfico de pastel
 const CHART_COLORS = ['#F59E0B', '#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#EF4444', '#EC4899', '#6366F1'];
@@ -362,7 +114,6 @@ export const ExpensesPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
   const [trendView, setTrendView] = useState<'mensual' | 'semanal'>('mensual');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -375,6 +126,8 @@ export const ExpensesPage = () => {
   const [showDeductibleOnly, setShowDeductibleOnly] = useState(false);
   const [showNoReceiptOnly, setShowNoReceiptOnly] = useState(false);
   const [formData, setFormData] = useState({
+    clienteId: '',
+    categoriaId: '',
     description: '',
     amount: '',
     category: '',
@@ -391,32 +144,56 @@ export const ExpensesPage = () => {
 
   const itemsPerPage = 6;
 
-  // Cargar datos desde localStorage o usar datos por defecto
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    try {
-      const saved = localStorage.getItem('expenses');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-      return getDefaultExpenses();
-    } catch (error) {
-      console.error('Error loading expenses:', error);
-      return getDefaultExpenses();
-    }
-  });
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
+  const [categoriasList, setCategoriasList] = useState<ApiCategoria[]>([]);
 
-  // Simular carga inicial
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+  const fetchExpenses = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const list = await gastosService.getAll();
+      const full = await Promise.all(
+        list.map(item => gastosService.getById(item.id!).catch(() => item))
+      );
+      setExpenses(full.map(toExpense));
+    } catch (e) {
+      console.error('Error cargando gastos:', e);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Guardar en localStorage cuando cambien los gastos
+  useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
+
   useEffect(() => {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    if (!showCreateModal) return;
+    clientesSvc.getAll().then(clientes => {
+      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+    }).catch(() => {});
+  }, [showCreateModal]);
+
+  useEffect(() => {
+    if (!formData.clienteId) { setCategoriasList([]); return; }
+    categoriasService.getByCliente(Number(formData.clienteId)).then(setCategoriasList).catch(() => {});
+  }, [formData.clienteId]);
+
+  const categoryBudgets = Object.entries(
+    expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] ?? 0) + e.amount; return acc; }, {} as Record<string, number>)
+  ).map(([name, actual], idx) => ({ name, budget: 0, actual, percentage: 0, color: CHART_COLORS[idx % CHART_COLORS.length] }));
+
+  const monthlyTrends = Object.entries(
+    expenses.reduce((acc, e) => { const m = e.date.slice(0, 7); acc[m] = (acc[m] ?? 0) + e.amount; return acc; }, {} as Record<string, number>)
+  ).sort().slice(-6).map(([m, amount]) => ({ month: m.slice(5), amount }));
+
+  const weeklyTrends = (() => {
+    const weeks: Record<string, number> = {};
+    expenses.forEach(e => {
+      const d = new Date(e.date); const ws = new Date(d); ws.setDate(d.getDate() - d.getDay());
+      const key = ws.toISOString().slice(0, 10);
+      weeks[key] = (weeks[key] ?? 0) + e.amount;
+    });
+    return Object.entries(weeks).sort().slice(-4).map(([, amount], i) => ({ week: `Sem ${i + 1}`, amount }));
+  })();
 
   // Obtener la fecha actual
   const now = new Date();
@@ -546,48 +323,42 @@ export const ExpensesPage = () => {
     setShowNoReceiptOnly(false);
   };
 
-  const handleCreateExpense = () => {
-    const newExpense: Expense = {
-      id: generateUniqueId('EXP'),
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      category: formData.category,
-      date: formData.date,
-      paymentMethod: formData.paymentMethod as Expense['paymentMethod'],
-      status: formData.status as Expense['status'],
-      vendor: formData.vendor || undefined,
-      invoice: formData.invoice || undefined,
-      notes: formData.notes || undefined,
-      deductible: formData.deductible,
-      recurring: false,
-      tax: 0.21,
-      tags: [],
-      receipt: false,
-      fiscalCategory: formData.fiscalCategory || undefined,
-      deductionType: formData.deductionType
-    };
-
-    setExpenses(prevExpenses => [newExpense, ...prevExpenses]);
-    setShowCreateModal(false);
-    setFormData({
-      description: '',
-      amount: '',
-      category: '',
-      date: new Date().toISOString().split('T')[0],
-      paymentMethod: 'transferencia',
-      status: 'completado',
-      vendor: '',
-      invoice: '',
-      notes: '',
-      deductible: false,
-      fiscalCategory: '',
-      deductionType: 'ninguna'
-    });
+  const handleCreateExpense = async () => {
+    try {
+      await gastosService.create({
+        clienteId: Number(formData.clienteId),
+        categoriaId: Number(formData.categoriaId),
+        monto: parseFloat(formData.amount),
+        fecha: formData.date,
+        descripcion: formData.description || undefined,
+        metodoPago: PM_TO_API[formData.paymentMethod] ?? 'EFECTIVO',
+        esRecurrente: false,
+        frecuencia: null,
+        activo: true,
+      });
+      await fetchExpenses();
+      setShowCreateModal(false);
+      setFormData({
+        clienteId: '', categoriaId: '', description: '', amount: '', category: '',
+        date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia',
+        status: 'completado', vendor: '', invoice: '', notes: '',
+        deductible: false, fiscalCategory: '', deductionType: 'ninguna'
+      });
+      toast.success('Gasto creado');
+    } catch (e) {
+      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    }
   };
 
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
-      setExpenses(prevExpenses => prevExpenses.filter(exp => exp.id !== id));
+      try {
+        await gastosService.remove(Number(id));
+        await fetchExpenses();
+        toast.success('Gasto eliminado');
+      } catch (e) {
+        toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      }
     }
   };
 
@@ -597,24 +368,21 @@ export const ExpensesPage = () => {
     setShowEditStatusModal(true);
   };
 
-  const handleUpdateStatus = () => {
+  const handleUpdateStatus = async () => {
     if (selectedExpense && newStatus && newStatus !== selectedExpense.status) {
-      setExpenses(prevExpenses => 
-        prevExpenses.map(exp => 
-          exp.id === selectedExpense.id ? { ...exp, status: newStatus as Expense['status'] } : exp
-        )
-      );
+      try {
+        await gastosService.update(Number(selectedExpense.id), {
+          activo: newStatus !== 'cancelado',
+        });
+        await fetchExpenses();
+        toast.success('Estado actualizado');
+      } catch (e) {
+        toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      }
     }
     setShowEditStatusModal(false);
     setSelectedExpense(null);
     setNewStatus('');
-  };
-
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
-      localStorage.removeItem('expenses');
-      setExpenses(getDefaultExpenses());
-    }
   };
 
   const filteredExpenses = expenses.filter(expense => {
@@ -650,11 +418,6 @@ export const ExpensesPage = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
 
   const getPaymentMethodIcon = (method: string) => {
     switch(method) {
@@ -720,29 +483,11 @@ export const ExpensesPage = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={handleRefresh}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-          >
-            <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-          </motion.button>
-          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <Plus size={20} />
             <span className="hidden sm:inline">Nuevo Gasto</span>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={resetData}
-            className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition-colors text-yellow-400 hover:text-yellow-300"
-            title="Restaurar datos por defecto"
-          >
-            <RefreshCw size={20} />
           </motion.button>
         </div>
       </motion.div>
@@ -1179,6 +924,9 @@ export const ExpensesPage = () => {
 
       {/* Filters and Search */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+        <div className="flex items-center px-4 pt-4 pb-3 border-b border-white/10">
+          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
+        </div>
         <div>
           <SearchFilterBar
             searchTerm={searchTerm}
@@ -1576,6 +1324,41 @@ export const ExpensesPage = () => {
         >
           <div>
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
+                      <select
+                        value={formData.clienteId}
+                        onChange={(e) => setFormData({...formData, clienteId: e.target.value, categoriaId: ''})}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                        required
+                      >
+                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                        {clientesList.map(c => (
+                          <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                      <select
+                        value={formData.categoriaId}
+                        onChange={(e) => setFormData({...formData, categoriaId: e.target.value})}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                        disabled={!formData.clienteId}
+                        required
+                      >
+                        <option value="" style={{ backgroundColor: '#1a0f14' }}>
+                          {formData.clienteId ? 'Seleccionar categoría' : 'Primero selecciona un cliente'}
+                        </option>
+                        {categoriasList.map(cat => (
+                          <option key={cat.id} value={cat.id} style={{ backgroundColor: '#1a0f14' }}>{cat.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
