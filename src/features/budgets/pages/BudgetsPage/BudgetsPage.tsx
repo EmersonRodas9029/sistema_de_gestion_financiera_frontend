@@ -1,553 +1,233 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet,
   Plus,
   Search,
   Filter,
-  RefreshCw,
   Edit,
   Trash2,
   DollarSign,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  BarChart3,
   Activity,
-  Target,
-  Home as HomeIcon,
-  Utensils,
-  Car,
-  Heart,
-  ShoppingBag,
-  Film,
-  Zap,
-  BookOpen,
-  Save,
-  Percent,
-  TrendingUp as TrendingUpIcon,
   XCircle,
+  Calendar,
+  User,
   Tag,
-  PieChart
+  PieChart,
+  TrendingUp,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, generateUniqueId, containerVariants, itemVariants } from '../../../../shared/utils';
+import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
-import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
+import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
+import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
+import { presupuestosService, type ApiPresupuesto } from '../../services';
+import { clientesService, type ApiCliente } from '../../../clients/services';
+import { categoriasService, type ApiCategoria } from '../../../categories/services';
 
-void AlertCircle; void CheckCircle; void Clock; void TrendingUpIcon; void Tag; void labelStyle;
-
-interface Budget {
-  id: string;
-  name: string;
-  category: string;
-  subcategory?: string;
-  amount: number;
-  spent: number;
-  period: 'monthly' | 'quarterly' | 'yearly';
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'completed' | 'exceeded' | 'pending';
-  alertThreshold: number;
-  notifications: boolean;
-  rollover: boolean;
-  notes?: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CategoryBudget {
-  name: string;
-  budgeted: number;
-  spent: number;
-  remaining: number;
-  percentage: number;
-  color: string;
-  icon: React.ReactNode;
-  status: 'good' | 'warning' | 'danger';
-  chartColor: string;
-}
-
-// Colores para el gráfico de pastel
-const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
-
-// Función para generar ID único
-
-// Datos iniciales por defecto
-const getDefaultBudgets = (): Budget[] => [
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Alimentación',
-    category: 'Alimentación',
-    amount: 600.00,
-    spent: 450.75,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: false,
-    tags: ['alimentación', 'supermercado'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Vivienda',
-    category: 'Vivienda',
-    amount: 1200.00,
-    spent: 1200.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'completed',
-    alertThreshold: 90,
-    notifications: true,
-    rollover: false,
-    tags: ['vivienda', 'alquiler'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Transporte',
-    category: 'Transporte',
-    amount: 200.00,
-    spent: 65.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: true,
-    tags: ['transporte', 'combustible'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Entretenimiento',
-    category: 'Entretenimiento',
-    amount: 150.00,
-    spent: 180.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'exceeded',
-    alertThreshold: 100,
-    notifications: true,
-    rollover: false,
-    tags: ['ocio', 'diversión'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Salud',
-    category: 'Salud',
-    amount: 200.00,
-    spent: 45.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: true,
-    tags: ['salud', 'farmacia'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Compras',
-    category: 'Compras',
-    amount: 300.00,
-    spent: 120.50,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: false,
-    tags: ['compras', 'ropa'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Servicios',
-    category: 'Servicios',
-    amount: 300.00,
-    spent: 210.50,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: false,
-    tags: ['servicios', 'luz', 'agua', 'internet'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Educación',
-    category: 'Educación',
-    amount: 200.00,
-    spent: 0,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: true,
-    tags: ['educación', 'cursos'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Ahorro',
-    category: 'Ahorro',
-    amount: 500.00,
-    spent: 500.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'completed',
-    alertThreshold: 100,
-    notifications: true,
-    rollover: true,
-    tags: ['ahorro', 'inversión'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  },
-  {
-    id: generateUniqueId('BUD'),
-    name: 'Presupuesto Inversiones',
-    category: 'Inversiones',
-    amount: 300.00,
-    spent: 200.00,
-    period: 'monthly',
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    alertThreshold: 80,
-    notifications: true,
-    rollover: true,
-    tags: ['inversiones', 'bolsa'],
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-15'
-  }
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1', '#EF4444'];
+
+const emptyForm = () => ({
+  clienteId: '',
+  categoriaId: '',
+  montoPresupuestado: '',
+  mes: String(new Date().getMonth() + 1),
+  anio: String(new Date().getFullYear()),
+  activo: true,
+});
+
 export const BudgetsPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
-  const [selectedStatus, setSelectedStatus] = useState<string>('todos');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [budgets, setBudgets] = useState<ApiPresupuesto[]>([]);
+  const [clientes, setClientes] = useState<ApiCliente[]>([]);
+  const [categoriasByClient, setCategoriasByClient] = useState<Record<number, ApiCategoria[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEstado, setSelectedEstado] = useState<'todos' | 'activo' | 'inactivo'>('todos');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'monto' | 'mes' | 'anio'>('anio');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    amount: '',
-    category: '',
-    alertThreshold: '80',
-    notifications: true,
-    rollover: false
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState<'name' | 'amount' | 'spent' | 'utilization'>('utilization');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [formData, setFormData] = useState({
-    name: '',
-    amount: '',
-    category: '',
-    period: 'monthly',
-    alertThreshold: '80',
-    notifications: true,
-    rollover: false,
-    notes: ''
-  });
+  const [selectedBudget, setSelectedBudget] = useState<ApiPresupuesto | null>(null);
+  const [formData, setFormData] = useState(emptyForm());
+  const [formCategorias, setFormCategorias] = useState<ApiCategoria[]>([]);
 
   const itemsPerPage = 6;
 
-  // Cargar datos desde localStorage o usar datos por defecto
-  const [budgets, setBudgets] = useState<Budget[]>(() => {
-    try {
-      const saved = localStorage.getItem('budgets');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-      return getDefaultBudgets();
-    } catch (error) {
-      console.error('Error loading budgets:', error);
-      return getDefaultBudgets();
-    }
-  });
+  const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
+  const categoriaNombre = (clienteId?: number, categoriaId?: number) => {
+    if (!categoriaId) return 'Sin categoría';
+    const lista = categoriasByClient[clienteId ?? -1] ?? [];
+    return lista.find(c => c.id === categoriaId)?.nombre ?? `Categoría #${categoriaId}`;
+  };
 
-  // Simular carga inicial
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+  const fetchBudgets = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const list = await presupuestosService.getAll();
+      const full = await Promise.all(list.map(item => presupuestosService.getById(item.id!)));
+      setBudgets(full);
+
+      const clienteIds = [...new Set(full.map(b => b.clienteId).filter((id): id is number => id != null))];
+      const entries = await Promise.all(
+        clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
+      );
+      setCategoriasByClient(Object.fromEntries(entries));
+    } catch (e) {
+      toast.error(`Error al cargar presupuestos: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Guardar en localStorage cuando cambien los presupuestos
+  useEffect(() => { fetchBudgets(); }, [fetchBudgets]);
+  useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
+
+  // Categorías del cliente seleccionado en el formulario (crear/editar)
   useEffect(() => {
-    localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets]);
+    if (!formData.clienteId) { setFormCategorias([]); return; }
+    const clienteId = Number(formData.clienteId);
+    if (categoriasByClient[clienteId]) { setFormCategorias(categoriasByClient[clienteId]); return; }
+    categoriasService.getByCliente(clienteId).then(cats => {
+      setFormCategorias(cats);
+      setCategoriasByClient(prev => ({ ...prev, [clienteId]: cats }));
+    }).catch(() => setFormCategorias([]));
+  }, [formData.clienteId, categoriasByClient]);
 
-  // Calcular estadísticas en tiempo real
-  const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
-  const remainingBudget = totalBudget - totalSpent;
-  const utilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-  const activeBudgets = budgets.filter(b => b.status === 'active').length;
-  const exceededBudgets = budgets.filter(b => b.status === 'exceeded').length;
-  const completedBudgets = budgets.filter(b => b.status === 'completed').length;
-  const projectedSavings = remainingBudget * 0.7;
-
-  // Calcular categorías para el gráfico
-  const categoryMap = new Map<string, { budgeted: number; spent: number }>();
-  budgets.forEach(b => {
-    const existing = categoryMap.get(b.category);
-    if (existing) {
-      existing.budgeted += b.amount;
-      existing.spent += b.spent;
-    } else {
-      categoryMap.set(b.category, { budgeted: b.amount, spent: b.spent });
+  const handleCreateBudget = async () => {
+    try {
+      await presupuestosService.create({
+        clienteId: Number(formData.clienteId),
+        categoriaId: formData.categoriaId ? Number(formData.categoriaId) : undefined,
+        montoPresupuestado: parseFloat(formData.montoPresupuestado),
+        mes: Number(formData.mes),
+        anio: Number(formData.anio),
+        activo: formData.activo,
+      });
+      toast.success('Presupuesto creado');
+      setShowCreateModal(false);
+      setFormData(emptyForm());
+      fetchBudgets();
+    } catch (e) {
+      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Ya existe un presupuesto para ese cliente/categoría/mes/año'}`);
     }
-  });
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'Alimentación': 'from-amber-500 to-amber-600',
-      'Vivienda': 'from-blue-500 to-blue-600',
-      'Transporte': 'from-emerald-500 to-emerald-600',
-      'Entretenimiento': 'from-purple-500 to-purple-600',
-      'Salud': 'from-rose-500 to-rose-600',
-      'Compras': 'from-pink-500 to-pink-600',
-      'Servicios': 'from-cyan-500 to-cyan-600',
-      'Educación': 'from-indigo-500 to-indigo-600',
-      'Ahorro': 'from-teal-500 to-teal-600',
-      'Inversiones': 'from-orange-500 to-orange-600'
-    };
-    return colors[category] || 'from-gray-500 to-gray-600';
   };
 
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, React.ReactNode> = {
-      'Alimentación': <Utensils size={16} />,
-      'Vivienda': <HomeIcon size={16} />,
-      'Transporte': <Car size={16} />,
-      'Entretenimiento': <Film size={16} />,
-      'Salud': <Heart size={16} />,
-      'Compras': <ShoppingBag size={16} />,
-      'Servicios': <Zap size={16} />,
-      'Educación': <BookOpen size={16} />,
-      'Ahorro': <Target size={16} />,
-      'Inversiones': <TrendingUpIcon size={16} />
-    };
-    return icons[category] || <Tag size={16} />;
-  };
-
-  // Datos para el gráfico de dona
-  const pieChartData = Array.from(categoryMap.entries()).map(([name, data], idx) => ({
-    name,
-    value: data.budgeted,
-    spent: data.spent,
-    color: CHART_COLORS[idx % CHART_COLORS.length]
-  }));
-
-  const categoryBudgets: CategoryBudget[] = Array.from(categoryMap.entries()).map(([name, data], idx) => {
-    const percentage = data.budgeted > 0 ? (data.spent / data.budgeted) * 100 : 0;
-    let status: 'good' | 'warning' | 'danger' = 'good';
-    if (percentage >= 100) status = 'danger';
-    else if (percentage >= 80) status = 'warning';
-    
-    return {
-      name,
-      budgeted: data.budgeted,
-      spent: data.spent,
-      remaining: data.budgeted - data.spent,
-      percentage,
-      color: getCategoryColor(name),
-      icon: getCategoryIcon(name),
-      status,
-      chartColor: CHART_COLORS[idx % CHART_COLORS.length]
-    };
-  }).sort((a, b) => b.budgeted - a.budgeted);
-
-  // Top 3 categorías
-  const topThreeCategories = categoryBudgets.slice(0, 3);
-
-  const filteredBudgets = budgets.filter(budget => {
-    const matchesSearch = budget.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         budget.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPeriod = selectedPeriod === 'todos' || budget.period === selectedPeriod;
-    const matchesStatus = selectedStatus === 'todos' || budget.status === selectedStatus;
-    
-    return matchesSearch && matchesPeriod && matchesStatus;
-  });
-
-  const sortedBudgets = [...filteredBudgets].sort((a, b) => {
-    if (sortBy === 'name') {
-      return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-    } else if (sortBy === 'amount') {
-      return sortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
-    } else if (sortBy === 'spent') {
-      return sortOrder === 'asc' ? a.spent - b.spent : b.spent - a.spent;
-    } else {
-      const utilA = (a.spent / a.amount) * 100;
-      const utilB = (b.spent / b.amount) * 100;
-      return sortOrder === 'asc' ? utilA - utilB : utilB - utilA;
-    }
-  });
-
-  const totalPages = Math.ceil(sortedBudgets.length / itemsPerPage);
-  const paginatedBudgets = sortedBudgets.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  const handleCreateBudget = () => {
-    const newBudget: Budget = {
-      id: generateUniqueId('BUD'),
-      name: formData.name,
-      category: formData.category,
-      amount: parseFloat(formData.amount),
-      spent: 0,
-      period: formData.period as Budget['period'],
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
-      status: 'active',
-      alertThreshold: parseInt(formData.alertThreshold),
-      notifications: formData.notifications,
-      rollover: formData.rollover,
-      notes: formData.notes || undefined,
-      tags: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setBudgets(prev => [newBudget, ...prev]);
-    setShowCreateModal(false);
-    setFormData({
-      name: '',
-      amount: '',
-      category: '',
-      period: 'monthly',
-      alertThreshold: '80',
-      notifications: true,
-      rollover: false,
-      notes: ''
-    });
-  };
-
-  const handleEditBudget = (budget: Budget) => {
+  const openEditModal = (budget: ApiPresupuesto) => {
     setSelectedBudget(budget);
-    setEditFormData({
-      name: budget.name,
-      amount: budget.amount.toString(),
-      category: budget.category,
-      alertThreshold: budget.alertThreshold.toString(),
-      notifications: budget.notifications,
-      rollover: budget.rollover
+    setFormData({
+      clienteId: String(budget.clienteId ?? ''),
+      categoriaId: budget.categoriaId ? String(budget.categoriaId) : '',
+      montoPresupuestado: String(budget.montoPresupuestado ?? ''),
+      mes: String(budget.mes ?? ''),
+      anio: String(budget.anio ?? ''),
+      activo: budget.activo ?? true,
     });
     setShowEditModal(true);
   };
 
-  const handleUpdateBudget = () => {
-    if (selectedBudget) {
-      const updatedBudgets = budgets.map(b => 
-        b.id === selectedBudget.id ? {
-          ...b,
-          name: editFormData.name,
-          amount: parseFloat(editFormData.amount),
-          category: editFormData.category,
-          alertThreshold: parseInt(editFormData.alertThreshold),
-          notifications: editFormData.notifications,
-          rollover: editFormData.rollover,
-          updatedAt: new Date().toISOString()
-        } : b
-      );
-      setBudgets(updatedBudgets);
+  const handleUpdateBudget = async () => {
+    if (!selectedBudget?.id) return;
+    try {
+      await presupuestosService.update(selectedBudget.id, {
+        categoriaId: formData.categoriaId ? Number(formData.categoriaId) : undefined,
+        montoPresupuestado: parseFloat(formData.montoPresupuestado),
+        mes: Number(formData.mes),
+        anio: Number(formData.anio),
+        activo: formData.activo,
+      });
+      toast.success('Presupuesto actualizado');
       setShowEditModal(false);
       setSelectedBudget(null);
+      fetchBudgets();
+    } catch (e) {
+      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
   };
 
-  const handleDeleteBudget = (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este presupuesto?')) {
+  const handleDeleteBudget = async (id?: number) => {
+    if (!id) return;
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este presupuesto?')) return;
+    try {
+      await presupuestosService.remove(id);
+      toast.success('Presupuesto eliminado');
       setBudgets(prev => prev.filter(b => b.id !== id));
+    } catch (e) {
+      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
   };
 
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará los datos a los valores por defecto. ¿Continuar?')) {
-      localStorage.removeItem('budgets');
-      setBudgets(getDefaultBudgets());
-    }
-  };
+  const filteredBudgets = budgets.filter(b => {
+    const nombre = `${clienteNombre(b.clienteId)} ${categoriaNombre(b.clienteId, b.categoriaId)}`.toLowerCase();
+    const matchesSearch = nombre.includes(searchTerm.toLowerCase());
+    const matchesEstado = selectedEstado === 'todos' || (selectedEstado === 'activo' ? b.activo : !b.activo);
+    return matchesSearch && matchesEstado;
+  });
 
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setSelectedPeriod('todos');
-    setSelectedStatus('todos');
-    setCurrentPage(1);
-  };
+  const sortedBudgets = [...filteredBudgets].sort((a, b) => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    if (sortBy === 'monto') return dir * ((a.montoPresupuestado ?? 0) - (b.montoPresupuestado ?? 0));
+    if (sortBy === 'mes') return dir * ((a.mes ?? 0) - (b.mes ?? 0));
+    return dir * ((a.anio ?? 0) - (b.anio ?? 0));
+  });
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'active': return <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Activity size={12} /> Activo</span>;
-      case 'completed': return <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><CheckCircle size={12} /> Completado</span>;
-      case 'exceeded': return <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><AlertCircle size={12} /> Excedido</span>;
-      case 'pending': return <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Clock size={12} /> Pendiente</span>;
-      default: return null;
-    }
-  };
+  const totalPages = Math.ceil(sortedBudgets.length / itemsPerPage);
+  const paginatedBudgets = sortedBudgets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const hasActiveFilters = searchTerm !== '' || selectedPeriod !== 'todos' || selectedStatus !== 'todos';
+  const totalBudget = budgets.reduce((sum, b) => sum + (b.montoPresupuestado ?? 0), 0);
+  const activeCount = budgets.filter(b => b.activo).length;
+  const inactiveCount = budgets.filter(b => !b.activo).length;
+
+  // Distribución por categoría (agrupando los presupuestos por categoriaId)
+  const categoryTotals = new Map<string, { nombre: string; total: number; count: number }>();
+  budgets.forEach(b => {
+    const key = b.categoriaId != null ? String(b.categoriaId) : 'sin-categoria';
+    const nombre = categoriaNombre(b.clienteId, b.categoriaId);
+    const entry = categoryTotals.get(key) ?? { nombre, total: 0, count: 0 };
+    entry.total += b.montoPresupuestado ?? 0;
+    entry.count += 1;
+    categoryTotals.set(key, entry);
+  });
+  const categoryEntries = [...categoryTotals.values()].sort((a, b) => b.total - a.total);
+  const pieChartData = categoryEntries.map((c, idx) => ({ name: c.nombre, value: c.total, color: CHART_COLORS[idx % CHART_COLORS.length] }));
+  const topThreeCategories = categoryEntries.slice(0, 3).map((c, idx) => ({
+    ...c,
+    percentage: totalBudget > 0 ? (c.total / totalBudget) * 100 : 0,
+    color: CHART_COLORS[idx % CHART_COLORS.length],
+  }));
+
+  const clearAllFilters = () => { setSearchTerm(''); setSelectedEstado('todos'); setCurrentPage(1); };
+  const hasActiveFilters = searchTerm !== '' || selectedEstado !== 'todos';
 
   if (isLoading) return <PageSkeleton />;
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       className="space-y-6 min-h-screen p-6"
       style={{ backgroundColor: '#1a0f14' }}
     >
-      {/* Header Mejorado */}
-      <motion.div 
+      {/* Header */}
+      <motion.div
         variants={itemVariants}
         className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
@@ -555,259 +235,153 @@ export const BudgetsPage = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">Presupuestos</h1>
-              <p className="text-white/50 text-sm mt-1">Controla tus límites de gasto por categoría</p>
+              <p className="text-white/50 text-sm mt-1">Límite de gasto por cliente y categoría</p>
             </div>
           </div>
           <div className="flex gap-2">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleRefresh}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
-            >
-              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
-              }`}
-            >
-              <BarChart3 size={20} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
-              }`}
-            >
-              <Wallet size={20} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nuevo Presupuesto</span>
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={resetData}
-              className="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl transition-all duration-300 text-yellow-400 hover:text-yellow-300 backdrop-blur-sm"
-              title="Restaurar datos por defecto"
-            >
-              <RefreshCw size={20} />
-            </motion.button>
           </div>
         </div>
       </motion.div>
 
-      {/* Summary Cards Mejoradas */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
-        >
+      {/* Summary Cards */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Presupuesto Total</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalBudget)}</p>
-              <p className="text-white/30 text-xs mt-1">Gastado: {formatCurrency(totalSpent)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
-              <Wallet size={24} className="text-[#F05984]" />
-            </div>
+            <div className="p-3 rounded-xl bg-white/10"><Wallet size={24} className="text-[#F05984]" /></div>
           </div>
-        </motion.div>
-
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/50 text-sm font-medium">Restante</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{formatCurrency(remainingBudget)}</p>
-              <p className="text-white/30 text-xs mt-1">Utilización: {utilization.toFixed(0)}%</p>
-            </div>
-            <div className="p-3 rounded-xl bg-green-500/20">
-              <Target size={24} className="text-green-400" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/50 text-sm font-medium">Presupuestos Activos</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">{activeBudgets}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-red-400 text-xs">{exceededBudgets} excedidos</span>
-                <span className="text-blue-400 text-xs">{completedBudgets} completados</span>
-              </div>
-            </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20">
-              <Activity size={24} className="text-yellow-400" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/50 text-sm font-medium">Ahorro Proyectado</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight">{formatCurrency(projectedSavings)}</p>
-              <p className="text-white/30 text-xs mt-1">Basado en restante</p>
-            </div>
-            <div className="p-3 rounded-xl bg-blue-500/20">
-              <TrendingUp size={24} className="text-blue-400" />
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* Progress Overview */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white font-semibold">Progreso General</h3>
-          <span className="text-white/60 text-sm">{utilization.toFixed(0)}% utilizado</span>
         </div>
-        <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${utilization}%` }}
-            transition={{ duration: 1 }}
-            className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
-          />
+        <div className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Activos</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{activeCount}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-green-500/20"><Activity size={24} className="text-green-400" /></div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/50 text-sm font-medium">Inactivos</p>
+              <p className="text-2xl font-bold text-white/60 mt-1 tracking-tight">{inactiveCount}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/10"><XCircle size={24} className="text-white/50" /></div>
+          </div>
         </div>
       </motion.div>
 
       {/* Distribución por Categoría - Gráfico de Dona y Top 3 */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Dona */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChart size={20} className="text-[#F05984]" />
-            <h3 className="text-white font-semibold">Distribución por Categoría</h3>
-          </div>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-                <ReTooltip
-                  contentStyle={tooltipStyle}
-                  formatter={(value: number) => [formatCurrency(value), 'Presupuesto']}
-                  labelStyle={{ color: 'white' }}
-                />
-                <Legend 
-                  formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  verticalAlign="bottom"
-                  height={36}
-                />
-              </RePieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Top 3 Categorías */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-[#F05984]" />
-            Top 3 Categorías
-          </h3>
-          <div className="space-y-4">
-            {topThreeCategories.map((cat, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                      {cat.icon}
-                    </div>
-                    <span className="text-white text-sm font-medium">{cat.name}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      cat.status === 'good' ? 'bg-green-500/20 text-green-400' : 
-                      cat.status === 'warning' ? 'bg-yellow-500/20 text-yellow-400' : 
-                      'bg-red-500/20 text-red-400'
-                    }`}>
-                      {cat.status === 'good' ? 'Bien' : cat.status === 'warning' ? 'Cuidado' : 'Excedido'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
-                    <span className="text-white text-sm font-semibold">{formatCurrency(cat.budgeted)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-white/60">Gastado: {formatCurrency(cat.spent)}</span>
-                  <span className={cat.remaining >= 0 ? 'text-green-400' : 'text-red-400'}>
-                    Restante: {formatCurrency(cat.remaining)}
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(cat.percentage, 100)}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className={`h-full rounded-full ${
-                      cat.percentage >= 100 ? 'bg-red-500' : 
-                      cat.percentage >= 80 ? 'bg-yellow-500' : 
-                      `bg-gradient-to-r ${cat.color}`
-                    }`}
+      {categoryEntries.length > 0 && (
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart size={20} className="text-[#F05984]" />
+              <h3 className="text-white font-semibold">Distribución por Categoría</h3>
+            </div>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <ReTooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number) => [formatCurrency(value), 'Presupuesto']}
+                    labelStyle={{ color: 'white' }}
                   />
-                </div>
-              </motion.div>
-            ))}
+                  <Legend
+                    formatter={(value) => <span className="text-white/70 text-xs">{value}</span>}
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    verticalAlign="bottom"
+                    height={36}
+                  />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-      </motion.div>
 
-      {/* Filters and Search con panel colapsable */}
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp size={18} className="text-[#F05984]" />
+              Top 3 Categorías
+            </h3>
+            <div className="space-y-4">
+              {topThreeCategories.map((cat, index) => (
+                <motion.div
+                  key={cat.nombre}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${cat.color}33` }}>
+                        <Tag size={14} style={{ color: cat.color }} />
+                      </div>
+                      <span className="text-white text-sm font-medium">{cat.nombre}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/10 text-white/50">
+                        {cat.count} {cat.count === 1 ? 'presupuesto' : 'presupuestos'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/50 text-xs">{cat.percentage.toFixed(1)}%</span>
+                      <span className="text-white text-sm font-semibold">{formatCurrency(cat.total)}</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                      transition={{ duration: 0.8, delay: index * 0.1 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Filters and list */}
       <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+        <div className="flex items-center px-4 pt-4">
+          <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
+        </div>
         <div className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
               <input
                 type="text"
-                placeholder="Buscar presupuesto por nombre o categoría..."
+                placeholder="Buscar por cliente o categoría..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
@@ -818,9 +392,7 @@ export const BudgetsPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
+                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}
               >
                 <Filter size={20} />
               </motion.button>
@@ -839,7 +411,6 @@ export const BudgetsPage = () => {
             </div>
           </div>
 
-          {/* Panel de filtros colapsable */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
@@ -848,35 +419,18 @@ export const BudgetsPage = () => {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Período</label>
-                    <select
-                      value={selectedPeriod}
-                      onChange={(e) => setSelectedPeriod(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-                      <option value="monthly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
-                      <option value="quarterly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Trimestral</option>
-                      <option value="yearly" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-                      <option value="active" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
-                      <option value="completed" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completados</option>
-                      <option value="exceeded" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Excedidos</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">Estado</label>
+                  <select
+                    value={selectedEstado}
+                    onChange={(e) => setSelectedEstado(e.target.value as typeof selectedEstado)}
+                    className="w-full md:w-64 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  >
+                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
+                    <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
+                    <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
+                  </select>
                 </div>
               </motion.div>
             )}
@@ -886,346 +440,221 @@ export const BudgetsPage = () => {
         <SortBar
           sortBy={sortBy}
           sortOrder={sortOrder}
-          onSort={(field) => {
-            setSortBy(field as typeof sortBy);
-            setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
-          }}
+          onSort={(field) => { setSortBy(field as typeof sortBy); setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc'); }}
           fields={[
-            { key: 'name', label: 'Nombre', icon: null },
-            { key: 'amount', label: 'Presupuesto', icon: <DollarSign size={14} /> },
-            { key: 'spent', label: 'Gastado', icon: <Activity size={14} /> },
-            { key: 'utilization', label: 'Utilización', icon: <Percent size={14} /> },
+            { key: 'anio', label: 'Año', icon: <Calendar size={14} /> },
+            { key: 'mes', label: 'Mes', icon: <Calendar size={14} /> },
+            { key: 'monto', label: 'Monto', icon: <DollarSign size={14} /> },
           ]}
           totalResults={filteredBudgets.length}
         />
 
-        {/* Estado Vacío */}
         {filteredBudgets.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-12 px-4"
-          >
-            <div className="p-4 bg-white/10 rounded-full mb-4">
-              <Wallet size={48} className="text-white/30" />
-            </div>
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="p-4 bg-white/10 rounded-full mb-4"><Wallet size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay presupuestos</h3>
-            <p className="text-white/40 text-sm text-center max-w-md">
-              No se encontraron presupuestos con los filtros actuales.
-              Prueba a ajustar los filtros o crea un nuevo presupuesto.
-            </p>
+            <p className="text-white/40 text-sm text-center max-w-md">Ajusta los filtros o crea un nuevo presupuesto.</p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
               className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
             >
-              <Plus size={18} />
-              <span>Crear nuevo presupuesto</span>
+              <Plus size={18} /><span>Crear nuevo presupuesto</span>
             </motion.button>
           </motion.div>
         )}
 
-        {/* Grid View Mejorado */}
-        {filteredBudgets.length > 0 && viewMode === 'grid' && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          >
-            <AnimatePresence>
-              {paginatedBudgets.map((budget, index) => {
-                const utilizationPercent = (budget.spent / budget.amount) * 100;
-                const isExceeded = utilizationPercent >= 100;
-                const isWarning = utilizationPercent >= 80 && utilizationPercent < 100;
-                return (
-                  <motion.div
-                    key={budget.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                      isExceeded ? 'border-red-500/50 shadow-red-500/20' : 
-                      isWarning ? 'border-yellow-500/50 shadow-yellow-500/20' : 
-                      'border-white/10 hover:border-[#F05984]/50'
-                    }`}
-                  >
-                    {isExceeded && (
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/10 rounded-full blur-2xl" />
-                    )}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl bg-gradient-to-r ${getCategoryColor(budget.category)} bg-opacity-20 shadow-lg`}>
-                          {getCategoryIcon(budget.category)}
+        {filteredBudgets.length > 0 && viewMode === 'table' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Categoría</th>
+                  <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Cliente</th>
+                  <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Periodo</th>
+                  <th className="text-left py-3 px-4 text-white/60 text-sm font-medium">Estado</th>
+                  <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Monto</th>
+                  <th className="text-right py-3 px-4 text-white/60 text-sm font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {paginatedBudgets.map((budget, index) => (
+                    <motion.tr
+                      key={budget.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Tag size={14} className="text-[#F05984]" />
+                          <span className="text-white font-medium">{categoriaNombre(budget.clienteId, budget.categoriaId)}</span>
                         </div>
-                        <div>
-                          <h3 className="text-white font-semibold">{budget.name}</h3>
-                          <p className="text-white/40 text-xs">{budget.category}</p>
+                      </td>
+                      <td className="py-3 px-4 text-white/70 text-sm">{clienteNombre(budget.clienteId)}</td>
+                      <td className="py-3 px-4 text-white/70 text-sm">{MESES[(budget.mes ?? 1) - 1]} {budget.anio}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${budget.activo ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'}`}>
+                          {budget.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right text-white font-semibold">{formatCurrency(budget.montoPresupuestado ?? 0)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                            <Edit size={14} />
+                          </motion.button>
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                            <Trash2 size={14} />
+                          </motion.button>
                         </div>
-                      </div>
-                      {getStatusBadge(budget.status)}
-                    </div>
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/50">Presupuesto:</span>
-                        <span className="text-white font-bold text-lg">{formatCurrency(budget.amount)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/50">Gastado:</span>
-                        <span className={isExceeded ? 'text-red-400 font-bold' : 'text-white'}>{formatCurrency(budget.spent)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/50">Restante:</span>
-                        <span className={isExceeded ? 'text-red-400' : 'text-green-400'}>{formatCurrency(budget.amount - budget.spent)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/50">Utilización:</span>
-                        <span className={isExceeded ? 'text-red-400' : isWarning ? 'text-yellow-400' : 'text-white'}>{utilizationPercent.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                        transition={{ duration: 0.8 }}
-                        className={`h-full rounded-full ${
-                          isExceeded ? 'bg-red-500' : 
-                          isWarning ? 'bg-yellow-500' : 
-                          'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                        }`}
-                      />
-                    </div>
-                    <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEditBudget(budget)}
-                        className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                      >
-                        <Edit size={14} />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDeleteBudget(budget.id)}
-                        className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                      >
-                        <Trash2 size={14} />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
           </motion.div>
         )}
 
-        {/* List View Mejorado */}
-        {filteredBudgets.length > 0 && viewMode === 'list' && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-4 space-y-2"
-          >
+        {filteredBudgets.length > 0 && viewMode === 'grid' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
-              {paginatedBudgets.map((budget, index) => {
-                const utilizationPercent = (budget.spent / budget.amount) * 100;
-                const isExceeded = utilizationPercent >= 100;
-                const isWarning = utilizationPercent >= 80 && utilizationPercent < 100;
-                return (
-                  <motion.div
-                    key={budget.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: index * 0.03 }}
-                    whileHover={{ scale: 1.01 }}
-                    className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                      isExceeded ? 'border-red-500/30' : 
-                      isWarning ? 'border-yellow-500/30' : 
-                      'border-white/10 hover:border-[#F05984]/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryColor(budget.category)} bg-opacity-20`}>
-                        {getCategoryIcon(budget.category)}
+              {paginatedBudgets.map((budget) => (
+                <motion.div
+                  key={budget.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  className="relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-gradient-to-r from-[#F05984]/20 to-[#BC455F]/20">
+                        <Tag size={16} className="text-[#F05984]" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-white font-medium">{budget.name}</h3>
-                          {getStatusBadge(budget.status)}
-                        </div>
-                        <p className="text-white/40 text-xs">{budget.category}</p>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-white/50 text-xs">Presupuesto</p>
-                          <p className="text-white text-sm font-bold">{formatCurrency(budget.amount)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white/50 text-xs">Gastado</p>
-                          <p className={isExceeded ? 'text-red-400 text-sm font-bold' : 'text-white text-sm'}>{formatCurrency(budget.spent)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white/50 text-xs">Restante</p>
-                          <p className={isExceeded ? 'text-red-400 text-sm' : 'text-green-400 text-sm'}>{formatCurrency(budget.amount - budget.spent)}</p>
-                        </div>
-                        <div className="w-32">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-white/60">{utilizationPercent.toFixed(0)}%</span>
-                          </div>
-                          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                              transition={{ duration: 0.6 }}
-                              className={`h-full rounded-full ${
-                                isExceeded ? 'bg-red-500' : 
-                                isWarning ? 'bg-yellow-500' : 
-                                'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                              }`}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditBudget(budget)}
-                          className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                        >
-                          <Edit size={16} />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteBudget(budget.id)}
-                          className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                        >
-                          <Trash2 size={16} />
-                        </motion.button>
+                      <div>
+                        <h3 className="text-white font-semibold">{categoriaNombre(budget.clienteId, budget.categoriaId)}</h3>
+                        <p className="text-white/40 text-xs flex items-center gap-1"><User size={12} /> {clienteNombre(budget.clienteId)}</p>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
+                    <span className={`px-2 py-1 rounded-full text-xs ${budget.activo ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'}`}>
+                      {budget.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/50">Monto:</span>
+                      <span className="text-white font-bold text-lg">{formatCurrency(budget.montoPresupuestado ?? 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/50">Periodo:</span>
+                      <span className="text-white">{MESES[(budget.mes ?? 1) - 1]} {budget.anio}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                      <Edit size={14} />
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                      <Trash2 size={14} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
             </AnimatePresence>
           </motion.div>
         )}
 
         {filteredBudgets.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredBudgets.length}
-            itemsPerPage={itemsPerPage}
-            label="presupuestos"
-            onPageChange={setCurrentPage}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredBudgets.length} itemsPerPage={itemsPerPage} label="presupuestos" onPageChange={setCurrentPage} />
         )}
       </motion.div>
 
-      {/* Modal para crear nuevo presupuesto */}
+      {/* Modal crear */}
       <AnimatePresence>
         <ModalOverlay
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           title="Nuevo Presupuesto"
-          subtitle="Define un nuevo límite de gasto por categoría"
+          subtitle="Define un límite de gasto para un cliente"
           icon={<Wallet size={20} className="text-white" />}
-          maxWidth="max-w-2xl"
+          maxWidth="max-w-lg"
         >
-          <div>
-                <form onSubmit={(e) => { e.preventDefault(); handleCreateBudget(); }} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Nombre del presupuesto *</label>
-                      <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Presupuesto Alimentación" required />
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                      <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                        <option value="" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Seleccionar categoría</option>
-                        <option value="Alimentación" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alimentación</option>
-                        <option value="Vivienda" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Vivienda</option>
-                        <option value="Transporte" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transporte</option>
-                        <option value="Entretenimiento" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Entretenimiento</option>
-                        <option value="Salud" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Salud</option>
-                        <option value="Compras" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Compras</option>
-                        <option value="Servicios" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Servicios</option>
-                        <option value="Educación" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Educación</option>
-                        <option value="Ahorro" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ahorro</option>
-                        <option value="Inversiones" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inversiones</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Monto del presupuesto *</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" required />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Período</label>
-                      <select value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="monthly">Mensual</option>
-                        <option value="quarterly">Trimestral</option>
-                        <option value="yearly">Anual</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Umbral de alerta (%)</label>
-                    <div className="relative">
-                      <Percent size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                      <input type="number" value={formData.alertThreshold} onChange={(e) => setFormData({...formData, alertThreshold: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={formData.notifications} onChange={(e) => setFormData({...formData, notifications: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white text-sm">Recibir notificaciones</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={formData.rollover} onChange={(e) => setFormData({...formData, rollover: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white text-sm">Permitir rollover</span>
-                    </label>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Notas adicionales</label>
-                    <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Notas adicionales..." />
-                  </div>
-                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="button"
-                      onClick={() => setShowCreateModal(false)}
-                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg"
-                    >
-                      <Save size={18} />
-                      <span>Guardar Presupuesto</span>
-                    </motion.button>
-                  </div>
-                </form>
-          </div>
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateBudget(); }} className="space-y-5">
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
+              <select
+                value={formData.clienteId}
+                onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })}
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                required
+              >
+                <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Categoría (opcional)</label>
+              <select
+                value={formData.categoriaId}
+                onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
+                disabled={!formData.clienteId}
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all disabled:opacity-50"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+              >
+                <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin categoría</option>
+                {formCategorias.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Mes *</label>
+                <select
+                  value={formData.mes}
+                  onChange={(e) => setFormData({ ...formData, mes: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  required
+                >
+                  {MESES.map((m, i) => <option key={m} value={i + 1} style={{ backgroundColor: '#1a0f14' }}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Año *</label>
+                <input type="number" value={formData.anio} onChange={(e) => setFormData({ ...formData, anio: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+              </div>
+            </div>
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Monto presupuestado *</label>
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                <input type="number" step="0.01" min="0" value={formData.montoPresupuestado} onChange={(e) => setFormData({ ...formData, montoPresupuestado: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" required />
+              </div>
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+              <span className="text-white text-sm">Activo</span>
+            </label>
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
+                Cancelar
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                Guardar Presupuesto
+              </motion.button>
+            </div>
+          </form>
         </ModalOverlay>
       </AnimatePresence>
 
-      {/* Modal para editar presupuesto */}
+      {/* Modal editar */}
       <AnimatePresence>
         <ModalOverlay
           isOpen={showEditModal && !!selectedBudget}
@@ -1233,82 +662,65 @@ export const BudgetsPage = () => {
           title="Editar Presupuesto"
           subtitle="Modifica los datos del presupuesto"
           icon={<Edit size={20} className="text-white" />}
-          maxWidth="max-w-2xl"
+          maxWidth="max-w-lg"
         >
-          <div>
-                <form onSubmit={(e) => { e.preventDefault(); handleUpdateBudget(); }} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Nombre del presupuesto *</label>
-                      <input type="text" value={editFormData.name} onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                      <select value={editFormData.category} onChange={(e) => setEditFormData({...editFormData, category: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="Alimentación">Alimentación</option>
-                        <option value="Vivienda">Vivienda</option>
-                        <option value="Transporte">Transporte</option>
-                        <option value="Entretenimiento">Entretenimiento</option>
-                        <option value="Salud">Salud</option>
-                        <option value="Compras">Compras</option>
-                        <option value="Servicios">Servicios</option>
-                        <option value="Educación">Educación</option>
-                        <option value="Ahorro">Ahorro</option>
-                        <option value="Inversiones">Inversiones</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Monto del presupuesto *</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input type="number" step="0.01" value={editFormData.amount} onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Umbral de alerta (%)</label>
-                      <div className="relative">
-                        <Percent size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input type="number" value={editFormData.alertThreshold} onChange={(e) => setEditFormData({...editFormData, alertThreshold: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={editFormData.notifications} onChange={(e) => setEditFormData({...editFormData, notifications: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white text-sm">Recibir notificaciones</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={editFormData.rollover} onChange={(e) => setEditFormData({...editFormData, rollover: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white text-sm">Permitir rollover</span>
-                    </label>
-                  </div>
-                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium"
-                    >
-                      Cancelar
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg"
-                    >
-                      <Save size={18} />
-                      <span>Guardar Cambios</span>
-                    </motion.button>
-                  </div>
-                </form>
-          </div>
+          <form onSubmit={(e) => { e.preventDefault(); handleUpdateBudget(); }} className="space-y-5">
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Cliente</label>
+              <input type="text" disabled value={clienteNombre(selectedBudget?.clienteId)} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/60" />
+            </div>
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Categoría (opcional)</label>
+              <select
+                value={formData.categoriaId}
+                onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+              >
+                <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin categoría</option>
+                {formCategorias.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Mes *</label>
+                <select
+                  value={formData.mes}
+                  onChange={(e) => setFormData({ ...formData, mes: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  required
+                >
+                  {MESES.map((m, i) => <option key={m} value={i + 1} style={{ backgroundColor: '#1a0f14' }}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-white/60 text-sm mb-1.5 block">Año *</label>
+                <input type="number" value={formData.anio} onChange={(e) => setFormData({ ...formData, anio: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+              </div>
+            </div>
+            <div>
+              <label className="text-white/60 text-sm mb-1.5 block">Monto presupuestado *</label>
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                <input type="number" step="0.01" min="0" value={formData.montoPresupuestado} onChange={(e) => setFormData({ ...formData, montoPresupuestado: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+              </div>
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+              <span className="text-white text-sm">Activo</span>
+            </label>
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowEditModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
+                Cancelar
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                Guardar Cambios
+              </motion.button>
+            </div>
+          </form>
         </ModalOverlay>
       </AnimatePresence>
-
     </motion.div>
   );
 };
