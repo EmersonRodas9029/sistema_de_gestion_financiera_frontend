@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
-  LogOut, FolderTree, FileText, Bell, Home, BarChart3, PiggyBank, Repeat
+  LogOut, FolderTree, FileText, Bell, Home, BarChart3, Repeat
 } from 'lucide-react';
 
 interface MenuItem {
@@ -29,8 +29,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
     { path: '/expenses', name: 'Gastos', icon: <TrendingDown size={20} />, roles: ['admin', 'client'], section: 'finances' },
     { path: '/recurring-expenses', name: 'Gastos Recurrentes', icon: <Repeat size={20} />, roles: ['admin', 'client'], section: 'finances' },
     { path: '/budgets', name: 'Presupuestos', icon: <Wallet size={20} />, roles: ['admin', 'client'], section: 'finances' },
-    { path: '/goals', name: 'Metas Financieras', icon: <Target size={20} />, roles: ['admin', 'client'], section: 'goals' },
-    { path: '/savings', name: 'Metas de Ahorro', icon: <PiggyBank size={20} />, roles: ['admin', 'client'], section: 'goals' },
+    { path: '/goals', name: 'Metas de Ahorro', icon: <Target size={20} />, roles: ['admin', 'client'], section: 'goals' },
     { path: '/categories', name: 'Categorías', icon: <FolderTree size={20} />, roles: ['admin', 'client'], section: 'management' },
     { path: '/admin/clients', name: 'Clientes', icon: <Users size={20} />, roles: ['admin'], section: 'management' },
     { path: '/analytics', name: 'Gráficos', icon: <BarChart3 size={20} />, roles: ['admin', 'client'], section: 'reports' },

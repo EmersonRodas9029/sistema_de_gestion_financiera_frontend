@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { MobileLeftBar } from './LeftBar/MobileLeftBar';
 import { LeftBar } from './LeftBar/LeftBar';
 import { 
-  Home, TrendingUp, TrendingDown, Repeat, Wallet, Target, 
-  PiggyBank, FolderTree, BarChart3, FileText, Users, Settings, 
-  Bell, LogOut, User, Calendar, Clock, ChevronDown, Menu
+  Home, TrendingUp, TrendingDown, Repeat, Wallet, Target,
+  FolderTree, BarChart3, FileText, Users, Settings,
+  Bell, LogOut, User, Clock, ChevronDown, Menu
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -22,8 +22,7 @@ const getPageTitle = (path: string): string => {
     '/expenses': 'Gastos',
     '/recurring-expenses': 'Gastos Recurrentes',
     '/budgets': 'Presupuestos',
-    '/goals': 'Metas',
-    '/savings': 'Ahorro',
+    '/goals': 'Metas de Ahorro',
     '/categories': 'Categorías',
     '/analytics': 'Gráficos',
     '/settings': 'Configuración',
@@ -47,7 +46,6 @@ const getPageIcon = (path: string) => {
     '/recurring-expenses': <Repeat size={18} className="text-orange-400" />,
     '/budgets': <Wallet size={18} className="text-blue-400" />,
     '/goals': <Target size={18} className="text-purple-400" />,
-    '/savings': <PiggyBank size={18} className="text-pink-400" />,
     '/categories': <FolderTree size={18} className="text-cyan-400" />,
     '/analytics': <BarChart3 size={18} className="text-teal-400" />,
     '/settings': <Settings size={18} className="text-gray-400" />,
