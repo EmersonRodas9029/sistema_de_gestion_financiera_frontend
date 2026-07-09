@@ -9,7 +9,6 @@ import { CategoriesPage } from '../features/categories/pages/CategoriesPage';
 import { GoalsPage } from '../features/goals/pages/GoalsPage';
 import { ChartsPage } from '../features/charts/pages/ChartsPage';
 import { ClientsPage } from '../features/clients/pages/ClientsPage';
-import { SavingsPage } from '../features/savings/pages/SavingsPage';
 import { NotificationsPage } from '../features/notifications/pages/NotificationsPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RecurringExpensesPage } from '../features/recurring-expenses/pages/RecurringExpensesPage';
@@ -51,7 +50,6 @@ const ProtectedRoutes = () => {
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />
         <Route path="/goals" element={<GoalsPage />} />
-        <Route path="/savings" element={<SavingsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/analytics" element={<ChartsPage />} />
         <Route path="/wallet" element={<Wallet />} />

@@ -122,8 +122,7 @@ export const HomePage = () => {
     { id: 'expenses', title: 'Gastos', description: 'Controla tus gastos', icon: <TrendingDown size={22} />, color: 'from-rose-500/20 to-rose-600/20', route: '/expenses', stats: '-5%' },
     { id: 'recurring-expenses', title: 'Gastos Rec.', description: 'Suscripciones', icon: <Repeat size={22} />, color: 'from-orange-500/20 to-orange-600/20', route: '/recurring-expenses', stats: '12' },
     { id: 'budgets', title: 'Presupuestos', description: 'Controla límites', icon: <Wallet size={22} />, color: 'from-blue-500/20 to-blue-600/20', route: '/budgets', stats: '80%' },
-    { id: 'goals', title: 'Metas', description: 'Objetivos financieros', icon: <Target size={22} />, color: 'from-purple-500/20 to-purple-600/20', route: '/goals', stats: '3' },
-    { id: 'savings', title: 'Ahorro', description: 'Metas de ahorro', icon: <PiggyBank size={22} />, color: 'from-pink-500/20 to-pink-600/20', route: '/savings', stats: '$7.8k' },
+    { id: 'goals', title: 'Metas de Ahorro', description: 'Objetivos financieros', icon: <Target size={22} />, color: 'from-purple-500/20 to-purple-600/20', route: '/goals', stats: '3' },
   ];
 
   useEffect(() => {
