@@ -17,6 +17,9 @@ const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return
 const BASE = `${config.apiUrl}/categorias`;
 const h = { 'Content-Type': 'application/json' };
 
+// ponytail: tipo no existe en la API, se codifica como "expense:icono" / "income:icono" (ver CategoriesPage)
+export const isCategoriaGasto = (c: ApiCategoria) => !c.icono?.includes(':') || c.icono.startsWith('expense:');
+
 export const categoriasService = {
   getByCliente: (clienteId: number): Promise<ApiCategoria[]> =>
     fetch(`${BASE}/cliente/${clienteId}`).then(json),
