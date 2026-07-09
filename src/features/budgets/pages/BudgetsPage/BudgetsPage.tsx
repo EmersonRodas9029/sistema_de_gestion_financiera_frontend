@@ -27,7 +27,8 @@ import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle'
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { presupuestosService, type ApiPresupuesto } from '../../services';
 import { clientesService, type ApiCliente } from '../../../clients/services';
-import { categoriasService, type ApiCategoria } from '../../../categories/services';
+import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
+import { gastosService, type ApiGasto } from '../../../expenses/services';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -49,6 +50,7 @@ export const BudgetsPage = () => {
   const [budgets, setBudgets] = useState<ApiPresupuesto[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [categoriasByClient, setCategoriasByClient] = useState<Record<number, ApiCategoria[]>>({});
+  const [gastos, setGastos] = useState<ApiGasto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +76,12 @@ export const BudgetsPage = () => {
     return lista.find(c => c.id === categoriaId)?.nombre ?? `Categoría #${categoriaId}`;
   };
 
+  // GET /categorias/cliente/{id} viene "liviano" (sin icono/color/descripcion), hace falta el detalle por id
+  const fetchCategoriasCompletas = async (clienteId: number): Promise<ApiCategoria[]> => {
+    const list = await categoriasService.getByCliente(clienteId);
+    return Promise.all(list.map(c => categoriasService.getById(c.id!).catch(() => c)));
+  };
+
   const fetchBudgets = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -83,7 +91,7 @@ export const BudgetsPage = () => {
 
       const clienteIds = [...new Set(full.map(b => b.clienteId).filter((id): id is number => id != null))];
       const entries = await Promise.all(
-        clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
+        clienteIds.map(async id => [id, await fetchCategoriasCompletas(id).catch(() => [])] as const)
       );
       setCategoriasByClient(Object.fromEntries(entries));
     } catch (e) {
@@ -95,14 +103,30 @@ export const BudgetsPage = () => {
 
   useEffect(() => { fetchBudgets(); }, [fetchBudgets]);
   useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
+  useEffect(() => {
+    gastosService.getAll()
+      .then(list => Promise.all(list.map(g => gastosService.getById(g.id!).catch(() => g))))
+      .then(setGastos)
+      .catch(() => {});
+  }, []);
 
-  // Categorías del cliente seleccionado en el formulario (crear/editar)
+  // Gastado real por presupuesto: gastos del mismo cliente/mes/año, filtrando por categoría si el presupuesto la tiene
+  const getSpent = (budget: ApiPresupuesto) => gastos.reduce((sum, g) => {
+    if (g.clienteId !== budget.clienteId) return sum;
+    if (budget.categoriaId != null && g.categoriaId !== budget.categoriaId) return sum;
+    if (!g.fecha) return sum;
+    const [anio, mes] = g.fecha.split('-').map(Number);
+    if (anio !== budget.anio || mes !== budget.mes) return sum;
+    return sum + (g.monto ?? 0);
+  }, 0);
+
+  // Categorías de gasto del cliente seleccionado en el formulario (crear/editar)
   useEffect(() => {
     if (!formData.clienteId) { setFormCategorias([]); return; }
     const clienteId = Number(formData.clienteId);
-    if (categoriasByClient[clienteId]) { setFormCategorias(categoriasByClient[clienteId]); return; }
-    categoriasService.getByCliente(clienteId).then(cats => {
-      setFormCategorias(cats);
+    if (categoriasByClient[clienteId]) { setFormCategorias(categoriasByClient[clienteId].filter(isCategoriaGasto)); return; }
+    fetchCategoriasCompletas(clienteId).then(cats => {
+      setFormCategorias(cats.filter(isCategoriaGasto));
       setCategoriasByClient(prev => ({ ...prev, [clienteId]: cats }));
     }).catch(() => setFormCategorias([]));
   }, [formData.clienteId, categoriasByClient]);
@@ -524,49 +548,72 @@ export const BudgetsPage = () => {
         {filteredBudgets.length > 0 && viewMode === 'grid' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
-              {paginatedBudgets.map((budget) => (
-                <motion.div
-                  key={budget.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  className="relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-gradient-to-r from-[#F05984]/20 to-[#BC455F]/20">
-                        <Tag size={16} className="text-[#F05984]" />
+              {paginatedBudgets.map((budget) => {
+                const budgeted = budget.montoPresupuestado ?? 0;
+                const spent = getSpent(budget);
+                const remaining = budgeted - spent;
+                const percentage = budgeted > 0 ? (spent / budgeted) * 100 : 0;
+                const isExceeded = remaining < 0;
+                return (
+                  <motion.div
+                    key={budget.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 ${isExceeded ? 'border-red-500/50' : 'border-white/10 hover:border-[#F05984]/50'}`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-gradient-to-r from-[#F05984]/20 to-[#BC455F]/20">
+                          <Tag size={16} className="text-[#F05984]" />
+                        </div>
+                        <div>
+                          <h3 className="text-white font-semibold">{categoriaNombre(budget.clienteId, budget.categoriaId)}</h3>
+                          <p className="text-white/40 text-xs flex items-center gap-1"><User size={12} /> {clienteNombre(budget.clienteId)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-white font-semibold">{categoriaNombre(budget.clienteId, budget.categoriaId)}</h3>
-                        <p className="text-white/40 text-xs flex items-center gap-1"><User size={12} /> {clienteNombre(budget.clienteId)}</p>
+                      <span className={`px-2 py-1 rounded-full text-xs ${budget.activo ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'}`}>
+                        {budget.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Presupuesto:</span>
+                        <span className="text-white font-bold text-lg">{formatCurrency(budgeted)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Gastado:</span>
+                        <span className={isExceeded ? 'text-red-400 font-medium' : 'text-white'}>{formatCurrency(spent)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Restante:</span>
+                        <span className={isExceeded ? 'text-red-400 font-medium' : 'text-green-400 font-medium'}>{formatCurrency(remaining)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50">Periodo:</span>
+                        <span className="text-white">{MESES[(budget.mes ?? 1) - 1]} {budget.anio}</span>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs ${budget.activo ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/50'}`}>
-                      {budget.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/50">Monto:</span>
-                      <span className="text-white font-bold text-lg">{formatCurrency(budget.montoPresupuestado ?? 0)}</span>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(percentage, 100)}%` }}
+                        transition={{ duration: 0.8 }}
+                        className={`h-full rounded-full ${isExceeded ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'}`}
+                      />
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/50">Periodo:</span>
-                      <span className="text-white">{MESES[(budget.mes ?? 1) - 1]} {budget.anio}</span>
+                    <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                        <Edit size={14} />
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                        <Trash2 size={14} />
+                      </motion.button>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
-                      <Edit size={14} />
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
-                      <Trash2 size={14} />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}
@@ -601,7 +648,7 @@ export const BudgetsPage = () => {
               </select>
             </div>
             <div>
-              <label className="text-white/60 text-sm mb-1.5 block">Categoría (opcional)</label>
+              <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>
               <select
                 value={formData.categoriaId}
                 onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
@@ -670,7 +717,7 @@ export const BudgetsPage = () => {
               <input type="text" disabled value={clienteNombre(selectedBudget?.clienteId)} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/60" />
             </div>
             <div>
-              <label className="text-white/60 text-sm mb-1.5 block">Categoría (opcional)</label>
+              <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>
               <select
                 value={formData.categoriaId}
                 onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
