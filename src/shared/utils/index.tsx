@@ -3,8 +3,11 @@ import { CheckCircle, Clock, Calendar, XCircle, AlertCircle } from 'lucide-react
 export const formatCurrency = (amount: number): string =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
 
-export const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+export const formatDate = (date: string): string => {
+  // ponytail: "YYYY-MM-DD" parses as UTC midnight, shifting a day back in behind-UTC timezones — force local time.
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00`) : new Date(date);
+  return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+};
 
 export const generateUniqueId = (prefix = 'ID'): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
