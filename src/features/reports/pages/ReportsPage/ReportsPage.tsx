@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Calendar, Filter, BarChart3,
   Plus, X, Search, PieChart as PieChartIcon, Trash2, Edit,
-  XCircle, AlertCircle, User, Clock, Download,
+  XCircle, AlertCircle, User, Clock, Download, Eye, Loader2,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
@@ -16,6 +16,10 @@ import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle'
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { reportesService, type ApiReporte, type TipoReporte } from '../../services';
 import { clientesService, usuariosService, type ApiCliente, type ApiUsuario } from '../../../clients/services';
+import { gastosService } from '../../../expenses/services';
+import { ingresosService } from '../../../incomes/services';
+import { categoriasService } from '../../../categories/services';
+import { presupuestosService } from '../../../budgets/services';
 
 const TIPO_LABEL: Record<TipoReporte, string> = {
   GASTOS_MENSUAL: 'Gastos Mensual',
@@ -33,6 +37,158 @@ const TIPO_COLOR: Record<TipoReporte, string> = {
   INGRESOS_ANUAL: '#047857',
   PRESUPUESTO: '#F59E0B',
   PERSONALIZADO: '#8B5CF6',
+};
+
+const formatValue = (v: unknown): string =>
+  v && typeof v === 'object' ? JSON.stringify(v) : String(v);
+
+// ponytail: covers object/array JSON shapes only (mirrors backend PDF rendering); anything else falls back to raw text
+const ReportContentPreview = ({ contenido }: { contenido?: string }) => {
+  if (!contenido?.trim()) return <p className="text-white/40 text-sm">Sin contenido</p>;
+
+  let data: unknown;
+  try { data = JSON.parse(contenido); } catch {
+    return <pre className="text-white/70 text-xs whitespace-pre-wrap bg-white/5 rounded-lg p-3">{contenido}</pre>;
+  }
+
+  if (Array.isArray(data) && data.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
+    const columns = [...new Set(data.flatMap(item => Object.keys(item as object)))];
+    return (
+      <div className="overflow-x-auto rounded-lg border border-white/10">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/5">
+              {columns.map(col => <th key={col} className="text-left py-2 px-3 text-white/60 font-medium">{col}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item, i) => (
+              <tr key={i} className="border-b border-white/5 last:border-0">
+                {columns.map(col => <td key={col} className="py-2 px-3 text-white/80">{formatValue((item as Record<string, unknown>)[col] ?? '—')}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (data && typeof data === 'object') {
+    return (
+      <div className="rounded-lg border border-white/10 divide-y divide-white/5">
+        {Object.entries(data as Record<string, unknown>).map(([key, value]) => (
+          <div key={key} className="flex items-center justify-between gap-4 py-2 px-3">
+            <span className="text-white/50 text-sm">{key}</span>
+            <span className="text-white text-sm text-right break-all">{formatValue(value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <p className="text-white text-sm">{formatValue(data)}</p>;
+};
+
+const AUTO_FILL_TYPES = new Set<TipoReporte>(['GASTOS_MENSUAL', 'GASTOS_ANUAL', 'INGRESOS_MENSUAL', 'INGRESOS_ANUAL', 'PRESUPUESTO']);
+
+const sumBy = (rows: number[]) => rows.reduce((s, n) => s + n, 0);
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// meses calendario (mes/año) cubiertos por un rango de fechas, para casar con Presupuesto (que se define por mes/año, no por fecha)
+const monthsInRange = (inicio: string, fin: string) => {
+  const start = new Date(`${inicio}T00:00:00`);
+  const end = new Date(`${fin}T00:00:00`);
+  const meses: { mes: number; anio: number }[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cursor <= end) {
+    meses.push({ mes: cursor.getMonth() + 1, anio: cursor.getFullYear() });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return meses;
+};
+
+// ponytail: /gastos y /ingresos solo listan campos resumidos (sin clienteId) — se filtra por fecha primero
+// y se pide el detalle completo solo de los candidatos, en vez de pedir el detalle de todo.
+const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: string, fin: string): Promise<string | null> => {
+  if (tipo === 'GASTOS_MENSUAL' || tipo === 'GASTOS_ANUAL') {
+    const [lista, categorias] = await Promise.all([gastosService.getAll(), categoriasService.getByCliente(clienteId)]);
+    const candidatos = lista.filter(g => g.fecha && g.fecha >= inicio && g.fecha <= fin);
+    const detalleCompleto = await Promise.all(candidatos.map(g => gastosService.getById(g.id!)));
+    const catName = new Map(categorias.map(c => [c.id, c.nombre ?? 'Sin categoría']));
+    const filtrados = detalleCompleto.filter(g => g.clienteId === clienteId);
+    const categoriasTotales: Record<string, number> = {};
+    filtrados.forEach(g => {
+      const nombre = catName.get(g.categoriaId!) ?? 'Sin categoría';
+      categoriasTotales[nombre] = (categoriasTotales[nombre] ?? 0) + (g.monto ?? 0);
+    });
+    return JSON.stringify({
+      total: sumBy(filtrados.map(g => g.monto ?? 0)),
+      categorias: categoriasTotales,
+      detalle: filtrados.map(g => ({ fecha: g.fecha, monto: g.monto, metodoPago: g.metodoPago, descripcion: g.descripcion })),
+    }, null, 2);
+  }
+  if (tipo === 'INGRESOS_MENSUAL' || tipo === 'INGRESOS_ANUAL') {
+    const lista = await ingresosService.getAll();
+    const candidatos = lista.filter(i => i.fecha && i.fecha >= inicio && i.fecha <= fin);
+    const detalleCompleto = await Promise.all(candidatos.map(i => ingresosService.getById(i.id!)));
+    const filtrados = detalleCompleto.filter(i => i.clienteId === clienteId);
+    const fuentesTotales: Record<string, number> = {};
+    filtrados.forEach(i => {
+      const nombre = i.fuente || i.tipo || 'Otro';
+      fuentesTotales[nombre] = (fuentesTotales[nombre] ?? 0) + (i.monto ?? 0);
+    });
+    return JSON.stringify({
+      total: sumBy(filtrados.map(i => i.monto ?? 0)),
+      fuentes: fuentesTotales,
+      detalle: filtrados.map(i => ({ fecha: i.fecha, monto: i.monto, fuente: i.fuente, descripcion: i.descripcion })),
+    }, null, 2);
+  }
+  if (tipo === 'PRESUPUESTO') {
+    const meses = monthsInRange(inicio, fin);
+    const mesesSet = new Set(meses.map(m => `${m.anio}-${m.mes}`));
+
+    const [presupuestosLista, gastosLista, categorias] = await Promise.all([
+      presupuestosService.getAll(), gastosService.getAll(), categoriasService.getByCliente(clienteId),
+    ]);
+    const presupuestoCandidatos = presupuestosLista.filter(p => mesesSet.has(`${p.anio}-${p.mes}`));
+    const gastoCandidatos = gastosLista.filter(g => g.fecha && g.fecha >= inicio && g.fecha <= fin);
+    const [presupuestoDetalle, gastoDetalle] = await Promise.all([
+      Promise.all(presupuestoCandidatos.map(p => presupuestosService.getById(p.id!))),
+      Promise.all(gastoCandidatos.map(g => gastosService.getById(g.id!))),
+    ]);
+    const presupuestosCliente = presupuestoDetalle.filter(p => p.clienteId === clienteId && p.activo !== false);
+    const gastosCliente = gastoDetalle.filter(g => g.clienteId === clienteId);
+
+    const catName = new Map(categorias.map(c => [c.id, c.nombre ?? 'Sin categoría']));
+    const presupuestadoPorCategoria: Record<string, number> = {};
+    presupuestosCliente.forEach(p => {
+      const nombre = catName.get(p.categoriaId!) ?? 'Sin categoría';
+      presupuestadoPorCategoria[nombre] = (presupuestadoPorCategoria[nombre] ?? 0) + (p.montoPresupuestado ?? 0);
+    });
+    const realPorCategoria: Record<string, number> = {};
+    gastosCliente.forEach(g => {
+      const nombre = catName.get(g.categoriaId!) ?? 'Sin categoría';
+      realPorCategoria[nombre] = (realPorCategoria[nombre] ?? 0) + (g.monto ?? 0);
+    });
+
+    const categoriasComparativa: Record<string, { presupuestado: number; real: number; variacion: number }> = {};
+    new Set([...Object.keys(presupuestadoPorCategoria), ...Object.keys(realPorCategoria)]).forEach(nombre => {
+      const presupuestado = presupuestadoPorCategoria[nombre] ?? 0;
+      const real = realPorCategoria[nombre] ?? 0;
+      categoriasComparativa[nombre] = { presupuestado, real, variacion: round2(real - presupuestado) };
+    });
+
+    const totalPresupuestado = round2(sumBy(Object.values(presupuestadoPorCategoria)));
+    const totalReal = round2(sumBy(Object.values(realPorCategoria)));
+
+    return JSON.stringify({
+      presupuestado: totalPresupuestado,
+      real: totalReal,
+      variacion: round2(totalReal - totalPresupuestado),
+      categorias: categoriasComparativa,
+    }, null, 2);
+  }
+  return null;
 };
 
 const emptyForm = () => ({
@@ -63,8 +219,11 @@ export const ReportsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ApiReporte | null>(null);
   const [formData, setFormData] = useState(emptyForm());
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   const itemsPerPage = 8;
 
@@ -87,6 +246,20 @@ export const ReportsPage = () => {
   useEffect(() => { fetchReports(); }, [fetchReports]);
   useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
   useEffect(() => { usuariosService.getAll().then(list => setContadores(list.filter(u => u.rol === 'CONTADOR'))).catch(() => {}); }, []);
+
+  // Autocompleta "contenido" con datos reales de gastos/ingresos al elegir cliente + tipo + período (solo al crear)
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const { clienteId, tipoReporte, periodoInicio, periodoFin } = formData;
+    if (!clienteId || !periodoInicio || !periodoFin || !AUTO_FILL_TYPES.has(tipoReporte)) return;
+    let cancelled = false;
+    setIsAutoFilling(true);
+    buildAutoContent(Number(clienteId), tipoReporte, periodoInicio, periodoFin)
+      .then(contenido => { if (!cancelled && contenido) setFormData(prev => ({ ...prev, contenido })); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsAutoFilling(false); });
+    return () => { cancelled = true; };
+  }, [showCreateModal, formData.clienteId, formData.tipoReporte, formData.periodoInicio, formData.periodoFin]);
 
   const validateForm = () => {
     if (!formData.clienteId) { toast.error('Selecciona un cliente'); return false; }
@@ -152,7 +325,8 @@ export const ReportsPage = () => {
   };
 
   const handleDownloadPdf = async (report: ApiReporte) => {
-    if (!report.id) return;
+    if (!report.id || downloadingId) return;
+    setDownloadingId(report.id);
     try {
       const blob = await reportesService.downloadPdf(report.id);
       const url = URL.createObjectURL(blob);
@@ -163,7 +337,14 @@ export const ReportsPage = () => {
       URL.revokeObjectURL(url);
     } catch (e) {
       toast.error(`Error al descargar PDF: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } finally {
+      setDownloadingId(null);
     }
+  };
+
+  const openDetailModal = (report: ApiReporte) => {
+    setSelectedReport(report);
+    setShowDetailModal(true);
   };
 
   const handleDeleteReport = async () => {
@@ -424,8 +605,11 @@ export const ReportsPage = () => {
                       <td className="py-3 px-4 text-white/70 text-sm">{report.fechaGeneracion ? formatDate(report.fechaGeneracion) : '—'}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-green-400" title="Descargar PDF">
-                            <Download size={14} />
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openDetailModal(report)} className="p-1.5 hover:bg-white/10 rounded-lg transition-all duration-300 text-white/60" title="Ver detalle">
+                            <Eye size={14} />
+                          </motion.button>
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} disabled={downloadingId === report.id} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-green-400 disabled:opacity-50" title="Descargar PDF">
+                            {downloadingId === report.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                           </motion.button>
                           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
                             <Edit size={14} />
@@ -490,8 +674,11 @@ export const ReportsPage = () => {
                       <span>{report.fechaGeneracion ? formatDate(report.fechaGeneracion) : '—'}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-white/60 hover:text-green-400" title="Descargar PDF">
-                        <Download size={14} />
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openDetailModal(report)} className="p-1.5 hover:bg-white/10 rounded-lg transition-all duration-300 text-white/60" title="Ver detalle">
+                        <Eye size={14} />
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} disabled={downloadingId === report.id} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-white/60 hover:text-green-400 disabled:opacity-50" title="Descargar PDF">
+                        {downloadingId === report.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                       </motion.button>
                       <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar">
                         <Edit size={14} />
@@ -565,7 +752,11 @@ export const ReportsPage = () => {
               </div>
             </div>
             <div>
-              <label className="text-white/60 text-sm mb-1.5 block">Contenido (JSON, opcional)</label>
+              <label className="text-white/60 text-sm mb-1.5 flex items-center gap-2">
+                Contenido (JSON, opcional)
+                {isAutoFilling && <span className="flex items-center gap-1 text-[#F05984] text-xs"><Loader2 size={12} className="animate-spin" /> Calculando datos reales...</span>}
+                {!isAutoFilling && AUTO_FILL_TYPES.has(formData.tipoReporte) && <span className="text-white/30 text-xs">(se autocompleta con datos reales)</span>}
+              </label>
               <textarea value={formData.contenido} onChange={(e) => setFormData({ ...formData, contenido: e.target.value })} rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-[#F05984] transition-all" placeholder='{"total": 1500.00, "categorias": {...}}' />
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
@@ -644,6 +835,34 @@ export const ReportsPage = () => {
               </motion.button>
             </div>
           </form>
+        </ModalOverlay>
+      </AnimatePresence>
+
+      {/* Modal ver detalle */}
+      <AnimatePresence>
+        <ModalOverlay isOpen={showDetailModal && !!selectedReport} onClose={() => setShowDetailModal(false)} title={selectedReport?.nombre ?? 'Reporte'} subtitle="Detalle del reporte" icon={<Eye size={20} className="text-white" />} maxWidth="max-w-2xl">
+          {selectedReport && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-white/50 block mb-1">Cliente</span><span className="text-white">{clienteNombre(selectedReport.clienteId)}</span></div>
+                <div><span className="text-white/50 block mb-1">Contador</span><span className="text-white">{contadorNombre(selectedReport.contadorId)}</span></div>
+                <div><span className="text-white/50 block mb-1">Tipo</span>{getTipoBadge(selectedReport.tipoReporte)}</div>
+                <div><span className="text-white/50 block mb-1">Generado</span><span className="text-white">{selectedReport.fechaGeneracion ? formatDate(selectedReport.fechaGeneracion) : '—'}</span></div>
+                <div className="col-span-2"><span className="text-white/50 block mb-1">Período</span><span className="text-white">{selectedReport.periodoInicio && selectedReport.periodoFin ? `${formatDate(selectedReport.periodoInicio)} - ${formatDate(selectedReport.periodoFin)}` : '—'}</span></div>
+              </div>
+              <div>
+                <p className="text-white/60 text-sm mb-2">Contenido</p>
+                <ReportContentPreview contenido={selectedReport.contenido} />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => handleDownloadPdf(selectedReport)} disabled={downloadingId === selectedReport.id}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium disabled:opacity-50">
+                  {downloadingId === selectedReport.id ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  Descargar PDF
+                </motion.button>
+              </div>
+            </div>
+          )}
         </ModalOverlay>
       </AnimatePresence>
 
