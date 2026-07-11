@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Calendar, Filter, BarChart3,
   Plus, X, Search, PieChart as PieChartIcon, Trash2, Edit,
-  XCircle, AlertCircle, User, Clock, Download, Eye, Loader2,
+  XCircle, AlertCircle, User, Clock, Download, Eye, Loader2, TrendingUp,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
@@ -259,6 +259,7 @@ export const ReportsPage = () => {
       .catch(() => {})
       .finally(() => { if (!cancelled) setIsAutoFilling(false); });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only these 4 fields should retrigger auto-fill, not all of formData (would re-run on every keystroke in nombre/contenido)
   }, [showCreateModal, formData.clienteId, formData.tipoReporte, formData.periodoInicio, formData.periodoFin]);
 
   const validateForm = () => {
@@ -390,6 +391,17 @@ export const ReportsPage = () => {
     .map(tipo => ({ name: TIPO_LABEL[tipo], value: reports.filter(r => r.tipoReporte === tipo).length, color: TIPO_COLOR[tipo] }))
     .filter(d => d.value > 0);
 
+  const topClientesReportes = Object.entries(
+    reports.reduce<Record<number, number>>((acc, r) => {
+      if (r.clienteId) acc[r.clienteId] = (acc[r.clienteId] ?? 0) + 1;
+      return acc;
+    }, {})
+  )
+    .map(([clienteId, count]) => ({ clienteId: Number(clienteId), nombre: clienteNombre(Number(clienteId)), count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const maxClienteReportes = topClientesReportes[0]?.count ?? 0;
+
   const clearAllFilters = () => { setSearchTerm(''); setSelectedTipo('todos'); setCurrentPage(1); };
   const hasActiveFilters = searchTerm !== '' || selectedTipo !== 'todos';
 
@@ -478,24 +490,69 @@ export const ReportsPage = () => {
         </motion.div>
       </motion.div>
 
-      {/* Distribución por tipo */}
-      {tipoDistribution.length > 0 && (
-        <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChartIcon size={20} className="text-[#F05984]" />
-            <h3 className="text-white font-semibold">Distribución por Tipo</h3>
-          </div>
-          <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <Pie data={tipoDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" animationBegin={0} animationDuration={800}>
-                  {tipoDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
-                </Pie>
-                <ReTooltip contentStyle={tooltipStyle} formatter={(value: number) => [value, 'reportes']} labelStyle={{ color: 'white' }} />
-                <Legend formatter={(value) => <span className="text-white/70 text-xs">{value}</span>} wrapperStyle={{ paddingTop: '20px' }} verticalAlign="bottom" height={36} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Distribución por tipo + Top usuarios */}
+      {(tipoDistribution.length > 0 || topClientesReportes.length > 0) && (
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {tipoDistribution.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <PieChartIcon size={20} className="text-[#F05984]" />
+                <h3 className="text-white font-semibold">Distribución por Tipo</h3>
+              </div>
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <Pie data={tipoDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" animationBegin={0} animationDuration={800}>
+                      {tipoDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
+                    </Pie>
+                    <ReTooltip contentStyle={tooltipStyle} formatter={(value: number) => [value, 'reportes']} labelStyle={{ color: 'white' }} />
+                    <Legend formatter={(value) => <span className="text-white/70 text-xs">{value}</span>} wrapperStyle={{ paddingTop: '20px' }} verticalAlign="bottom" height={36} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {topClientesReportes.length > 0 && (
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp size={18} className="text-[#F05984]" />
+                Usuarios con más Reportes
+              </h3>
+              <div className="space-y-4">
+                {topClientesReportes.map((c, index) => {
+                  const percentage = maxClienteReportes > 0 ? (c.count / maxClienteReportes) * 100 : 0;
+                  return (
+                    <motion.div
+                      key={c.clienteId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] bg-opacity-20 w-6 h-6 flex items-center justify-center text-white text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <span className="text-white text-sm font-medium">{c.nombre}</span>
+                        </div>
+                        <span className="text-white text-sm font-semibold">{c.count} reportes</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          transition={{ duration: 0.8, delay: index * 0.1 }}
+                          className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
 
