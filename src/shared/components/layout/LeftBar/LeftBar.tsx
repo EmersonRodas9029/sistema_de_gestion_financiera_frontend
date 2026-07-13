@@ -1,8 +1,9 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
   LogOut, FolderTree, FileText, Bell, Home, BarChart3, Repeat
 } from 'lucide-react';
+import { useUnreadNotificationsCount } from '../../../hooks/useUnreadNotificationsCount';
 
 interface MenuItem {
   path: string;
@@ -21,7 +22,8 @@ interface LeftBarProps {
 
 export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate }: LeftBarProps) => {
   const navigate = useNavigate();
-  const unreadNotifications = 3;
+  const location = useLocation();
+  const { count: unreadNotifications } = useUnreadNotificationsCount(location.pathname);
 
   const menuItems: MenuItem[] = [
     { path: '/', name: 'Inicio', icon: <Home size={20} />, roles: ['admin', 'client'], section: 'main' },

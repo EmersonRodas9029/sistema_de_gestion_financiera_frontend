@@ -1,5 +1,6 @@
 import { type ReactNode, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAutoNotifications } from '../../hooks/useAutoNotifications';
 import { MobileLeftBar } from './LeftBar/MobileLeftBar';
 import { LeftBar } from './LeftBar/LeftBar';
 import { 
@@ -68,6 +69,8 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
   const pageIcon = getPageIcon(currentPath);
   
   const [currentTime, setCurrentTime] = useState('');
+
+  useAutoNotifications();
 
   useEffect(() => {
     const updateTime = () => {
