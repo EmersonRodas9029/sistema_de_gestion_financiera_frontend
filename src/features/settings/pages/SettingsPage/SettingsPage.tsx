@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import { clientesService, usuariosService } from '../../../clients/services';
+import { type TipoNotificacion } from '../../../notifications/services';
+import { configuracionesService } from '../../services';
+import {
   Settings,
   User,
   Bell,
   Shield,
-  Globe,
   Lock,
   Eye,
   EyeOff,
@@ -37,28 +41,29 @@ interface SettingsSection {
 
 interface ProfileSettings {
   name: string;
+  username: string;
   email: string;
   phone: string;
-  company: string;
   position: string;
   avatar?: string;
-  language: string;
-  timezone: string;
-  dateFormat: string;
-  currency: string;
 }
 
 interface NotificationSettings {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  smsNotifications: boolean;
-  marketingEmails: boolean;
-  goalReminders: boolean;
-  paymentReminders: boolean;
-  budgetAlerts: boolean;
-  weeklyReports: boolean;
-  monthlyReports: boolean;
+  enabledTypes: TipoNotificacion[];
 }
+
+// Los mismos 5 tipos reales que genera useAutoNotifications y muestra NotificationsPage (labels/iconos en sync).
+const NOTIFICATION_TYPES: { value: TipoNotificacion; label: string; description: string }[] = [
+  { value: 'PRESUPUESTO_EXCEDIDO', label: 'Presupuesto', description: 'Avisos al acercarte o exceder el límite de un presupuesto' },
+  { value: 'GASTO_RECURRENTE', label: 'Gasto recurrente', description: 'Avisos de cobros recurrentes próximos o vencidos' },
+  { value: 'META_PROGRESO', label: 'Metas', description: 'Hitos de progreso (50%/100%) y vencimientos próximos de tus metas' },
+  { value: 'RECORDATORIO', label: 'Recordatorios', description: 'Recordatorios generales de la cuenta' },
+  { value: 'SISTEMA', label: 'Sistema', description: 'Avisos del sistema' },
+];
+
+// Clave genérica en /api/configuraciones (tipo JSON) usada para persistir qué tipos
+// de notificación tiene habilitados el cliente; no hay endpoint dedicado de preferencias.
+const CLAVE_TIPOS_NOTIFICACION = 'notif_tipos_habilitados';
 
 interface SecuritySettings {
   twoFactorAuth: boolean;
@@ -90,29 +95,17 @@ interface BackupSettings {
   includeAttachments: boolean;
 }
 
-// Datos iniciales por defecto
+// Datos iniciales: se toman del usuario autenticado (localStorage), no de valores inventados
 const getDefaultProfile = (): ProfileSettings => ({
-  name: 'Emerson Rodríguez',
-  email: 'emerson@finansys.com',
-  phone: '+34 612 345 678',
-  company: 'FinanSys Solutions',
-  position: 'Administrador',
-  language: 'es',
-  timezone: 'Europe/Madrid',
-  dateFormat: 'DD/MM/YYYY',
-  currency: 'USD'
+  name: localStorage.getItem('userName') || 'Usuario',
+  username: localStorage.getItem('userName') || '',
+  email: localStorage.getItem('userEmail') || '',
+  phone: '',
+  position: localStorage.getItem('userRole') === 'client' ? 'Cliente' : 'Administrador',
 });
 
 const getDefaultNotifications = (): NotificationSettings => ({
-  emailNotifications: true,
-  pushNotifications: true,
-  smsNotifications: false,
-  marketingEmails: false,
-  goalReminders: true,
-  paymentReminders: true,
-  budgetAlerts: true,
-  weeklyReports: true,
-  monthlyReports: true
+  enabledTypes: NOTIFICATION_TYPES.map(t => t.value),
 });
 
 const getDefaultSecurity = (): SecuritySettings => ({
@@ -163,6 +156,8 @@ const CustomSwitch = ({ enabled, onChange, label, description }: { enabled: bool
 );
 
 export const SettingsPage = () => {
+  const navigate = useNavigate();
+  const restoreInputRef = useRef<HTMLInputElement>(null);
   const [activeSection, setActiveSection] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -170,41 +165,104 @@ export const SettingsPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [passwordData, setPasswordData] = useState({
     current: '',
     new: '',
     confirm: ''
   });
+  const [clienteId, setClienteId] = useState<number | null>(null);
+  const [notifConfigId, setNotifConfigId] = useState<number | null>(null);
 
-  // Simular carga inicial
+  // Cargar datos reales del usuario autenticado
   useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
+    const userId = localStorage.getItem('userId');
+
+    const load = async () => {
+      let resolvedClienteId: number | null = null;
+
+      try {
+        // GET /api/usuarios no trae un objeto "cliente" anidado: solo id/username/email/rol.
+        const usuarios = await usuariosService.getAll();
+        const me = usuarios.find(u => String(u.id) === userId);
+        if (me) {
+          setProfile(prev => ({
+            ...prev,
+            name: me.username || prev.name,
+            username: me.username || prev.username,
+            email: me.email || prev.email,
+            position: me.rol === 'CONTADOR' ? 'Contador' : 'Cliente',
+          }));
+
+          // El único enlace usuario -> cliente es el email; se resuelve contra /api/clientes.
+          if (me.rol === 'CLIENTE' && me.email) {
+            const clientes = await clientesService.getAll();
+            const cliente = clientes.find(c => c.email?.toLowerCase() === me.email!.toLowerCase());
+            if (cliente) {
+              if (cliente.id != null) {
+                resolvedClienteId = Number(cliente.id);
+                localStorage.setItem('clienteId', String(resolvedClienteId));
+              }
+              setProfile(prev => ({
+                ...prev,
+                name: cliente.nombreCompleto || prev.name,
+                phone: cliente.telefono || prev.phone,
+              }));
+            }
+          }
+        }
+      } catch {
+        // no se pudo cargar el usuario autenticado; se mantiene el perfil basado en localStorage
+      }
+      setClienteId(resolvedClienteId);
+
+      if (resolvedClienteId != null) {
+        try {
+          const configs = await configuracionesService.getAll();
+          const mia = configs.find(c => c.clienteId === resolvedClienteId && c.clave === CLAVE_TIPOS_NOTIFICACION);
+          if (mia) {
+            setNotifConfigId(mia.id ?? null);
+            const tipos = JSON.parse(mia.valor) as unknown;
+            if (Array.isArray(tipos)) {
+              setNotifications(prev => ({ ...prev, enabledTypes: tipos as TipoNotificacion[] }));
+            }
+          }
+        } catch {
+          // sin conexión o valor inválido: se mantiene lo que había en localStorage
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    load();
   }, []);
 
-  // Cargar configuraciones desde localStorage
+  // Cargar configuraciones desde localStorage, sobre una base de valores por defecto por si
+  // quedó guardada una forma antigua (campos removidos/renombrados en una versión previa).
   const [profile, setProfile] = useState<ProfileSettings>(() => {
     const saved = localStorage.getItem('settings_profile');
-    return saved ? JSON.parse(saved) : getDefaultProfile();
+    return { ...getDefaultProfile(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
     const saved = localStorage.getItem('settings_notifications');
-    return saved ? JSON.parse(saved) : getDefaultNotifications();
+    return { ...getDefaultNotifications(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
   const [security, setSecurity] = useState<SecuritySettings>(() => {
     const saved = localStorage.getItem('settings_security');
-    return saved ? JSON.parse(saved) : getDefaultSecurity();
+    return { ...getDefaultSecurity(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
   const [preferences, setPreferences] = useState<PreferenceSettings>(() => {
     const saved = localStorage.getItem('settings_preferences');
-    return saved ? JSON.parse(saved) : getDefaultPreferences();
+    return { ...getDefaultPreferences(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
   const [backup, setBackup] = useState<BackupSettings>(() => {
     const saved = localStorage.getItem('settings_backup');
-    return saved ? JSON.parse(saved) : getDefaultBackup();
+    return { ...getDefaultBackup(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
   // Guardar configuraciones en localStorage cuando cambien
@@ -264,7 +322,7 @@ export const SettingsPage = () => {
   // Calcular estadísticas
   const activeConfigurations = [
     profile.name !== getDefaultProfile().name,
-    notifications.emailNotifications,
+    notifications.enabledTypes.includes('PRESUPUESTO_EXCEDIDO'),
     security.twoFactorAuth,
     preferences.animations,
     backup.autoBackup
@@ -273,27 +331,56 @@ export const SettingsPage = () => {
   const totalConfigurations = 5;
   const completionPercentage = (activeConfigurations / totalConfigurations) * 100;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      if (clienteId != null) {
+        const valor = JSON.stringify(notifications.enabledTypes);
+        try {
+          if (notifConfigId != null) {
+            await configuracionesService.update(notifConfigId, { clave: CLAVE_TIPOS_NOTIFICACION, valor, tipo: 'JSON' });
+          } else {
+            const created = await configuracionesService.create({ clienteId, clave: CLAVE_TIPOS_NOTIFICACION, valor, tipo: 'JSON' });
+            setNotifConfigId(created.id ?? null);
+          }
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'Error al guardar las preferencias de notificaciones');
+        }
+      }
       setShowSuccess(true);
+      toast.success('Cambios guardados');
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleChangePassword = () => {
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
     if (passwordData.new !== passwordData.confirm) {
-      alert('Las contraseñas no coinciden');
+      toast.error('Las contraseñas no coinciden');
       return;
     }
     if (passwordData.new.length < 6) {
-      alert('La contraseña debe tener al menos 6 caracteres');
+      toast.error('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-    console.log('Cambiar contraseña:', passwordData);
-    setPasswordData({ current: '', new: '', confirm: '' });
-    alert('Contraseña actualizada correctamente');
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    setIsChangingPassword(true);
+    try {
+      await usuariosService.changePassword(userId, {
+        passwordActual: passwordData.current,
+        passwordNueva: passwordData.new,
+      });
+      toast.success('Contraseña actualizada');
+      setPasswordData({ current: '', new: '', confirm: '' });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al cambiar la contraseña');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleExportData = () => {
@@ -314,7 +401,45 @@ export const SettingsPage = () => {
   };
 
   const handleDeleteAccount = () => {
+    setDeleteConfirmText('');
     setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    const userId = Number(localStorage.getItem('userId'));
+    if (!userId) return;
+    try {
+      if (clienteId != null) await clientesService.remove(clienteId);
+      await usuariosService.remove(userId);
+      localStorage.clear();
+      toast.success('Cuenta eliminada');
+      navigate('/login');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar la cuenta');
+    }
+  };
+
+  const handleRestoreClick = () => restoreInputRef.current?.click();
+
+  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string);
+        if (data.profile) setProfile(data.profile);
+        if (data.notifications) setNotifications(data.notifications);
+        if (data.security) setSecurity(data.security);
+        if (data.preferences) setPreferences(data.preferences);
+        if (data.backup) setBackup(data.backup);
+        toast.success('Respaldo restaurado');
+      } catch {
+        toast.error('El archivo de respaldo no es válido');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const resetData = () => {
@@ -324,7 +449,7 @@ export const SettingsPage = () => {
       setSecurity(getDefaultSecurity());
       setPreferences(getDefaultPreferences());
       setBackup(getDefaultBackup());
-      alert('Configuración restaurada a valores por defecto');
+      toast.success('Configuración restaurada a valores por defecto');
     }
   };
 
@@ -540,66 +665,23 @@ export const SettingsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Nombre completo</label>
-                    <input type="text" value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                    <input type="text" value={profile.name} readOnly className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 cursor-not-allowed" />
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
+                    <label className="text-white/60 text-sm mb-1 block">Usuario</label>
+                    <input type="text" value={profile.username} readOnly className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 cursor-not-allowed" />
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Email</label>
-                    <input type="email" value={profile.email} onChange={(e) => setProfile({...profile, email: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                    <input type="email" value={profile.email} readOnly className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 cursor-not-allowed" />
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Teléfono</label>
                     <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-                    <label className="text-white/60 text-sm mb-1 block">Empresa</label>
-                    <input type="text" value={profile.company} onChange={(e) => setProfile({...profile, company: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Cargo</label>
-                    <input type="text" value={profile.position} onChange={(e) => setProfile({...profile, position: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Globe size={18} className="text-[#F05984]" />
-                  Preferencias Regionales
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-                    <label className="text-white/60 text-sm mb-1 block">Idioma</label>
-                    <select value={profile.language} onChange={(e) => setProfile({...profile, language: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="es" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Español</option>
-                      <option value="en" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inglés</option>
-                      <option value="fr" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Francés</option>
-                      <option value="de" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alemán</option>
-                    </select>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-                    <label className="text-white/60 text-sm mb-1 block">Zona horaria</label>
-                    <select value={profile.timezone} onChange={(e) => setProfile({...profile, timezone: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="Europe/Madrid" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Madrid</option>
-                      <option value="Europe/London" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Londres</option>
-                      <option value="America/New_York" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Nueva York</option>
-                      <option value="America/Mexico_City" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ciudad de México</option>
-                    </select>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-                    <label className="text-white/60 text-sm mb-1 block">Formato de fecha</label>
-                    <select value={profile.dateFormat} onChange={(e) => setProfile({...profile, dateFormat: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="DD/MM/YYYY" style={{ backgroundColor: '#1a0f14', color: 'white' }}>DD/MM/YYYY</option>
-                      <option value="MM/DD/YYYY" style={{ backgroundColor: '#1a0f14', color: 'white' }}>MM/DD/YYYY</option>
-                      <option value="YYYY-MM-DD" style={{ backgroundColor: '#1a0f14', color: 'white' }}>YYYY-MM-DD</option>
-                    </select>
-                  </div>
-                  <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
-                    <label className="text-white/60 text-sm mb-1 block">Moneda</label>
-                    <select value={profile.currency} onChange={(e) => setProfile({...profile, currency: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="USD" style={{ backgroundColor: '#1a0f14', color: 'white' }}>USD $</option>
-                      <option value="EUR" style={{ backgroundColor: '#1a0f14', color: 'white' }}>EUR €</option>
-                      <option value="GBP" style={{ backgroundColor: '#1a0f14', color: 'white' }}>GBP £</option>
-                      <option value="MXN" style={{ backgroundColor: '#1a0f14', color: 'white' }}>MXN $</option>
-                    </select>
+                    <input type="text" value={profile.position} readOnly className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 cursor-not-allowed" />
                   </div>
                 </div>
               </div>
@@ -610,66 +692,24 @@ export const SettingsPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Bell size={18} className="text-[#F05984]" />
-                  Canales de notificación
-                </h3>
-                <div className="space-y-3">
-                  <CustomSwitch
-                    enabled={notifications.emailNotifications}
-                    onChange={(val) => setNotifications({...notifications, emailNotifications: val})}
-                    label="Email"
-                    description="Recibir notificaciones por correo electrónico"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.pushNotifications}
-                    onChange={(val) => setNotifications({...notifications, pushNotifications: val})}
-                    label="Push"
-                    description="Notificaciones push en el navegador"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.smsNotifications}
-                    onChange={(val) => setNotifications({...notifications, smsNotifications: val})}
-                    label="SMS"
-                    description="Mensajes de texto"
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                   <Target size={18} className="text-[#F05984]" />
                   Tipos de notificaciones
                 </h3>
                 <div className="space-y-3">
-                  <CustomSwitch
-                    enabled={notifications.goalReminders}
-                    onChange={(val) => setNotifications({...notifications, goalReminders: val})}
-                    label="Recordatorios de metas"
-                    description="Recordatorios sobre tus metas de ahorro"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.paymentReminders}
-                    onChange={(val) => setNotifications({...notifications, paymentReminders: val})}
-                    label="Recordatorios de pagos"
-                    description="Alertas de pagos próximos a vencer"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.budgetAlerts}
-                    onChange={(val) => setNotifications({...notifications, budgetAlerts: val})}
-                    label="Alertas de presupuesto"
-                    description="Notificaciones cuando te acerques al límite"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.weeklyReports}
-                    onChange={(val) => setNotifications({...notifications, weeklyReports: val})}
-                    label="Reportes semanales"
-                    description="Resumen semanal de tus finanzas"
-                  />
-                  <CustomSwitch
-                    enabled={notifications.monthlyReports}
-                    onChange={(val) => setNotifications({...notifications, monthlyReports: val})}
-                    label="Reportes mensuales"
-                    description="Resumen mensual detallado"
-                  />
+                  {NOTIFICATION_TYPES.map((t) => (
+                    <CustomSwitch
+                      key={t.value}
+                      enabled={notifications.enabledTypes.includes(t.value)}
+                      onChange={(val) => setNotifications({
+                        ...notifications,
+                        enabledTypes: val
+                          ? [...notifications.enabledTypes, t.value]
+                          : notifications.enabledTypes.filter(v => v !== t.value),
+                      })}
+                      label={t.label}
+                      description={t.description}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -709,9 +749,10 @@ export const SettingsPage = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleChangePassword}
-                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                    disabled={isChangingPassword}
+                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium disabled:opacity-50"
                   >
-                    Cambiar contraseña
+                    {isChangingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
                   </motion.button>
                 </div>
               </div>
@@ -903,6 +944,7 @@ export const SettingsPage = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    onClick={handleExportData}
                     className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
                   >
                     <Download size={16} />
@@ -911,11 +953,13 @@ export const SettingsPage = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    onClick={handleRestoreClick}
                     className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
                   >
                     <Upload size={16} />
                     <span>Restaurar</span>
                   </motion.button>
+                  <input ref={restoreInputRef} type="file" accept="application/json" onChange={handleRestoreFile} className="hidden" />
                 </div>
               </div>
               <div>
@@ -993,7 +1037,13 @@ export const SettingsPage = () => {
                 <p className="text-white/60 mb-4">¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible y perderás todos tus datos.</p>
                 <div className="bg-white/5 rounded-lg p-4 mb-4">
                   <p className="text-white text-sm mb-2">Por favor, escribe <span className="font-bold text-red-400">ELIMINAR</span> para confirmar:</p>
-                  <input type="text" className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-red-400 transition-all" placeholder="ELIMINAR" />
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-red-400 transition-all"
+                    placeholder="ELIMINAR"
+                  />
                 </div>
                 <div className="flex justify-end gap-3">
                   <motion.button
@@ -1007,7 +1057,9 @@ export const SettingsPage = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all font-medium"
+                    onClick={confirmDeleteAccount}
+                    disabled={deleteConfirmText !== 'ELIMINAR'}
+                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Eliminar cuenta
                   </motion.button>
