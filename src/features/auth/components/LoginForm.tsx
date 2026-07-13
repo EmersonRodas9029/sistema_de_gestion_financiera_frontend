@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
   ArrowLeft,
   LogIn,
   AlertCircle
@@ -11,21 +11,22 @@ import {
 
 interface LoginFormProps {
   onBack: () => void;
-  onLogin: (email: string, password: string) => void;
+  onLogin: (username: string, password: string) => void;
   error?: string;
+  isLoading?: boolean;
 }
 
-export const LoginForm = ({ onBack, onLogin, error }: LoginFormProps) => {
+export const LoginForm = ({ onBack, onLogin, error, isLoading }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
     rememberMe: false
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(formData.email, formData.password);
+    onLogin(formData.username, formData.password);
   };
 
   return (
@@ -56,16 +57,16 @@ export const LoginForm = ({ onBack, onLogin, error }: LoginFormProps) => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 block">
-            Correo electrónico
+            Usuario
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              type="text"
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
               className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
-              placeholder="ejemplo@correo.com"
+              placeholder="tu.usuario"
               required
             />
           </div>
@@ -115,20 +116,13 @@ export const LoginForm = ({ onBack, onLogin, error }: LoginFormProps) => {
 
         <button
           type="submit"
-          className="w-full py-3 px-4 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02]"
+          disabled={isLoading}
+          className="w-full py-3 px-4 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
         >
           <LogIn size={20} />
-          <span>Iniciar Sesión</span>
+          <span>{isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
         </button>
-
-        <div className="bg-gray-100 p-4 rounded-xl">
-          <p className="text-xs text-gray-600 mb-2">Credenciales de demostración:</p>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Admin:</span> admin@budgease.com / admin123</p>
-            <p><span className="font-medium">Cliente:</span> cliente@budgease.com / cliente123</p>
-          </div>
-        </div>
       </form>
     </div>
   );
