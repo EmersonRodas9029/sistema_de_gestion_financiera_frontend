@@ -166,3 +166,220 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #BC455F, #6E4068);
 }
+
+/* ============================================================
+   Tema claro
+   La app está construida con clases oscuras fijas (bg-white/N,
+   text-white/N, border-white/N, bg-[#1a0f14], gradientes de
+   tarjetas, etc.) repetidas en todas las páginas, no con un
+   sistema dark:/light: de Tailwind. En vez de tocar cada archivo,
+   se remapean aquí esas mismas clases cuando <html data-theme="light">,
+   así el toggle de Preferencias afecta a todo el sitio de una vez.
+   Los colores de marca (#F05984, #BC455F, degradado del sidebar)
+   se dejan intactos: funcionan igual de bien sobre fondo claro.
+   ============================================================ */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="light"] .bg-gradient-main {
+  background: linear-gradient(135deg, #fbf7f9 0%, #f4edf1 50%, #fbf7f9 100%);
+}
+
+:root[data-theme="light"] .glass-effect {
+  background: rgba(26, 15, 20, 0.04);
+  border-color: rgba(26, 15, 20, 0.08);
+}
+
+/* Superficies elevadas (modales, dropdowns) que usaban el fondo oscuro base.
+   Blanco cálido en vez de #ffffff puro: contra el degradado rosado del fondo,
+   el blanco puro se veía como un flash demasiado fuerte/artificial. */
+:root[data-theme="light"] .bg-\[\#1a0f14\],
+:root[data-theme="light"] .bg-\[\#2a1a22\],
+:root[data-theme="light"] .bg-\[\#2a1520\] {
+  background-color: #fdf8fa;
+}
+
+/* Muchas páginas fijan estos mismos colores por style inline (style={{backgroundColor:'#1a0f14'}})
+   en vez de clases -react serializa el hex a rgb() en el DOM-, así que las reglas de arriba no
+   les llegan (un inline style le gana a cualquier selector de clase). Se fuerzan aquí por
+   contenido literal del atributo style, con !important, que sí le gana al inline style. */
+:root[data-theme="light"] [style*="rgb(26, 15, 20)"] {
+  background-color: #fdf8fa !important;
+  color: #1a0f14 !important;
+}
+:root[data-theme="light"] [style*="rgba(255, 255, 255, 0.05)"] {
+  background-color: rgba(26, 15, 20, 0.05) !important;
+  color: #1a0f14 !important;
+}
+
+/* Texto: text-white y sus variantes de opacidad */
+:root[data-theme="light"] .text-white { color: #1a0f14; }
+:root[data-theme="light"] .text-white\/90 { color: rgba(26, 15, 20, 0.9); }
+:root[data-theme="light"] .text-white\/80 { color: rgba(26, 15, 20, 0.8); }
+:root[data-theme="light"] .text-white\/70 { color: rgba(26, 15, 20, 0.7); }
+:root[data-theme="light"] .text-white\/60 { color: rgba(26, 15, 20, 0.6); }
+:root[data-theme="light"] .text-white\/50 { color: rgba(26, 15, 20, 0.5); }
+:root[data-theme="light"] .text-white\/40 { color: rgba(26, 15, 20, 0.45); }
+:root[data-theme="light"] .text-white\/30 { color: rgba(26, 15, 20, 0.4); }
+:root[data-theme="light"] .text-white\/20 { color: rgba(26, 15, 20, 0.35); }
+:root[data-theme="light"] .group:hover .group-hover\:text-white\/80 { color: rgba(26, 15, 20, 0.8); }
+:root[data-theme="light"] .hover\:text-white:hover { color: #1a0f14; }
+
+/* Fondos: bg-white/N usados como tinte de tarjetas/botones */
+:root[data-theme="light"] .bg-white\/5 { background-color: rgba(26, 15, 20, 0.05); }
+:root[data-theme="light"] .bg-white\/10 { background-color: rgba(26, 15, 20, 0.08); }
+:root[data-theme="light"] .bg-white\/20 { background-color: rgba(26, 15, 20, 0.12); }
+:root[data-theme="light"] .hover\:bg-white\/5:hover { background-color: rgba(26, 15, 20, 0.05); }
+:root[data-theme="light"] .hover\:bg-white\/10:hover { background-color: rgba(26, 15, 20, 0.08); }
+:root[data-theme="light"] .hover\:bg-white\/20:hover { background-color: rgba(26, 15, 20, 0.12); }
+
+/* Bordes: border-white/N */
+:root[data-theme="light"] .border-white\/5 { border-color: rgba(26, 15, 20, 0.06); }
+:root[data-theme="light"] .border-white\/10 { border-color: rgba(26, 15, 20, 0.1); }
+:root[data-theme="light"] .border-white\/20 { border-color: rgba(26, 15, 20, 0.15); }
+:root[data-theme="light"] .border-white\/30 { border-color: rgba(26, 15, 20, 0.2); }
+
+/* Degradados de tarjetas de estadísticas (from-/to-/via- oscuros) */
+:root[data-theme="light"] .from-\[\#321D28\] { --tw-gradient-from: #fbe4ec var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#321D28\] { --tw-gradient-to: #fbe4ec var(--tw-gradient-to-position); }
+:root[data-theme="light"] .from-\[\#6E4068\] { --tw-gradient-from: #f1e2f0 var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#6E4068\] { --tw-gradient-to: #f1e2f0 var(--tw-gradient-to-position); }
+:root[data-theme="light"] .via-\[\#4a2d40\] { --tw-gradient-stops: var(--tw-gradient-from), #f6e6ee var(--tw-gradient-via-position), var(--tw-gradient-to); }
+:root[data-theme="light"] .to-\[\#4a2d5a\] { --tw-gradient-to: #f3e6f1 var(--tw-gradient-to-position); }
+:root[data-theme="light"] .to-\[\#4a2040\] { --tw-gradient-to: #f6e2ec var(--tw-gradient-to-position); }
+:root[data-theme="light"] .to-\[\#0d0710\] { --tw-gradient-to: #fdf9fb var(--tw-gradient-to-position); }
+:root[data-theme="light"] .from-\[\#1a0f14\] { --tw-gradient-from: #fdfafb var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#1a0f14\] { --tw-gradient-to: #f7eef1 var(--tw-gradient-to-position); }
+:root[data-theme="light"] .to-\[\#2d1a25\] { --tw-gradient-to: #f6ecef var(--tw-gradient-to-position); }
+:root[data-theme="light"] .from-\[\#1e293b\] { --tw-gradient-from: #e9f1fb var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#334155\] { --tw-gradient-to: #dde8f6 var(--tw-gradient-to-position); }
+:root[data-theme="light"] .from-\[\#1e1b2e\] { --tw-gradient-from: #efe9f8 var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#2d2a3d\] { --tw-gradient-to: #e4def0 var(--tw-gradient-to-position); }
+:root[data-theme="light"] .from-\[\#1a2e2a\] { --tw-gradient-from: #e6f5ef var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-\[\#2d403a\] { --tw-gradient-to: #daf0e5 var(--tw-gradient-to-position); }
+
+/* Inputs, selects y scrollbar */
+:root[data-theme="light"] select,
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea {
+  background-color: rgba(26, 15, 20, 0.04);
+  border-color: rgba(26, 15, 20, 0.12);
+  color: #1a0f14;
+}
+:root[data-theme="light"] select:hover,
+:root[data-theme="light"] input:hover,
+:root[data-theme="light"] textarea:hover {
+  background-color: rgba(26, 15, 20, 0.07);
+}
+:root[data-theme="light"] select option {
+  background-color: #fdf8fa;
+  color: #1a0f14;
+}
+
+/* Título con gradiente clip-text (MainLayout, header móvil) */
+:root[data-theme="light"] .from-white { --tw-gradient-from: #1a0f14 var(--tw-gradient-from-position); }
+:root[data-theme="light"] .to-white\/80 { --tw-gradient-to: rgba(26, 15, 20, 0.8) var(--tw-gradient-to-position); }
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder {
+  color: rgba(26, 15, 20, 0.35);
+}
+:root[data-theme="light"] .custom-scrollbar {
+  scrollbar-color: #F05984 #f4edf1;
+}
+:root[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-track {
+  background: #f4edf1;
+}
+
+/* ============================================================
+   Esquema de colores (solo tema oscuro)
+   Recolorea el acento de marca (#F05984/#BC455F/#6E4068) que usan
+   botones, bordes, badges y el sidebar. Cada esquema solo define
+   sus 4 componentes RGB (--sp primario, --ss secundario, --st
+   oscuro/terciario, --sl hover claro); las reglas que remapean
+   las clases están escritas una sola vez y usan esas variables,
+   así que "Predeterminado" no necesita reglas (es el color base
+   de la app) y agregar un esquema nuevo es solo 4 números.
+   No se aplica en tema claro a propósito, según lo pedido.
+   ============================================================ */
+:root[data-theme="dark"][data-color-scheme="blue"] {
+  --sp: 59 130 246; --ss: 37 99 235; --st: 30 58 138; --sl: 96 165 250;
+}
+:root[data-theme="dark"][data-color-scheme="green"] {
+  --sp: 16 185 129; --ss: 5 150 105; --st: 6 95 70; --sl: 52 211 153;
+}
+:root[data-theme="dark"][data-color-scheme="purple"] {
+  --sp: 139 92 246; --ss: 124 58 237; --st: 76 29 149; --sl: 167 139 250;
+}
+
+:root[data-theme="dark"]:is([data-color-scheme="blue"], [data-color-scheme="green"], [data-color-scheme="purple"]) {
+  & .text-\[\#F05984\],
+  & .group:hover .group-hover\:text-\[\#F05984\] { color: rgb(var(--sp)); }
+  & .hover\:text-\[\#d14d75\]:hover { color: rgb(var(--sl)); }
+  & .text-\[\#BC455F\],
+  & .group:hover .group-hover\:text-\[\#BC455F\] { color: rgb(var(--ss)); }
+
+  & .bg-\[\#F05984\] { background-color: rgb(var(--sp)); }
+  & .bg-\[\#F05984\]\/5 { background-color: rgb(var(--sp) / 0.05); }
+  & .bg-\[\#F05984\]\/10 { background-color: rgb(var(--sp) / 0.1); }
+  & .bg-\[\#F05984\]\/15 { background-color: rgb(var(--sp) / 0.15); }
+  & .bg-\[\#F05984\]\/20,
+  & .hover\:bg-\[\#F05984\]\/20:hover { background-color: rgb(var(--sp) / 0.2); }
+  & .group:hover .group-hover\:bg-\[\#F05984\]\/10 { background-color: rgb(var(--sp) / 0.1); }
+  & .group:hover .group-hover\:bg-\[\#F05984\]\/30 { background-color: rgb(var(--sp) / 0.3); }
+  & .bg-\[\#BC455F\]\/5 { background-color: rgb(var(--ss) / 0.05); }
+  & .bg-\[\#BC455F\]\/10 { background-color: rgb(var(--ss) / 0.1); }
+  & .bg-\[\#BC455F\]\/15 { background-color: rgb(var(--ss) / 0.15); }
+  & .bg-\[\#BC455F\]\/20 { background-color: rgb(var(--ss) / 0.2); }
+  & .group:hover .group-hover\:bg-\[\#BC455F\]\/10 { background-color: rgb(var(--ss) / 0.1); }
+  & .group:hover .group-hover\:bg-\[\#BC455F\]\/30 { background-color: rgb(var(--ss) / 0.3); }
+
+  & .border-\[\#F05984\],
+  & .focus\:border-\[\#F05984\]:focus { border-color: rgb(var(--sp)); }
+  & .hover\:border-\[\#F05984\]\/30:hover { border-color: rgb(var(--sp) / 0.3); }
+  & .hover\:border-\[\#F05984\]\/40:hover { border-color: rgb(var(--sp) / 0.4); }
+  & .hover\:border-\[\#F05984\]\/50:hover { border-color: rgb(var(--sp) / 0.5); }
+
+  & .focus\:ring-\[\#F05984\]:focus { --tw-ring-color: rgb(var(--sp)); }
+
+  & .shadow-\[\#F05984\]\/20 { --tw-shadow-color: rgb(var(--sp) / 0.2); }
+  & .hover\:shadow-\[\#F05984\]\/25:hover { --tw-shadow-color: rgb(var(--sp) / 0.25); }
+  & .hover\:shadow-\[\#F05984\]\/30:hover { --tw-shadow-color: rgb(var(--sp) / 0.3); }
+
+  & .from-\[\#F05984\] { --tw-gradient-from: rgb(var(--sp)) var(--tw-gradient-from-position); }
+  & .from-\[\#F05984\]\/20 { --tw-gradient-from: rgb(var(--sp) / 0.2) var(--tw-gradient-from-position); }
+  & .to-\[\#F05984\]\/10 { --tw-gradient-to: rgb(var(--sp) / 0.1) var(--tw-gradient-to-position); }
+  & .to-\[\#BC455F\] { --tw-gradient-to: rgb(var(--ss)) var(--tw-gradient-to-position); }
+  & .to-\[\#BC455F\]\/20 { --tw-gradient-to: rgb(var(--ss) / 0.2) var(--tw-gradient-to-position); }
+  & .from-\[\#BC455F\]\/20 { --tw-gradient-from: rgb(var(--ss) / 0.2) var(--tw-gradient-from-position); }
+  & .from-\[\#6E4068\] { --tw-gradient-from: rgb(var(--st)) var(--tw-gradient-from-position); }
+  & .to-\[\#6E4068\] { --tw-gradient-to: rgb(var(--st)) var(--tw-gradient-to-position); }
+  & .to-\[\#6E4068\]\/20 { --tw-gradient-to: rgb(var(--st) / 0.2) var(--tw-gradient-to-position); }
+  & .to-\[\#6E4068\]\/40 { --tw-gradient-to: rgb(var(--st) / 0.4) var(--tw-gradient-to-position); }
+  & .to-\[\#6E4068\]\/50 { --tw-gradient-to: rgb(var(--st) / 0.5) var(--tw-gradient-to-position); }
+  & .via-\[\#6E4068\] {
+    --tw-gradient-to: rgb(var(--st) / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--st)) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  & select:focus,
+  & input:focus,
+  & textarea:focus {
+    border-color: rgb(var(--sp));
+    box-shadow: 0 0 0 2px rgb(var(--sp) / 0.2);
+  }
+  & select:hover,
+  & input:hover,
+  & textarea:hover {
+    border-color: rgb(var(--sp) / 0.5);
+  }
+  & .custom-scrollbar {
+    scrollbar-color: rgb(var(--sp)) #1a0f14;
+  }
+  & .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, rgb(var(--sp)), rgb(var(--ss)));
+  }
+  & .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, rgb(var(--ss)), rgb(var(--st)));
+  }
+}

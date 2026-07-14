@@ -5,6 +5,7 @@ import { presupuestosService } from '../../features/budgets/services';
 import { gastosService } from '../../features/expenses/services';
 import { metasService } from '../../features/goals/services';
 import { gastosRecurrentesService, type ApiGastoRecurrente } from '../../features/recurring-expenses/services';
+import { configuracionesService } from '../../features/settings/services';
 
 const DIAS_AVISO_RECURRENTE = 3; // avisar si el próximo cobro cae dentro de estos días
 const DIAS_AVISO_META = 7; // avisar si la meta vence dentro de estos días
@@ -13,6 +14,35 @@ const UMBRAL_AVISO_PRESUPUESTO = 0.9; // avisar antes de excederse al llegar a e
 const INTERVALO_POLLING_MS = 10 * 60 * 1000; // además del chequeo al cargar, revisar cada 10 minutos
 
 const diffDias = (a: Date, b: Date) => Math.round((a.getTime() - b.getTime()) / 86400000);
+
+const TODOS_LOS_TIPOS: TipoNotificacion[] = ['PRESUPUESTO_EXCEDIDO', 'GASTO_RECURRENTE', 'META_PROGRESO', 'RECORDATORIO', 'SISTEMA'];
+const CLAVE_TIPOS_NOTIFICACION = 'notif_tipos_habilitados';
+
+const tiposDesdeCache = (): TipoNotificacion[] | null => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('settings_notifications') || '{}') as { enabledTypes?: TipoNotificacion[] };
+    return saved.enabledTypes ?? null;
+  } catch {
+    return null;
+  }
+};
+
+// Tipos habilitados por el usuario en Configuración > Notificaciones (src/features/settings).
+// No hay endpoint dedicado de preferencias: se reusa /api/configuraciones (clave genérica, tipo JSON),
+// con localStorage como caché/fallback si la config aún no existe o falla la red.
+const tiposHabilitados = async (clienteId: number): Promise<Set<TipoNotificacion>> => {
+  try {
+    const configs = await configuracionesService.getAll();
+    const mia = configs.find(c => c.clienteId === clienteId && c.clave === CLAVE_TIPOS_NOTIFICACION);
+    if (mia) {
+      const tipos = JSON.parse(mia.valor) as unknown;
+      if (Array.isArray(tipos)) return new Set(tipos as TipoNotificacion[]);
+    }
+  } catch {
+    // sin conexión o configuración inválida: caer al caché local
+  }
+  return new Set(tiposDesdeCache() ?? TODOS_LOS_TIPOS);
+};
 
 const proximaOcurrencia = (g: ApiGastoRecurrente): Date | null => {
   // Si nunca se procesó, la próxima ocurrencia es la fecha de inicio tal cual;
@@ -50,12 +80,13 @@ export async function generarNotificacionesAutomaticas(clienteId: number): Promi
   const hoy = new Date();
   const anio = hoy.getFullYear(), mes = hoy.getMonth() + 1;
 
-  const [notiExistentes, presupuestosLivianos, gastosLivianos, metas, recurrentesLivianos] = await Promise.all([
+  const [notiExistentes, presupuestosLivianos, gastosLivianos, metas, recurrentesLivianos, habilitados] = await Promise.all([
     notificacionesService.getAll().catch(() => []),
     presupuestosService.getAll().catch(() => []),
     gastosService.getAll().catch(() => []),
     metasService.getByCliente(clienteId).catch(() => []),
     gastosRecurrentesService.getByCliente(clienteId).catch(() => []),
+    tiposHabilitados(clienteId),
   ]);
 
   const misNotisActivas = notiExistentes.filter(n => n.clienteId === clienteId && n.activa);
@@ -63,6 +94,8 @@ export async function generarNotificacionesAutomaticas(clienteId: number): Promi
   let creadas = 0;
 
   const crear = (tipo: TipoNotificacion, titulo: string, mensaje: string, marca: string): Promise<unknown> => {
+    // Tipo desactivado en Configuración: no se genera, y las renovables existentes se archivan solas más abajo.
+    if (!habilitados.has(tipo)) return Promise.resolve();
     vigentes.add(marca);
     const yaExiste = misNotisActivas.some(n => n.tipo === tipo && n.mensaje.includes(`#${marca}`));
     if (yaExiste) return Promise.resolve();

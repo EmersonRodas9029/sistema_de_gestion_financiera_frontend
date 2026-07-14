@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip } from 'recharts';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { usuariosService, clientesService, type ApiUsuario } from '../../services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -70,7 +71,7 @@ export const ClientsPage = () => {
   const [searchTerm, setSearchTerm]       = useState('');
   const [selectedRol, setSelectedRol]     = useState<string>('todos');
   const [selectedActivo, setSelectedActivo] = useState<string>('todos');
-  const [viewMode, setViewMode]           = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode]           = useState<'grid' | 'list'>(() => getViewPreferences().defaultView);
   const [isLoading, setIsLoading]         = useState(true);
   const [showFilters, setShowFilters]     = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -93,7 +94,7 @@ export const ClientsPage = () => {
     fechaNacimiento: '', direccion: '', documentoIdentidad: '', tipoDocumento: '',
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const fetchUsuarios = async () => {
     setIsLoading(true);

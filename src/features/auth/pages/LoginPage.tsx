@@ -1,61 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
-import { 
-  TrendingUp, 
-  Shield, 
-  CreditCard, 
+import { authService } from '../services';
+import {
+  TrendingUp,
+  Shield,
+  CreditCard,
   PieChart,
   ArrowRight,
   Users,
   Target
 } from 'lucide-react';
 
-// Credenciales de prueba
-const TEST_CREDENTIALS = {
-  admin: {
-    email: 'admin@budgease.com',
-    password: 'admin123',
-    role: 'admin',
-    name: 'Admin'
-  },
-  client: {
-    email: 'cliente@budgease.com',
-    password: 'cliente123',
-    role: 'client',
-    name: 'Cliente'
-  }
-};
-
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (email: string, password: string) => {
-    // Limpiar error anterior
+  const handleLogin = async (username: string, password: string) => {
     setError('');
-    
-    // Validar credenciales
-    if (email === TEST_CREDENTIALS.admin.email && password === TEST_CREDENTIALS.admin.password) {
-      // Login como admin
+    setIsLoading(true);
+    try {
+      const { token, userId, username: name, email, rol } = await authService.login(username, password);
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', TEST_CREDENTIALS.admin.role);
-      localStorage.setItem('userName', TEST_CREDENTIALS.admin.name);
-      localStorage.setItem('userEmail', TEST_CREDENTIALS.admin.email);
+      localStorage.setItem('userRole', rol === 'CLIENTE' ? 'client' : 'admin');
+      localStorage.setItem('userName', name);
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userId', String(userId));
+      localStorage.setItem('authToken', token);
       navigate('/');
-    } 
-    else if (email === TEST_CREDENTIALS.client.email && password === TEST_CREDENTIALS.client.password) {
-      // Login como cliente
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', TEST_CREDENTIALS.client.role);
-      localStorage.setItem('userName', TEST_CREDENTIALS.client.name);
-      localStorage.setItem('userEmail', TEST_CREDENTIALS.client.email);
-      navigate('/');
-    }
-    else {
-      // Credenciales inválidas
-      setError('Credenciales incorrectas. Por favor, intenta de nuevo.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Credenciales incorrectas. Por favor, intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -180,13 +158,14 @@ export const LoginPage = () => {
               </p>
             </div>
           ) : (
-            <LoginForm 
+            <LoginForm
               onBack={() => {
                 setShowLogin(false);
                 setError('');
-              }} 
+              }}
               onLogin={handleLogin}
               error={error}
+              isLoading={isLoading}
             />
           )}
         </div>

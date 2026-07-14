@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -86,7 +87,7 @@ export const ExpensesPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
   const [trendView, setTrendView] = useState<'mensual' | 'semanal'>('mensual');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -102,7 +103,7 @@ export const ExpensesPage = () => {
     paymentMethod: 'transferencia',
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);

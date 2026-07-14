@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { ingresosService, type ApiIngreso } from '../../services';
 import { clientesService } from '../../../clients/services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
@@ -117,7 +118,7 @@ export const IncomesPage = () => {
   const [selectedMetodo, setSelectedMetodo] = useState<string>('todos');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('todos');
   const [showFilters, setShowFilters]       = useState(false);
-  const [viewMode, setViewMode]             = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode]             = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
   const [sortBy, setSortBy]                 = useState<string>('date');
   const [sortOrder, setSortOrder]           = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage]       = useState(1);
@@ -132,7 +133,7 @@ export const IncomesPage = () => {
     metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '', activo: true,
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const fetchIngresos = async () => {
     setIsLoading(true);

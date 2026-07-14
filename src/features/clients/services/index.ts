@@ -42,4 +42,18 @@ export const usuariosService = {
     fetch(`${config.apiUrl}/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
   remove: (id: string | number): Promise<void> =>
     fetch(`${config.apiUrl}/usuarios/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+  changePassword: async (id: string | number, data: { passwordActual: string; passwordNueva: string }): Promise<void> => {
+    const r = await fetch(`${config.apiUrl}/usuarios/${id}/password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) {
+      const body = await r.json().catch(() => null) as { message?: string } | null;
+      throw new Error(body?.message || r.statusText);
+    }
+  },
 };

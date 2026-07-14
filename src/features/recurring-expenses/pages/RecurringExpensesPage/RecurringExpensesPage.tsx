@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatCurrency, formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
@@ -57,7 +58,7 @@ export const RecurringExpensesPage = () => {
   const [selectedFrecuencia, setSelectedFrecuencia] = useState<'todos' | Frecuencia>('todos');
   const [selectedEstado, setSelectedEstado] = useState<Estado>('todos');
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'monto' | 'frecuencia' | 'fechaInicio'>('fechaInicio');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -68,7 +69,7 @@ export const RecurringExpensesPage = () => {
   const [formData, setFormData] = useState(emptyForm());
   const [formCategorias, setFormCategorias] = useState<ApiCategoria[]>([]);
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
   const allCategorias = Object.values(categoriasByClient).flat();
