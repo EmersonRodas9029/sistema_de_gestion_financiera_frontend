@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatCurrency, formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
@@ -43,7 +44,7 @@ export const GoalsPage = () => {
   const [selectedEstado, setSelectedEstado] = useState<Estado>('todas');
   const [selectedPrioridad, setSelectedPrioridad] = useState<'todas' | Prioridad>('todas');
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'nombre' | 'progreso' | 'monto' | 'fecha'>('progreso');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -53,7 +54,7 @@ export const GoalsPage = () => {
   const [selectedGoal, setSelectedGoal] = useState<ApiMeta | null>(null);
   const [formData, setFormData] = useState(emptyForm());
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
 

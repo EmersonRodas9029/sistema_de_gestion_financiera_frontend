@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { categoriasService, type ApiCategoria } from '../../services';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { clientesService } from '../../../clients/services';
 import { gastosService } from '../../../expenses/services';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -161,7 +162,7 @@ const itemVariants = {
 
 export const CategoriesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => getViewPreferences().defaultView);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
@@ -191,7 +192,7 @@ export const CategoriesPage = () => {
   const [sortBy, setSortBy] = useState<'name' | 'transactions' | 'amount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const itemsPerPage = 6;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const [categories, setCategories] = useState<Category[]>([]);
 

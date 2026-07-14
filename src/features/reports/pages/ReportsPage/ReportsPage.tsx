@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
@@ -211,7 +212,7 @@ export const ReportsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTipo, setSelectedTipo] = useState<'todos' | TipoReporte>('todos');
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'nombre' | 'fecha' | 'periodo'>('fecha');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -225,7 +226,7 @@ export const ReportsPage = () => {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
 
-  const itemsPerPage = 8;
+  const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? (id ? `Cliente #${id}` : '—');
   const contadorNombre = (id?: number) => contadores.find(c => Number(c.id) === id)?.username ?? (id ? `Contador #${id}` : 'Sin asignar');

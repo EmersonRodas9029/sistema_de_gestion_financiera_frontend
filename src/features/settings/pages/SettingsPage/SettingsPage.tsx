@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,16 +17,11 @@ import {
   RefreshCw,
   AlertCircle,
   Trash2,
-  Download,
-  Upload,
-  Database,
-  Cloud,
   Target,
   Activity,
   BarChart3,
   Palette,
   CheckCircle as CheckCircleIcon,
-  Clock,
   AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
@@ -67,32 +62,15 @@ const CLAVE_TIPOS_NOTIFICACION = 'notif_tipos_habilitados';
 
 interface SecuritySettings {
   twoFactorAuth: boolean;
-  biometricLogin: boolean;
-  sessionTimeout: number;
-  loginAlerts: boolean;
-  deviceManagement: boolean;
   lastPasswordChange: string;
 }
 
 interface PreferenceSettings {
-  theme: 'light' | 'dark' | 'system';
-  colorScheme: string;
+  theme: 'light' | 'dark';
+  colorScheme: 'default' | 'blue' | 'green' | 'purple';
   fontSize: 'small' | 'medium' | 'large';
-  compactMode: boolean;
-  animations: boolean;
-  soundEffects: boolean;
-  hapticFeedback: boolean;
   defaultView: 'grid' | 'list';
   itemsPerPage: number;
-}
-
-interface BackupSettings {
-  autoBackup: boolean;
-  backupFrequency: 'daily' | 'weekly' | 'monthly';
-  backupLocation: string;
-  lastBackup: string;
-  backupSize: string;
-  includeAttachments: boolean;
 }
 
 // Datos iniciales: se toman del usuario autenticado (localStorage), no de valores inventados
@@ -110,10 +88,6 @@ const getDefaultNotifications = (): NotificationSettings => ({
 
 const getDefaultSecurity = (): SecuritySettings => ({
   twoFactorAuth: false,
-  biometricLogin: true,
-  sessionTimeout: 30,
-  loginAlerts: true,
-  deviceManagement: true,
   lastPasswordChange: '2024-01-15'
 });
 
@@ -121,21 +95,8 @@ const getDefaultPreferences = (): PreferenceSettings => ({
   theme: 'dark',
   colorScheme: 'default',
   fontSize: 'medium',
-  compactMode: false,
-  animations: true,
-  soundEffects: true,
-  hapticFeedback: false,
   defaultView: 'grid',
   itemsPerPage: 20
-});
-
-const getDefaultBackup = (): BackupSettings => ({
-  autoBackup: true,
-  backupFrequency: 'weekly',
-  backupLocation: 'cloud',
-  lastBackup: '2024-02-23 03:00',
-  backupSize: '2.4 GB',
-  includeAttachments: true
 });
 
 // Componente Switch personalizado
@@ -157,7 +118,6 @@ const CustomSwitch = ({ enabled, onChange, label, description }: { enabled: bool
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
-  const restoreInputRef = useRef<HTMLInputElement>(null);
   const [activeSection, setActiveSection] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -260,11 +220,6 @@ export const SettingsPage = () => {
     return { ...getDefaultPreferences(), ...(saved ? JSON.parse(saved) : {}) };
   });
 
-  const [backup, setBackup] = useState<BackupSettings>(() => {
-    const saved = localStorage.getItem('settings_backup');
-    return { ...getDefaultBackup(), ...(saved ? JSON.parse(saved) : {}) };
-  });
-
   // Guardar configuraciones en localStorage cuando cambien
   useEffect(() => {
     localStorage.setItem('settings_profile', JSON.stringify(profile));
@@ -280,11 +235,11 @@ export const SettingsPage = () => {
 
   useEffect(() => {
     localStorage.setItem('settings_preferences', JSON.stringify(preferences));
+    const FONT_SIZES = { small: '14px', medium: '16px', large: '18px' } as const;
+    document.documentElement.style.fontSize = FONT_SIZES[preferences.fontSize];
+    document.documentElement.setAttribute('data-theme', preferences.theme);
+    document.documentElement.setAttribute('data-color-scheme', preferences.colorScheme);
   }, [preferences]);
-
-  useEffect(() => {
-    localStorage.setItem('settings_backup', JSON.stringify(backup));
-  }, [backup]);
 
   const sections: SettingsSection[] = [
     {
@@ -310,12 +265,6 @@ export const SettingsPage = () => {
       name: 'Preferencias',
       icon: <Palette size={20} />,
       description: 'Apariencia y comportamiento'
-    },
-    {
-      id: 'backup',
-      name: 'Respaldo',
-      icon: <Database size={20} />,
-      description: 'Configuración de copias de seguridad'
     }
   ];
 
@@ -324,11 +273,10 @@ export const SettingsPage = () => {
     profile.name !== getDefaultProfile().name,
     notifications.enabledTypes.includes('PRESUPUESTO_EXCEDIDO'),
     security.twoFactorAuth,
-    preferences.animations,
-    backup.autoBackup
+    preferences.colorScheme !== 'default'
   ].filter(Boolean).length;
 
-  const totalConfigurations = 5;
+  const totalConfigurations = 4;
   const completionPercentage = (activeConfigurations / totalConfigurations) * 100;
 
   const handleSave = async () => {
@@ -376,28 +324,12 @@ export const SettingsPage = () => {
       });
       toast.success('Contraseña actualizada');
       setPasswordData({ current: '', new: '', confirm: '' });
+      setSecurity({ ...security, lastPasswordChange: new Date().toISOString() });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error al cambiar la contraseña');
     } finally {
       setIsChangingPassword(false);
     }
-  };
-
-  const handleExportData = () => {
-    const data = {
-      profile,
-      notifications,
-      security,
-      preferences,
-      backup
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `finansys_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleDeleteAccount = () => {
@@ -419,36 +351,12 @@ export const SettingsPage = () => {
     }
   };
 
-  const handleRestoreClick = () => restoreInputRef.current?.click();
-
-  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result as string);
-        if (data.profile) setProfile(data.profile);
-        if (data.notifications) setNotifications(data.notifications);
-        if (data.security) setSecurity(data.security);
-        if (data.preferences) setPreferences(data.preferences);
-        if (data.backup) setBackup(data.backup);
-        toast.success('Respaldo restaurado');
-      } catch {
-        toast.error('El archivo de respaldo no es válido');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   const resetData = () => {
     if (window.confirm('¿Esto restaurará todas las configuraciones a los valores por defecto. ¿Continuar?')) {
       setProfile(getDefaultProfile());
       setNotifications(getDefaultNotifications());
       setSecurity(getDefaultSecurity());
       setPreferences(getDefaultPreferences());
-      setBackup(getDefaultBackup());
       toast.success('Configuración restaurada a valores por defecto');
     }
   };
@@ -530,7 +438,7 @@ export const SettingsPage = () => {
       </motion.div>
 
       {/* Tarjetas de Estadísticas Resumen */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -592,22 +500,6 @@ export const SettingsPage = () => {
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/50 text-sm font-medium">Último Respaldo</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight">Exitoso</p>
-              <p className="text-white/30 text-xs mt-1">{backup.lastBackup}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-blue-500/20">
-              <Database size={24} className="text-blue-400" />
-            </div>
-          </div>
-        </motion.div>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -754,48 +646,7 @@ export const SettingsPage = () => {
                   >
                     {isChangingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
                   </motion.button>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Shield size={18} className="text-[#F05984]" />
-                  Autenticación
-                </h3>
-                <div className="space-y-3">
-                  <CustomSwitch
-                    enabled={security.twoFactorAuth}
-                    onChange={(val) => setSecurity({...security, twoFactorAuth: val})}
-                    label="Autenticación de dos factores"
-                    description="Añade una capa extra de seguridad"
-                  />
-                  <CustomSwitch
-                    enabled={security.biometricLogin}
-                    onChange={(val) => setSecurity({...security, biometricLogin: val})}
-                    label="Login biométrico"
-                    description="Usa huella digital o reconocimiento facial"
-                  />
-                  <CustomSwitch
-                    enabled={security.loginAlerts}
-                    onChange={(val) => setSecurity({...security, loginAlerts: val})}
-                    label="Alertas de inicio de sesión"
-                    description="Notificaciones de nuevos accesos"
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Clock size={18} className="text-[#F05984]" />
-                  Sesión
-                </h3>
-                <div className="bg-white/5 rounded-xl p-4">
-                  <label className="text-white/60 text-sm mb-1 block">Tiempo de sesión (minutos)</label>
-                  <select value={security.sessionTimeout} onChange={(e) => setSecurity({...security, sessionTimeout: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                    <option value="15">15 minutos</option>
-                    <option value="30">30 minutos</option>
-                    <option value="60">1 hora</option>
-                    <option value="120">2 horas</option>
-                  </select>
-                  <p className="text-white/40 text-sm mt-2">Último cambio de contraseña: {new Date(security.lastPasswordChange).toLocaleDateString()}</p>
+                  <p className="text-white/40 text-sm">Último cambio de contraseña: {new Date(security.lastPasswordChange).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
@@ -812,19 +663,19 @@ export const SettingsPage = () => {
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tema</label>
                     <select value={preferences.theme} onChange={(e) => setPreferences({...preferences, theme: e.target.value as PreferenceSettings['theme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="light">Claro</option>
                       <option value="dark">Oscuro</option>
-                      <option value="system">Sistema</option>
+                      <option value="light">Claro</option>
                     </select>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Esquema de colores</label>
-                    <select value={preferences.colorScheme} onChange={(e) => setPreferences({...preferences, colorScheme: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.colorScheme} onChange={(e) => setPreferences({...preferences, colorScheme: e.target.value as PreferenceSettings['colorScheme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="default">Predeterminado</option>
                       <option value="blue">Azul</option>
                       <option value="green">Verde</option>
                       <option value="purple">Púrpura</option>
                     </select>
+                    <p className="text-white/30 text-xs mt-1">Solo aplica con el tema oscuro</p>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tamaño de fuente</label>
@@ -834,32 +685,6 @@ export const SettingsPage = () => {
                       <option value="large">Grande</option>
                     </select>
                   </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Activity size={18} className="text-[#F05984]" />
-                  Comportamiento
-                </h3>
-                <div className="space-y-3">
-                  <CustomSwitch
-                    enabled={preferences.compactMode}
-                    onChange={(val) => setPreferences({...preferences, compactMode: val})}
-                    label="Modo compacto"
-                    description="Mostrar más información en menos espacio"
-                  />
-                  <CustomSwitch
-                    enabled={preferences.animations}
-                    onChange={(val) => setPreferences({...preferences, animations: val})}
-                    label="Animaciones"
-                    description="Efectos visuales en la interfaz"
-                  />
-                  <CustomSwitch
-                    enabled={preferences.soundEffects}
-                    onChange={(val) => setPreferences({...preferences, soundEffects: val})}
-                    label="Efectos de sonido"
-                    description="Reproducir sonidos en acciones"
-                  />
                 </div>
               </div>
               <div>
@@ -889,123 +714,37 @@ export const SettingsPage = () => {
             </div>
           )}
 
-          {activeSection === 'backup' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Database size={18} className="text-[#F05984]" />
-                  Configuración de respaldo
-                </h3>
-                <div className="space-y-4">
-                  <CustomSwitch
-                    enabled={backup.autoBackup}
-                    onChange={(val) => setBackup({...backup, autoBackup: val})}
-                    label="Respaldo automático"
-                    description="Realizar copias de seguridad automáticas"
-                  />
-                  {backup.autoBackup && (
-                    <>
-                      <div className="bg-white/5 rounded-xl p-4">
-                        <label className="text-white/60 text-sm mb-1 block">Frecuencia de respaldo</label>
-                        <select value={backup.backupFrequency} onChange={(e) => setBackup({...backup, backupFrequency: e.target.value as BackupSettings['backupFrequency']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                          <option value="daily">Diario</option>
-                          <option value="weekly">Semanal</option>
-                          <option value="monthly">Mensual</option>
-                        </select>
-                      </div>
-                      <div className="bg-white/5 rounded-xl p-4">
-                        <label className="text-white/60 text-sm mb-1 block">Ubicación de respaldo</label>
-                        <select value={backup.backupLocation} onChange={(e) => setBackup({...backup, backupLocation: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                          <option value="cloud">Nube</option>
-                          <option value="local">Local</option>
-                          <option value="external">Externo</option>
-                        </select>
-                      </div>
-                      <CustomSwitch
-                        enabled={backup.includeAttachments}
-                        onChange={(val) => setBackup({...backup, includeAttachments: val})}
-                        label="Incluir archivos adjuntos"
-                        description="Respaldar también los archivos"
-                      />
-                    </>
-                  )}
+          {activeSection === 'security' && (
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="space-y-4 p-5 border border-red-500/30 rounded-xl bg-red-500/5">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={20} className="text-red-400" />
+                  <h3 className="text-red-400 font-semibold">Zona de peligro</h3>
                 </div>
-              </div>
-              <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10">
-                <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <Cloud size={18} className="text-[#F05984]" />
-                  Último respaldo
-                </h3>
-                <div className="space-y-2">
-                  <p className="text-white/60 text-sm">Fecha: <span className="text-white">{backup.lastBackup}</span></p>
-                  <p className="text-white/60 text-sm">Tamaño: <span className="text-white">{backup.backupSize}</span></p>
-                </div>
-                <div className="flex gap-3 mt-4">
+                <p className="text-white/60 text-sm">Estas acciones son irreversibles. Ten cuidado.</p>
+                <div className="flex flex-wrap gap-3">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleExportData}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
+                    onClick={resetData}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg text-yellow-400 hover:text-yellow-300 transition-all"
                   >
-                    <Download size={16} />
-                    <span>Descargar respaldo</span>
+                    <RefreshCw size={16} />
+                    <span>Restaurar configuración</span>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleRestoreClick}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
+                    onClick={handleDeleteAccount}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all"
                   >
-                    <Upload size={16} />
-                    <span>Restaurar</span>
+                    <Trash2 size={16} />
+                    <span>Eliminar cuenta</span>
                   </motion.button>
-                  <input ref={restoreInputRef} type="file" accept="application/json" onChange={handleRestoreFile} className="hidden" />
                 </div>
-              </div>
-              <div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleExportData}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all"
-                >
-                  <Download size={16} />
-                  <span>Exportar todos los datos</span>
-                </motion.button>
               </div>
             </div>
           )}
-
-          {/* Danger Zone */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="space-y-4 p-5 border border-red-500/30 rounded-xl bg-red-500/5">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={20} className="text-red-400" />
-                <h3 className="text-red-400 font-semibold">Zona de peligro</h3>
-              </div>
-              <p className="text-white/60 text-sm">Estas acciones son irreversibles. Ten cuidado.</p>
-              <div className="flex flex-wrap gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={resetData}
-                  className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg text-yellow-400 hover:text-yellow-300 transition-all"
-                >
-                  <RefreshCw size={16} />
-                  <span>Restaurar configuración</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleDeleteAccount}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all"
-                >
-                  <Trash2 size={16} />
-                  <span>Eliminar cuenta</span>
-                </motion.button>
-              </div>
-            </div>
-          </div>
         </motion.div>
       </div>
 
