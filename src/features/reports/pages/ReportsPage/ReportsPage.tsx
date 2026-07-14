@@ -21,6 +21,7 @@ import { gastosService } from '../../../expenses/services';
 import { ingresosService } from '../../../incomes/services';
 import { categoriasService } from '../../../categories/services';
 import { presupuestosService } from '../../../budgets/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 
 const TIPO_LABEL: Record<TipoReporte, string> = {
   GASTOS_MENSUAL: 'Gastos Mensual',
@@ -192,8 +193,8 @@ const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: st
   return null;
 };
 
-const emptyForm = () => ({
-  clienteId: '',
+const emptyForm = (clienteId = '') => ({
+  clienteId,
   contadorId: '',
   nombre: '',
   tipoReporte: 'GASTOS_MENSUAL' as TipoReporte,
@@ -204,6 +205,7 @@ const emptyForm = () => ({
 });
 
 export const ReportsPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [reports, setReports] = useState<ApiReporte[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [contadores, setContadores] = useState<ApiUsuario[]>([]);
@@ -222,7 +224,7 @@ export const ReportsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ApiReporte | null>(null);
-  const [formData, setFormData] = useState(emptyForm());
+  const [formData, setFormData] = useState(emptyForm(isClientRole ? ownClienteId : ''));
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
 
@@ -290,7 +292,7 @@ export const ReportsPage = () => {
       await reportesService.create(buildPayload());
       toast.success('Reporte generado');
       setShowCreateModal(false);
-      setFormData(emptyForm());
+      setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchReports();
     } catch (e) {
       toast.error(`Error al generar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
@@ -435,7 +437,7 @@ export const ReportsPage = () => {
           </div>
           <div className="flex gap-2">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
+              onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Generar Reporte</span>
@@ -625,7 +627,7 @@ export const ReportsPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><FileText size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay reportes</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron reportes con los filtros actuales. Prueba a ajustar los filtros o genera un nuevo reporte.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
               className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
               <Plus size={18} />
               <span>Generar nuevo reporte</span>
@@ -764,10 +766,16 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                </select>
+                {isClientRole ? (
+                  <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                    {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
+                  </div>
+                ) : (
+                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
+                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Contador (opcional)</label>
@@ -836,9 +844,15 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                </select>
+                {isClientRole ? (
+                  <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                    {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
+                  </div>
+                ) : (
+                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
+                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Contador (opcional)</label>

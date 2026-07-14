@@ -17,12 +17,13 @@ import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle'
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { metasService, type ApiMeta, type Prioridad } from '../../services';
 import { clientesService, type ApiCliente } from '../../../clients/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 
 const PRIORIDAD_COLOR: Record<Prioridad, string> = { BAJA: '#10B981', MEDIA: '#F59E0B', ALTA: '#EF4444' };
 const PRIORIDAD_LABEL: Record<Prioridad, string> = { BAJA: 'Baja', MEDIA: 'Media', ALTA: 'Alta' };
 
-const emptyForm = () => ({
-  clienteId: '',
+const emptyForm = (clienteId = '') => ({
+  clienteId,
   nombre: '',
   descripcion: '',
   montoObjetivo: '',
@@ -36,6 +37,7 @@ const emptyForm = () => ({
 type Estado = 'todas' | 'activa' | 'completada' | 'inactiva';
 
 export const GoalsPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [goals, setGoals] = useState<ApiMeta[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ export const GoalsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<ApiMeta | null>(null);
-  const [formData, setFormData] = useState(emptyForm());
+  const [formData, setFormData] = useState(emptyForm(isClientRole ? ownClienteId : ''));
 
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
@@ -111,7 +113,7 @@ export const GoalsPage = () => {
       });
       toast.success('Meta creada');
       setShowCreateModal(false);
-      setFormData(emptyForm());
+      setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchGoals();
     } catch (e) {
       toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
@@ -252,7 +254,7 @@ export const GoalsPage = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
+            onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
           >
             <Plus size={20} />
@@ -431,7 +433,7 @@ export const GoalsPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Target size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay metas financieras</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron metas con los filtros actuales. Prueba a ajustar los filtros o crea una nueva meta.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
               <Plus size={18} />
               <span>Crear nueva meta</span>
             </motion.button>
@@ -583,10 +585,16 @@ export const GoalsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                </select>
+                {isClientRole ? (
+                  <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                    {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
+                  </div>
+                ) : (
+                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
+                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Nombre de la meta *</label>

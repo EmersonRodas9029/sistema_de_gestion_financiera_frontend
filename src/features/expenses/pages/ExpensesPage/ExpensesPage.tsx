@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { gastosService, type ApiGasto } from '../../services';
 import { clientesService as clientesSvc } from '../../../clients/services';
 import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingDown,
@@ -81,6 +82,7 @@ const toExpense = (api: ApiGasto, categoryName?: string): Expense => ({
 const CHART_COLORS = ['#F59E0B', '#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#EF4444', '#EC4899', '#6366F1'];
 
 export const ExpensesPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
@@ -95,7 +97,7 @@ export const ExpensesPage = () => {
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [formData, setFormData] = useState({
-    clienteId: '',
+    clienteId: isClientRole ? ownClienteId : '',
     categoriaId: '',
     description: '',
     amount: '',
@@ -290,7 +292,7 @@ export const ExpensesPage = () => {
       await fetchExpenses();
       setShowCreateModal(false);
       setFormData({
-        clienteId: '', categoriaId: '', description: '', amount: '',
+        clienteId: isClientRole ? ownClienteId : '', categoriaId: '', description: '', amount: '',
         date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia',
       });
       toast.success('Gasto creado');
@@ -1055,18 +1057,24 @@ export const ExpensesPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                      <select
-                        value={formData.clienteId}
-                        onChange={(e) => setFormData({...formData, clienteId: e.target.value, categoriaId: ''})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
-                        required
-                      >
-                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                        {clientesList.map(c => (
-                          <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
-                        ))}
-                      </select>
+                      {isClientRole ? (
+                        <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                          {clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}
+                        </div>
+                      ) : (
+                        <select
+                          value={formData.clienteId}
+                          onChange={(e) => setFormData({...formData, clienteId: e.target.value, categoriaId: ''})}
+                          className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                          required
+                        >
+                          <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                          {clientesList.map(c => (
+                            <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>

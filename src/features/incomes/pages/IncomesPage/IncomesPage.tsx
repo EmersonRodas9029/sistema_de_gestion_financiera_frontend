@@ -20,6 +20,7 @@ import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPe
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { ingresosService, type ApiIngreso } from '../../services';
 import { clientesService } from '../../../clients/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -77,8 +78,8 @@ const inputCls    = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounde
 const selectStyle = { backgroundColor: 'rgba(255,255,255,0.05)', color: 'white' };
 const optStyle    = { backgroundColor: '#1a0f14', color: 'white' };
 
-const emptyCreate = () => ({
-  clienteId: '', monto: '',
+const emptyCreate = (clienteId = '') => ({
+  clienteId, monto: '',
   fecha: new Date().toISOString().split('T')[0],
   tipo: 'ESTABLE', fuente: '', descripcion: '',
   metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '',
@@ -108,6 +109,7 @@ const FrecuenciaSelect = ({ value, onChange }: { value: string; onChange: (v: st
 );
 
 export const IncomesPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [ingresos, setIngresos]   = useState<Ingreso[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError]         = useState<string | null>(null);
@@ -127,7 +129,7 @@ export const IncomesPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal]     = useState(false);
   const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
-  const [createForm, setCreateForm] = useState(emptyCreate());
+  const [createForm, setCreateForm] = useState(emptyCreate(isClientRole ? ownClienteId : ''));
   const [editForm, setEditForm]     = useState({
     monto: '', fecha: '', tipo: 'ESTABLE', fuente: '', descripcion: '',
     metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '', activo: true,
@@ -260,7 +262,7 @@ export const IncomesPage = () => {
       });
       await fetchIngresos();
       setShowCreateModal(false);
-      setCreateForm(emptyCreate());
+      setCreateForm(emptyCreate(isClientRole ? ownClienteId : ''));
     } catch {
       setError('Error al crear el ingreso.');
     }
@@ -340,7 +342,7 @@ export const IncomesPage = () => {
         <div className="flex gap-2">
           <motion.button
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => { setCreateForm(emptyCreate()); setShowCreateModal(true); }}
+            onClick={() => { setCreateForm(emptyCreate(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <Plus size={20} />
@@ -739,14 +741,18 @@ export const IncomesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                <select value={createForm.clienteId}
-                  onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
-                  className={inputCls} style={selectStyle} required>
-                  <option value="" style={optStyle}>Seleccionar cliente</option>
-                  {clientesList.map(c => (
-                    <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
-                  ))}
-                </select>
+                {isClientRole ? (
+                  <div className={inputCls}>{clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}</div>
+                ) : (
+                  <select value={createForm.clienteId}
+                    onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
+                    className={inputCls} style={selectStyle} required>
+                    <option value="" style={optStyle}>Seleccionar cliente</option>
+                    {clientesList.map(c => (
+                      <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
@@ -815,7 +821,7 @@ export const IncomesPage = () => {
             </AnimatePresence>
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button"
-                onClick={() => { setShowCreateModal(false); setCreateForm(emptyCreate()); }}
+                onClick={() => { setShowCreateModal(false); setCreateForm(emptyCreate(isClientRole ? ownClienteId : '')); }}
                 className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
                 Cancelar
               </motion.button>
