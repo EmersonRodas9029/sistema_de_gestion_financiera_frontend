@@ -7,14 +7,15 @@ import {
 } from 'recharts';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { gastosService } from '../../../expenses/services';
+import { ingresosService } from '../../../incomes/services';
+import { categoriasService } from '../../../categories/services';
 import {
   TrendingUp,
-  TrendingDown, 
-  Calendar, 
-  Download, 
-  Filter, 
-  RefreshCw,
+  TrendingDown,
+  Calendar,
   ArrowUp,
+  ArrowDown,
   Activity,
   Target,
   BarChart3,
@@ -31,13 +32,22 @@ import {
   Shield,
   Sparkles,
   Briefcase,
-  Camera,
   Menu,
+  Tag,
+  DollarSign,
+  CreditCard,
   X as XIcon
 } from 'lucide-react';
 
 interface ChartData {
   month: string;
+  income: number;
+  expense: number;
+  savings: number;
+}
+
+interface QuarterData {
+  quarter: string;
   income: number;
   expense: number;
   savings: number;
@@ -50,50 +60,45 @@ interface CategoryData {
   icon?: React.ReactNode;
 }
 
-// Datos de ejemplo - Evolución mensual
-const monthlyData: ChartData[] = [
-  { month: 'Ene', income: 3250, expense: 2100, savings: 1150 },
-  { month: 'Feb', income: 3400, expense: 1950, savings: 1450 },
-  { month: 'Mar', income: 3100, expense: 2300, savings: 800 },
-  { month: 'Abr', income: 3550, expense: 2050, savings: 1500 },
-  { month: 'May', income: 3300, expense: 2250, savings: 1050 },
-  { month: 'Jun', income: 3600, expense: 1900, savings: 1700 },
-  { month: 'Jul', income: 3450, expense: 2150, savings: 1300 },
-  { month: 'Ago', income: 3200, expense: 2350, savings: 850 },
-  { month: 'Sep', income: 3350, expense: 2000, savings: 1350 },
-  { month: 'Oct', income: 3500, expense: 2200, savings: 1300 },
-  { month: 'Nov', income: 3650, expense: 2100, savings: 1550 },
-  { month: 'Dic', income: 3800, expense: 2500, savings: 1300 }
-];
+const sumBy = (values: number[]) => values.reduce((total, n) => total + n, 0);
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// Datos de categorías de ingresos con iconos - Colores del tema
-const incomeCategories: CategoryData[] = [
-  { name: 'Salario', value: 28500, color: '#F05984', icon: <Wallet size={14} /> },
-  { name: 'Servicios', value: 12500, color: '#BC455F', icon: <Briefcase size={14} /> },
-  { name: 'Ventas', value: 8500, color: '#6E4068', icon: <ShoppingBag size={14} /> },
-  { name: 'Inversiones', value: 4200, color: '#8b5cf6', icon: <TrendingUp size={14} /> },
-  { name: 'Otros', value: 3800, color: '#6b7280', icon: <Sparkles size={14} /> }
-];
+// Colores para fuentes de ingreso (no tienen categoría/color propio en la API)
+const INCOME_PALETTE = ['#F05984', '#BC455F', '#6E4068', '#8b5cf6', '#06b6d4', '#f59e0b', '#6366f1', '#6b7280'];
 
-// Datos de categorías de gastos con iconos - Colores del tema
-const expenseCategories: CategoryData[] = [
-  { name: 'Vivienda', value: 14400, color: '#F05984', icon: <HomeIcon size={14} /> },
-  { name: 'Alimentación', value: 5120, color: '#BC455F', icon: <Utensils size={14} /> },
-  { name: 'Transporte', value: 3240, color: '#6E4068', icon: <Car size={14} /> },
-  { name: 'Servicios', value: 2840, color: '#8b5cf6', icon: <Zap size={14} /> },
-  { name: 'Ocio', value: 2150, color: '#06b6d4', icon: <Film size={14} /> },
-  { name: 'Salud', value: 1850, color: '#ef4444', icon: <Heart size={14} /> },
-  { name: 'Compras', value: 1650, color: '#f59e0b', icon: <ShoppingBag size={14} /> },
-  { name: 'Seguros', value: 1350, color: '#6366f1', icon: <Shield size={14} /> }
-];
+// Mapa reducido de iconos por nombre codificado en categoria.icono ("expense:utensils")
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  home: <HomeIcon size={14} />,
+  utensils: <Utensils size={14} />,
+  car: <Car size={14} />,
+  heart: <Heart size={14} />,
+  shopping: <ShoppingBag size={14} />,
+  film: <Film size={14} />,
+  zap: <Zap size={14} />,
+  shield: <Shield size={14} />,
+  briefcase: <Briefcase size={14} />,
+  sparkles: <Sparkles size={14} />,
+  wallet: <Wallet size={14} />,
+  dollar: <DollarSign size={14} />,
+  credit: <CreditCard size={14} />,
+};
+const iconFor = (icono?: string) => {
+  const name = icono?.includes(':') ? icono.slice(icono.indexOf(':') + 1) : icono;
+  return CATEGORY_ICONS[name ?? ''] ?? <Tag size={14} />;
+};
 
-// Datos trimestrales
-const quarterlyData = [
-  { quarter: 'Q1 2024', income: 9750, expense: 6350, savings: 3400 },
-  { quarter: 'Q2 2024', income: 10450, expense: 6200, savings: 4250 },
-  { quarter: 'Q3 2024', income: 10000, expense: 6500, savings: 3500 },
-  { quarter: 'Q4 2024', income: 10950, expense: 6800, savings: 4150 }
-];
+// Insignia de tendencia (positiva/negativa) reutilizada en las tarjetas de resumen
+const TrendBadge = ({ value }: { value: number }) => {
+  const positive = value >= 0;
+  return (
+    <div className={`flex items-center gap-1 px-2 py-1 ${positive ? 'bg-green-500/20' : 'bg-red-500/20'} rounded-full group-hover:scale-105 transition-transform`}>
+      {positive ? <ArrowUp size={12} className="text-green-400" /> : <ArrowDown size={12} className="text-red-400" />}
+      <span className={`${positive ? 'text-green-400' : 'text-red-400'} text-xs font-medium`}>
+        {positive ? '+' : ''}{value.toFixed(1)}%
+      </span>
+    </div>
+  );
+};
 
 interface TooltipPayload {
   name: string;
@@ -261,45 +266,75 @@ export const ChartsPage = () => {
   const [activeTab, setActiveTab] = useState<'comparison' | 'income' | 'expense'>('comparison');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('6m');
   const [chartType, setChartType] = useState<'bar' | 'line' | 'area'>('bar');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({ start: '2024-01-01', end: '2024-12-31' });
+  const [dateRange, setDateRange] = useState({ start: '2026-01-01', end: '2026-12-31' });
 
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 800);
-  }, []);
+  const [monthlyData, setMonthlyData] = useState<ChartData[]>([]);
+  const [quarterlyData, setQuarterlyData] = useState<QuarterData[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<CategoryData[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<CategoryData[]>([]);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
+  const [clienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
 
-  const exportAsImage = useCallback(() => {
-    const charts = document.querySelectorAll('.recharts-wrapper');
-    charts.forEach((chart, index) => {
-      const svg = chart.querySelector('svg');
-      if (svg) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        const img = new Image();
-        
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          const link = document.createElement('a');
-          link.download = `chart-${index + 1}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        };
-        
-        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-      }
-    });
-  }, []);
+  const fetchChartData = useCallback(async () => {
+    if (!clienteId) { setIsLoading(false); return; }
+    setIsLoading(true);
+    try {
+      const [gastosLista, ingresosLista, categorias] = await Promise.all([
+        gastosService.getAll(), ingresosService.getAll(), categoriasService.getByCliente(clienteId),
+      ]);
+      // ponytail: /gastos y /ingresos solo listan campos resumidos (sin clienteId) — se pide el detalle completo de cada uno
+      const [gastosDetalle, ingresosDetalle] = await Promise.all([
+        Promise.all(gastosLista.map(g => gastosService.getById(g.id!).catch(() => g))),
+        Promise.all(ingresosLista.map(i => ingresosService.getById(i.id!).catch(() => i))),
+      ]);
+      const gastos = gastosDetalle.filter(g => g.clienteId === clienteId && g.activo !== false);
+      const ingresos = ingresosDetalle.filter(i => i.clienteId === clienteId && i.activo !== false);
+      const catById = new Map(categorias.map(c => [c.id, c]));
+
+      const now = new Date();
+      const months = Array.from({ length: 12 }, (_, idx) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (11 - idx), 1);
+        return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: capitalize(d.toLocaleDateString('es-ES', { month: 'short' })) };
+      });
+      const monthly: ChartData[] = months.map(({ key, label }) => {
+        const income = sumBy(ingresos.filter(i => i.fecha?.slice(0, 7) === key).map(i => i.monto ?? 0));
+        const expense = sumBy(gastos.filter(g => g.fecha?.slice(0, 7) === key).map(g => g.monto ?? 0));
+        return { month: label, income, expense, savings: income - expense };
+      });
+      setMonthlyData(monthly);
+
+      const quarters: QuarterData[] = Array.from({ length: 4 }, (_, q) => {
+        const chunk = monthly.slice(q * 3, q * 3 + 3);
+        const income = sumBy(chunk.map(m => m.income));
+        const expense = sumBy(chunk.map(m => m.expense));
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - (11 - (q * 3 + 2)), 1);
+        return { quarter: `Q${Math.floor(lastMonthDate.getMonth() / 3) + 1} ${lastMonthDate.getFullYear()}`, income, expense, savings: income - expense };
+      });
+      setQuarterlyData(quarters);
+
+      const expenseTotals = new Map<number, number>();
+      gastos.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
+      setExpenseCategories([...expenseTotals.entries()]
+        .map(([catId, value]) => {
+          const cat = catById.get(catId);
+          return { name: cat?.nombre ?? 'Sin categoría', value, color: cat?.color ?? '#6b7280', icon: iconFor(cat?.icono) };
+        })
+        .sort((a, b) => b.value - a.value));
+
+      const incomeTotals = new Map<string, number>();
+      ingresos.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotals.set(key, (incomeTotals.get(key) ?? 0) + (i.monto ?? 0)); });
+      setIncomeCategories([...incomeTotals.entries()]
+        .map(([name, value], idx) => ({ name, value, color: INCOME_PALETTE[idx % INCOME_PALETTE.length], icon: <Wallet size={14} /> }))
+        .sort((a, b) => b.value - a.value));
+    } catch (e) {
+      console.error('Error cargando datos de gráficos:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clienteId]);
+
+  useEffect(() => { fetchChartData(); }, [fetchChartData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
@@ -320,9 +355,22 @@ export const ChartsPage = () => {
   const filteredData = getFilteredData();
   const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.value, 0);
   const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.value, 0);
-  const savingsRate = ((totalIncome - totalExpense) / totalIncome) * 100;
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
 
   const topExpenseCategories = [...expenseCategories].sort((a, b) => b.value - a.value).slice(0, 5);
+  const topExpenseCategory = topExpenseCategories[0];
+  const topExpensePercentage = topExpenseCategory && totalExpense > 0 ? (topExpenseCategory.value / totalExpense) * 100 : 0;
+
+  const trendPct = (key: 'income' | 'expense' | 'savings') => {
+    if (monthlyData.length < 2) return 0;
+    const prev = monthlyData[monthlyData.length - 2][key];
+    const last = monthlyData[monthlyData.length - 1][key];
+    if (!prev) return last > 0 ? 100 : 0;
+    return ((last - prev) / Math.abs(prev)) * 100;
+  };
+  const incomeTrend = trendPct('income');
+  const expenseTrend = trendPct('expense');
+  const savingsTrend = trendPct('savings');
 
   if (isLoading) return <PageSkeleton />;
 
@@ -391,50 +439,13 @@ export const ChartsPage = () => {
         >
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05984]/15 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#BC455F]/15 rounded-full blur-3xl animate-pulse" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
-                <BarChart3 size={28} className="text-white" aria-hidden="true" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">Análisis y Gráficos</h1>
-                <p className="text-white/50 text-sm mt-1">Visualiza y analiza tus ingresos y gastos</p>
-              </div>
+          <div className="relative flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+              <BarChart3 size={28} className="text-white" aria-hidden="true" />
             </div>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRefresh}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
-              >
-                <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-xl transition-all duration-300 ${
-                  showFilters ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white backdrop-blur-sm'
-                }`}
-              >
-                <Filter size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={exportAsImage}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
-              >
-                <Camera size={20} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 text-white/80 hover:text-white backdrop-blur-sm"
-              >
-                <Download size={20} />
-              </motion.button>
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Análisis y Gráficos</h1>
+              <p className="text-white/50 text-sm mt-1">Visualiza y analiza tus ingresos y gastos</p>
             </div>
           </div>
         </motion.div>
@@ -450,11 +461,8 @@ export const ChartsPage = () => {
                 <p className="text-white/50 text-sm font-medium mb-2">Ingresos Totales</p>
                 <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
-                    <ArrowUp size={12} className="text-green-400" />
-                    <span className="text-green-400 text-xs font-medium">+8.5%</span>
-                  </div>
-                  <span className="text-white/30 text-xs">vs año anterior</span>
+                  <TrendBadge value={incomeTrend} />
+                  <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
@@ -472,11 +480,8 @@ export const ChartsPage = () => {
                 <p className="text-white/50 text-sm font-medium mb-2">Gastos Totales</p>
                 <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#BC455F] transition-colors">{formatCurrency(totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full group-hover:scale-105 transition-transform">
-                    <ArrowUp size={12} className="text-red-400" />
-                    <span className="text-red-400 text-xs font-medium">+3.2%</span>
-                  </div>
-                  <span className="text-white/30 text-xs">vs año anterior</span>
+                  <TrendBadge value={expenseTrend} />
+                  <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
@@ -494,11 +499,8 @@ export const ChartsPage = () => {
                 <p className="text-white/50 text-sm font-medium mb-2">Ahorro Total</p>
                 <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full group-hover:scale-105 transition-transform">
-                    <ArrowUp size={12} className="text-green-400" />
-                    <span className="text-green-400 text-xs font-medium">+12.4%</span>
-                  </div>
-                  <span className="text-white/30 text-xs">vs año anterior</span>
+                  <TrendBadge value={savingsTrend} />
+                  <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
@@ -633,14 +635,7 @@ export const ChartsPage = () => {
             </motion.button>
           </div>
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="p-5 border-b border-white/10 bg-white/5 overflow-hidden"
-              >
+          <div className="p-5 border-b border-white/10 bg-white/5">
                 <div className="flex flex-wrap gap-5 items-center">
                   <div className="flex items-center gap-3">
                     <Calendar size={16} className="text-white/40" />
@@ -658,54 +653,54 @@ export const ChartsPage = () => {
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-3 ml-auto">
-                    <span className="text-white/70 text-sm font-medium">Tipo de gráfico:</span>
-                    <div className="flex gap-2">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setChartType('bar')}
-                        className={`p-2 rounded-xl transition-all ${
-                          chartType === 'bar'
-                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
-                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-                        }`}
-                        title="Gráfico de barras"
-                      >
-                        <BarChart3 size={18} />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setChartType('line')}
-                        className={`p-2 rounded-xl transition-all ${
-                          chartType === 'line'
-                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
-                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-                        }`}
-                        title="Gráfico de líneas"
-                      >
-                        <LineChartIcon size={18} />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setChartType('area')}
-                        className={`p-2 rounded-xl transition-all ${
-                          chartType === 'area'
-                            ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
-                            : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
-                        }`}
-                        title="Gráfico de área"
-                      >
-                        <Activity size={18} />
-                      </motion.button>
+                  {activeTab === 'comparison' && (
+                    <div className="flex items-center gap-3 ml-auto">
+                      <span className="text-white/70 text-sm font-medium">Tipo de gráfico:</span>
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setChartType('bar')}
+                          className={`p-2 rounded-xl transition-all ${
+                            chartType === 'bar'
+                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                          }`}
+                          title="Gráfico de barras"
+                        >
+                          <BarChart3 size={18} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setChartType('line')}
+                          className={`p-2 rounded-xl transition-all ${
+                            chartType === 'line'
+                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                          }`}
+                          title="Gráfico de líneas"
+                        >
+                          <LineChartIcon size={18} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setChartType('area')}
+                          className={`p-2 rounded-xl transition-all ${
+                            chartType === 'area'
+                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
+                          }`}
+                          title="Gráfico de área"
+                        >
+                          <Activity size={18} />
+                        </motion.button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          </div>
 
           <div className="p-6">
             <LazyChart>
@@ -918,9 +913,9 @@ export const ChartsPage = () => {
                     <TrendingUp size={22} className="text-[#F05984]" />
                   </div>
                   <div>
-                    <p className="text-white font-semibold mb-2 text-base">Crecimiento de ingresos</p>
+                    <p className="text-white font-semibold mb-2 text-base">{incomeTrend >= 0 ? 'Crecimiento de ingresos' : 'Caída de ingresos'}</p>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Tus ingresos han aumentado un <span className="text-[#F05984] font-bold text-base">8.5%</span> respecto al año anterior
+                      Tus ingresos {incomeTrend >= 0 ? 'aumentaron' : 'disminuyeron'} un <span className="text-[#F05984] font-bold text-base">{Math.abs(incomeTrend).toFixed(1)}%</span> respecto al mes anterior
                     </p>
                   </div>
                 </div>
@@ -938,7 +933,9 @@ export const ChartsPage = () => {
                   <div>
                     <p className="text-white font-semibold mb-2 text-base">Área de oportunidad</p>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Tus gastos en ocio representan el <span className="text-[#BC455F] font-bold text-base">15%</span> del total
+                      {topExpenseCategory
+                        ? <>Tus gastos en {topExpenseCategory.name} representan el <span className="text-[#BC455F] font-bold text-base">{topExpensePercentage.toFixed(0)}%</span> del total</>
+                        : 'Aún no hay gastos registrados para analizar'}
                     </p>
                   </div>
                 </div>
@@ -956,7 +953,7 @@ export const ChartsPage = () => {
                   <div>
                     <p className="text-white font-semibold mb-2 text-base">Tasa de ahorro</p>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Tu tasa de ahorro actual es del <span className="text-[#F05984] font-bold text-base">{savingsRate.toFixed(0)}%</span>, por encima del promedio
+                      Tu tasa de ahorro actual es del <span className="text-[#F05984] font-bold text-base">{savingsRate.toFixed(0)}%</span> de tus ingresos totales
                     </p>
                   </div>
                 </div>

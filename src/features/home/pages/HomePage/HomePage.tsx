@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
   Target,
   Sparkles,
   Repeat,
@@ -29,8 +29,14 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
-import {  containerVariants, itemVariants } from '../../../../shared/utils';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { gastosService } from '../../../expenses/services';
+import { ingresosService } from '../../../incomes/services';
+import { categoriasService } from '../../../categories/services';
+import { metasService } from '../../../goals/services';
+import { presupuestosService } from '../../../budgets/services';
+import { gastosRecurrentesService } from '../../../recurring-expenses/services';
 
 interface QuickOption {
   id: string;
@@ -49,55 +55,74 @@ interface ChartDataPoint {
   gastos: number;
 }
 
-// Datos para el gráfico de 7 días
-const weeklyChartData: ChartDataPoint[] = [
-  { name: 'Lun', ingresos: 450, gastos: 320 },
-  { name: 'Mar', ingresos: 380, gastos: 420 },
-  { name: 'Mié', ingresos: 520, gastos: 380 },
-  { name: 'Jue', ingresos: 410, gastos: 450 },
-  { name: 'Vie', ingresos: 480, gastos: 390 },
-  { name: 'Sáb', ingresos: 530, gastos: 410 },
-  { name: 'Dom', ingresos: 490, gastos: 370 },
-];
+interface PieItem {
+  name: string;
+  value: number;
+  color: string;
+  amount: number;
+}
 
-// Datos para el gráfico de 6 meses
-const monthlyChartData: ChartDataPoint[] = [
-  { name: 'Ene', ingresos: 3200, gastos: 2800 },
-  { name: 'Feb', ingresos: 3600, gastos: 3100 },
-  { name: 'Mar', ingresos: 3800, gastos: 3200 },
-  { name: 'Abr', ingresos: 3500, gastos: 2800 },
-  { name: 'May', ingresos: 4000, gastos: 3300 },
-  { name: 'Jun', ingresos: 4200, gastos: 3400 },
-];
+interface TxItem {
+  id: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  date: string;
+}
 
-// Datos para el gráfico de pastel
-const pieChartExpensesData = [
-  { name: 'Alimentación', value: 35, color: '#F05984', amount: 1240.50 },
-  { name: 'Vivienda', value: 28, color: '#BC455F', amount: 1200.00 },
-  { name: 'Transporte', value: 15, color: '#6E4068', amount: 650.00 },
-  { name: 'Entretenimiento', value: 12, color: '#321D28', amount: 520.00 },
-  { name: 'Salud', value: 10, color: '#2DD4BF', amount: 430.00 },
-];
+interface HealthMetric {
+  name: string;
+  value: number;
+  color: string;
+}
 
-const pieChartIncomeData = [
-  { name: 'Salario', value: 45, color: '#F05984', amount: 3250.00 },
-  { name: 'Freelance', value: 30, color: '#BC455F', amount: 2150.00 },
-  { name: 'Inversiones', value: 15, color: '#6E4068', amount: 1080.00 },
-  { name: 'Otros', value: 10, color: '#321D28', amount: 720.00 },
-];
+interface DashboardData {
+  balance: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  savingsRate: number;
+  weekly: ChartDataPoint[];
+  monthly: ChartDataPoint[];
+  expensesByCategory: PieItem[];
+  incomeBySource: PieItem[];
+  recentTransactions: TxItem[];
+  transactionsCount: number;
+  avgExpensePerDay: number;
+  incomeTrend: number;
+  expenseTrend: number;
+  recurringCount: number;
+  budgetUsagePct: number | null;
+  goalsPending: number;
+  health: HealthMetric[];
+  financialScore: number;
+  projection: { income: number; expenses: number; balance: number };
+}
 
-const recentTransactions = [
-  { id: 1, description: 'Supermercado', amount: 156.75, type: 'expense', category: 'Alimentación', date: 'Hoy' },
-  { id: 2, description: 'Pago de nómina', amount: 2500.00, type: 'income', category: 'Salario', date: 'Ayer' },
-  { id: 3, description: 'Netflix', amount: 15.99, type: 'expense', category: 'Suscripciones', date: 'Ayer' },
-  { id: 4, description: 'Cliente Proyecto Web', amount: 3500.00, type: 'income', category: 'Servicios', date: '23 Feb' },
-];
+const emptyDashboard: DashboardData = {
+  balance: 0, monthlyIncome: 0, monthlyExpenses: 0, savingsRate: 0,
+  weekly: [], monthly: [], expensesByCategory: [], incomeBySource: [], recentTransactions: [],
+  transactionsCount: 0, avgExpensePerDay: 0, incomeTrend: 0, expenseTrend: 0,
+  recurringCount: 0, budgetUsagePct: null, goalsPending: 0,
+  health: [], financialScore: 0, projection: { income: 0, expenses: 0, balance: 0 },
+};
 
-const healthMetrics = [
-  { name: 'Control de Gastos', value: 85, color: '#F05984' },
-  { name: 'Capacidad de Ahorro', value: 72, color: '#BC455F' },
-  { name: 'Estabilidad', value: 68, color: '#6E4068' },
-];
+const sumBy = (values: number[]) => values.reduce((total, n) => total + n, 0);
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+const INCOME_PALETTE = ['#F05984', '#BC455F', '#6E4068', '#2DD4BF', '#8b5cf6', '#f59e0b'];
+
+// Etiqueta relativa para transacciones recientes ("Hoy" / "Ayer" / "23 jul")
+const relativeDayLabel = (fecha: string) => {
+  const d = new Date(`${fecha}T00:00:00`);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'Hoy';
+  if (sameDay(d, yesterday)) return 'Ayer';
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+};
 
 type ChartPeriod = 'week' | 'month';
 
@@ -106,23 +131,143 @@ export const HomePage = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [userRole] = useState<'admin' | 'client'>(localStorage.getItem('userRole') as 'admin' | 'client' || 'client');
   const [isLoading, setIsLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [period, setPeriod] = useState<ChartPeriod>('week');
   const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
+  const [data, setData] = useState<DashboardData>(emptyDashboard);
+  const [clienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
 
-  const stats = {
-    balance: 12580.75,
-    monthlyIncome: 3250.00,
-    monthlyExpenses: 1245.50,
-    savingsRate: 62
-  };
+  const fetchDashboard = useCallback(async () => {
+    if (!clienteId) { setIsLoading(false); return; }
+    setIsLoading(true);
+    try {
+      const [gastosLista, ingresosLista, categorias, metas, recurrentes, presupuestosLista] = await Promise.all([
+        gastosService.getAll(), ingresosService.getAll(), categoriasService.getByCliente(clienteId),
+        metasService.getByCliente(clienteId), gastosRecurrentesService.getByCliente(clienteId), presupuestosService.getAll(),
+      ]);
+      // ponytail: /gastos y /ingresos solo listan campos resumidos (sin clienteId) — se pide el detalle completo de cada uno
+      const [gastosDetalle, ingresosDetalle] = await Promise.all([
+        Promise.all(gastosLista.map(g => gastosService.getById(g.id!).catch(() => g))),
+        Promise.all(ingresosLista.map(i => ingresosService.getById(i.id!).catch(() => i))),
+      ]);
+      const gastos = gastosDetalle.filter(g => g.clienteId === clienteId && g.activo !== false);
+      const ingresos = ingresosDetalle.filter(i => i.clienteId === clienteId && i.activo !== false);
+      const catById = new Map(categorias.map(c => [c.id, c]));
+
+      const now = new Date();
+      const currentMonthKey = now.toISOString().slice(0, 7);
+
+      const balance = sumBy(ingresos.map(i => i.monto ?? 0)) - sumBy(gastos.map(g => g.monto ?? 0));
+      const monthlyIncome = sumBy(ingresos.filter(i => i.fecha?.slice(0, 7) === currentMonthKey).map(i => i.monto ?? 0));
+      const monthlyExpenses = sumBy(gastos.filter(g => g.fecha?.slice(0, 7) === currentMonthKey).map(g => g.monto ?? 0));
+      const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
+
+      const days = Array.from({ length: 7 }, (_, idx) => {
+        const d = new Date(now); d.setDate(now.getDate() - (6 - idx));
+        return { key: d.toISOString().slice(0, 10), label: capitalize(d.toLocaleDateString('es-ES', { weekday: 'short' })) };
+      });
+      const weekly: ChartDataPoint[] = days.map(({ key, label }) => ({
+        name: label,
+        ingresos: sumBy(ingresos.filter(i => i.fecha === key).map(i => i.monto ?? 0)),
+        gastos: sumBy(gastos.filter(g => g.fecha === key).map(g => g.monto ?? 0)),
+      }));
+
+      const months = Array.from({ length: 6 }, (_, idx) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
+        return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: capitalize(d.toLocaleDateString('es-ES', { month: 'short' })) };
+      });
+      const monthly: ChartDataPoint[] = months.map(({ key, label }) => ({
+        name: label,
+        ingresos: sumBy(ingresos.filter(i => i.fecha?.slice(0, 7) === key).map(i => i.monto ?? 0)),
+        gastos: sumBy(gastos.filter(g => g.fecha?.slice(0, 7) === key).map(g => g.monto ?? 0)),
+      }));
+
+      const monthTrend = (key: 'ingresos' | 'gastos') => {
+        const prev = monthly[monthly.length - 2]?.[key] ?? 0;
+        const last = monthly[monthly.length - 1]?.[key] ?? 0;
+        if (!prev) return last > 0 ? 100 : 0;
+        return ((last - prev) / Math.abs(prev)) * 100;
+      };
+      const incomeTrend = monthTrend('ingresos');
+      const expenseTrend = monthTrend('gastos');
+
+      const expenseTotals = new Map<number, number>();
+      gastos.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
+      const totalExpenseAmount = sumBy([...expenseTotals.values()]);
+      const expensesByCategory: PieItem[] = [...expenseTotals.entries()]
+        .map(([catId, amount]) => {
+          const cat = catById.get(catId);
+          return { name: cat?.nombre ?? 'Sin categoría', amount, color: cat?.color ?? '#6b7280', value: totalExpenseAmount > 0 ? Math.round((amount / totalExpenseAmount) * 100) : 0 };
+        })
+        .sort((a, b) => b.amount - a.amount);
+
+      const incomeTotals = new Map<string, number>();
+      ingresos.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotals.set(key, (incomeTotals.get(key) ?? 0) + (i.monto ?? 0)); });
+      const totalIncomeAmount = sumBy([...incomeTotals.values()]);
+      const incomeBySource: PieItem[] = [...incomeTotals.entries()]
+        .map(([name, amount], idx) => ({ name, amount, color: INCOME_PALETTE[idx % INCOME_PALETTE.length], value: totalIncomeAmount > 0 ? Math.round((amount / totalIncomeAmount) * 100) : 0 }))
+        .sort((a, b) => b.amount - a.amount);
+
+      const recentTransactions: TxItem[] = [
+        ...gastos.map(g => ({ id: `g${g.id}`, description: g.descripcion || 'Gasto', amount: g.monto ?? 0, type: 'expense' as const, category: catById.get(g.categoriaId ?? -1)?.nombre ?? 'Sin categoría', date: g.fecha ?? '' })),
+        ...ingresos.map(i => ({ id: `i${i.id}`, description: i.descripcion || i.fuente || 'Ingreso', amount: i.monto ?? 0, type: 'income' as const, category: i.fuente || i.tipo || 'Otro', date: i.fecha ?? '' })),
+      ]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 4)
+        .map(tx => ({ ...tx, date: relativeDayLabel(tx.date) }));
+
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const presupuestoCandidatos = presupuestosLista.filter(p => p.mes === currentMonth && p.anio === currentYear);
+      const presupuestoDetalle = await Promise.all(presupuestoCandidatos.map(p => presupuestosService.getById(p.id!)));
+      const totalPresupuestado = sumBy(presupuestoDetalle.filter(p => p.clienteId === clienteId && p.activo !== false).map(p => p.montoPresupuestado ?? 0));
+      const budgetUsagePct = totalPresupuestado > 0 ? Math.round((monthlyExpenses / totalPresupuestado) * 100) : null;
+
+      const goalsPending = metas.filter(m => !m.completada).length;
+      const recurringCount = recurrentes.filter(r => r.activo !== false).length;
+      const transactionsCount = gastos.length + ingresos.length;
+      const avgExpensePerDay = monthlyExpenses / Math.max(1, now.getDate());
+
+      const capacidadAhorro = clamp(savingsRate, 0, 100);
+      const controlGastos = budgetUsagePct != null
+        ? clamp(100 - budgetUsagePct, 0, 100)
+        : clamp(100 - (monthlyIncome > 0 ? (monthlyExpenses / monthlyIncome) * 100 : 0), 0, 100);
+      const mesesEstables = monthly.filter(m => m.ingresos - m.gastos >= 0).length;
+      const estabilidad = (mesesEstables / monthly.length) * 100;
+      const financialScore = Math.round((capacidadAhorro + controlGastos + estabilidad) / 3);
+
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      const daysElapsed = now.getDate();
+      const projectedIncome = (monthlyIncome / daysElapsed) * daysInMonth;
+      const projectedExpenses = (monthlyExpenses / daysElapsed) * daysInMonth;
+
+      setData({
+        balance, monthlyIncome, monthlyExpenses, savingsRate,
+        weekly, monthly, expensesByCategory, incomeBySource, recentTransactions,
+        transactionsCount, avgExpensePerDay, incomeTrend, expenseTrend,
+        recurringCount, budgetUsagePct, goalsPending,
+        health: [
+          { name: 'Control de Gastos', value: Math.round(controlGastos), color: '#F05984' },
+          { name: 'Capacidad de Ahorro', value: Math.round(capacidadAhorro), color: '#BC455F' },
+          { name: 'Estabilidad', value: Math.round(estabilidad), color: '#6E4068' },
+        ],
+        financialScore,
+        projection: { income: projectedIncome, expenses: projectedExpenses, balance: projectedIncome - projectedExpenses },
+      });
+    } catch (e) {
+      console.error('Error cargando el dashboard:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clienteId]);
+
+  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
   const quickOptions: QuickOption[] = [
-    { id: 'incomes', title: 'Ingresos', description: 'Registra tus ingresos', icon: <TrendingUp size={22} />, color: 'from-emerald-500/20 to-emerald-600/20', route: '/incomes', stats: '+12%' },
-    { id: 'expenses', title: 'Gastos', description: 'Controla tus gastos', icon: <TrendingDown size={22} />, color: 'from-rose-500/20 to-rose-600/20', route: '/expenses', stats: '-5%' },
-    { id: 'recurring-expenses', title: 'Gastos Rec.', description: 'Suscripciones', icon: <Repeat size={22} />, color: 'from-orange-500/20 to-orange-600/20', route: '/recurring-expenses', stats: '12' },
-    { id: 'budgets', title: 'Presupuestos', description: 'Controla límites', icon: <Wallet size={22} />, color: 'from-blue-500/20 to-blue-600/20', route: '/budgets', stats: '80%' },
-    { id: 'goals', title: 'Metas de Ahorro', description: 'Objetivos financieros', icon: <Target size={22} />, color: 'from-purple-500/20 to-purple-600/20', route: '/goals', stats: '3' },
+    { id: 'incomes', title: 'Ingresos', description: 'Registra tus ingresos', icon: <TrendingUp size={22} />, color: 'from-emerald-500/20 to-emerald-600/20', route: '/incomes', stats: `${data.incomeTrend >= 0 ? '+' : ''}${data.incomeTrend.toFixed(0)}%` },
+    { id: 'expenses', title: 'Gastos', description: 'Controla tus gastos', icon: <TrendingDown size={22} />, color: 'from-rose-500/20 to-rose-600/20', route: '/expenses', stats: `${data.expenseTrend >= 0 ? '+' : ''}${data.expenseTrend.toFixed(0)}%` },
+    { id: 'recurring-expenses', title: 'Gastos Rec.', description: 'Suscripciones', icon: <Repeat size={22} />, color: 'from-orange-500/20 to-orange-600/20', route: '/recurring-expenses', stats: String(data.recurringCount) },
+    { id: 'budgets', title: 'Presupuestos', description: 'Controla límites', icon: <Wallet size={22} />, color: 'from-blue-500/20 to-blue-600/20', route: '/budgets', stats: data.budgetUsagePct != null ? `${data.budgetUsagePct}%` : '—' },
+    { id: 'goals', title: 'Metas de Ahorro', description: 'Objetivos financieros', icon: <Target size={22} />, color: 'from-purple-500/20 to-purple-600/20', route: '/goals', stats: String(data.goalsPending) },
   ];
 
   useEffect(() => {
@@ -141,16 +286,7 @@ export const HomePage = () => {
     updateTime();
     const interval = setInterval(updateTime, 60000);
 
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-    }, 5000);
-
-    setTimeout(() => setIsLoading(false), 800);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timer);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const formatCurrency = (amount: number) => {
@@ -163,12 +299,12 @@ export const HomePage = () => {
 
   // Obtener datos del gráfico según el período
   const getChartData = (): ChartDataPoint[] => {
-    return period === 'week' ? weeklyChartData : monthlyChartData;
+    return period === 'week' ? data.weekly : data.monthly;
   };
 
   const chartData = getChartData();
-  
-  const currentPieData = activePieChart === 'expenses' ? pieChartExpensesData : pieChartIncomeData;
+
+  const currentPieData = activePieChart === 'expenses' ? data.expensesByCategory : data.incomeBySource;
   const totalAmount = currentPieData.reduce((sum, item) => sum + item.amount, 0);
 
   // Calcular totales según el período
@@ -210,14 +346,11 @@ export const HomePage = () => {
       style={{ backgroundColor: '#1a0f14' }}
     >
       {/* Welcome Banner */}
-      <AnimatePresence>
-        {showWelcome && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20, transition: { duration: 0.5, ease: "easeInOut" } }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#321D28] via-[#6E4068] to-[#BC455F] p-6 shadow-2xl"
-          >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#321D28] via-[#6E4068] to-[#BC455F] p-6 shadow-2xl"
+      >
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0YzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -230,14 +363,14 @@ export const HomePage = () => {
                     <p className="text-white/90 text-sm font-medium mb-1">Balance Total</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-4xl font-bold text-white">$</span>
-                      <span className="text-5xl font-bold text-white">{formatCurrency(stats.balance)}</span>
+                      <span className="text-5xl font-bold text-white">{formatCurrency(data.balance)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 mt-4">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-xl px-4 py-2 border border-white/30">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                    <span className="text-white font-semibold">+12.5%</span>
+                    {data.incomeTrend >= 0 ? <TrendingUp className="w-4 h-4 text-white" /> : <TrendingDown className="w-4 h-4 text-white" />}
+                    <span className="text-white font-semibold">{data.incomeTrend >= 0 ? '+' : ''}{data.incomeTrend.toFixed(1)}%</span>
                     <span className="text-white/80 text-sm">vs mes anterior</span>
                   </div>
                 </div>
@@ -250,22 +383,20 @@ export const HomePage = () => {
                     <ArrowUpRight className="w-4 h-4 text-emerald-300" />
                     <span className="text-white/90 text-sm font-medium">Ingresos</span>
                   </div>
-                  <div className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyIncome)}</div>
-                  <p className="text-emerald-300 text-xs mt-1 font-medium">+12% este mes</p>
+                  <div className="text-2xl font-bold text-white">{formatCurrency(data.monthlyIncome)}</div>
+                  <p className="text-emerald-300 text-xs mt-1 font-medium">{data.incomeTrend >= 0 ? '+' : ''}{data.incomeTrend.toFixed(0)}% este mes</p>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 min-w-[140px]">
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowDownRight className="w-4 h-4 text-rose-300" />
                     <span className="text-white/90 text-sm font-medium">Gastos</span>
                   </div>
-                  <div className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyExpenses)}</div>
-                  <p className="text-rose-300 text-xs mt-1 font-medium">-5% vs mes anterior</p>
+                  <div className="text-2xl font-bold text-white">{formatCurrency(data.monthlyExpenses)}</div>
+                  <p className="text-rose-300 text-xs mt-1 font-medium">{data.expenseTrend >= 0 ? '+' : ''}{data.expenseTrend.toFixed(0)}% vs mes anterior</p>
                 </motion.div>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </motion.div>
 
       {/* Quick Stats Row */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -280,13 +411,13 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Tasa de Ahorro</p>
-              <p className="text-2xl font-bold text-white">{stats.savingsRate}%</p>
+              <p className="text-2xl font-bold text-white">{data.savingsRate.toFixed(0)}%</p>
             </div>
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${stats.savingsRate}%` }}
+              animate={{ width: `${clamp(data.savingsRate, 0, 100)}%` }}
               transition={{ duration: 1, delay: 0.5 }}
               className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" 
             />
@@ -304,7 +435,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Transacciones</p>
-              <p className="text-2xl font-bold text-white">145</p>
+              <p className="text-2xl font-bold text-white">{data.transactionsCount}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Total registradas</p>
@@ -321,7 +452,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Gasto Promedio</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(42)}</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(data.avgExpensePerDay)}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Por día</p>
@@ -338,7 +469,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Diferencia</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyIncome - stats.monthlyExpenses)}</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(data.monthlyIncome - data.monthlyExpenses)}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Este mes</p>
@@ -468,7 +599,10 @@ export const HomePage = () => {
           >
             <h3 className="text-lg font-bold text-white mb-4">Actividad Reciente</h3>
             <div className="space-y-2">
-              {recentTransactions.map((tx) => (
+              {data.recentTransactions.length === 0 && (
+                <p className="text-white/40 text-sm">Aún no hay transacciones registradas</p>
+              )}
+              {data.recentTransactions.map((tx) => (
                 <motion.div
                   key={tx.id}
                   whileHover={{ x: 4 }}
@@ -595,12 +729,14 @@ export const HomePage = () => {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-[#F05984]">78</div>
-                <p className="text-white/40 text-xs">Bueno</p>
+                <div className="text-3xl font-bold text-[#F05984]">{data.financialScore}</div>
+                <p className="text-white/40 text-xs">
+                  {data.financialScore >= 70 ? 'Bueno' : data.financialScore >= 40 ? 'Regular' : 'Bajo'}
+                </p>
               </div>
             </div>
             <div className="space-y-4">
-              {healthMetrics.map((metric, idx) => (
+              {data.health.map((metric, idx) => (
                 <div key={idx}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-white/50 text-xs font-medium">{metric.name}</span>
@@ -641,21 +777,21 @@ export const HomePage = () => {
                   <span className="text-white/50 text-xs">Ingresos Estimados</span>
                   <TrendingUp className="w-3 h-3 text-emerald-400" />
                 </div>
-                <p className="text-emerald-400 font-bold text-lg">{formatCurrency(4200)}</p>
+                <p className="text-emerald-400 font-bold text-lg">{formatCurrency(data.projection.income)}</p>
               </div>
               <div className="bg-white/5 rounded-xl p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-white/50 text-xs">Gastos Estimados</span>
                   <TrendingDown className="w-3 h-3 text-rose-400" />
                 </div>
-                <p className="text-rose-400 font-bold text-lg">{formatCurrency(2800)}</p>
+                <p className="text-rose-400 font-bold text-lg">{formatCurrency(data.projection.expenses)}</p>
               </div>
               <div className="bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-xl p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-white/70 text-xs">Balance Proyectado</span>
                   <Wallet className="w-3 h-3 text-white/70" />
                 </div>
-                <p className="text-white font-bold text-lg">{formatCurrency(1400)}</p>
+                <p className="text-white font-bold text-lg">{formatCurrency(data.projection.balance)}</p>
               </div>
             </div>
           </motion.div>

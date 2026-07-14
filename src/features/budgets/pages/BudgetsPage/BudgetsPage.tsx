@@ -30,6 +30,7 @@ import { presupuestosService, type ApiPresupuesto } from '../../services';
 import { clientesService, type ApiCliente } from '../../../clients/services';
 import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
 import { gastosService, type ApiGasto } from '../../../expenses/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -38,8 +39,8 @@ const MESES = [
 
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1', '#EF4444'];
 
-const emptyForm = () => ({
-  clienteId: '',
+const emptyForm = (clienteId = '') => ({
+  clienteId,
   categoriaId: '',
   montoPresupuestado: '',
   mes: String(new Date().getMonth() + 1),
@@ -48,6 +49,7 @@ const emptyForm = () => ({
 });
 
 export const BudgetsPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [budgets, setBudgets] = useState<ApiPresupuesto[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [categoriasByClient, setCategoriasByClient] = useState<Record<number, ApiCategoria[]>>({});
@@ -65,7 +67,7 @@ export const BudgetsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<ApiPresupuesto | null>(null);
-  const [formData, setFormData] = useState(emptyForm());
+  const [formData, setFormData] = useState(emptyForm(isClientRole ? ownClienteId : ''));
   const [formCategorias, setFormCategorias] = useState<ApiCategoria[]>([]);
 
   const itemsPerPage = getViewPreferences().itemsPerPage;
@@ -144,7 +146,7 @@ export const BudgetsPage = () => {
       });
       toast.success('Presupuesto creado');
       setShowCreateModal(false);
-      setFormData(emptyForm());
+      setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchBudgets();
     } catch (e) {
       toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Ya existe un presupuesto para ese cliente/categoría/mes/año'}`);
@@ -267,7 +269,7 @@ export const BudgetsPage = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
+              onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
             >
               <Plus size={20} />
@@ -482,7 +484,7 @@ export const BudgetsPage = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setFormData(emptyForm()); setShowCreateModal(true); }}
+              onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
               className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
             >
               <Plus size={18} /><span>Crear nuevo presupuesto</span>
@@ -637,16 +639,22 @@ export const BudgetsPage = () => {
           <form onSubmit={(e) => { e.preventDefault(); handleCreateBudget(); }} className="space-y-5">
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-              <select
-                value={formData.clienteId}
-                onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                required
-              >
-                <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-              </select>
+              {isClientRole ? (
+                <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                  {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
+                </div>
+              ) : (
+                <select
+                  value={formData.clienteId}
+                  onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })}
+                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                  required
+                >
+                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                </select>
+              )}
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>

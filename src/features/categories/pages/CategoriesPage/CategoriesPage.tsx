@@ -4,6 +4,7 @@ import { categoriasService, type ApiCategoria } from '../../services';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { clientesService } from '../../../clients/services';
 import { gastosService } from '../../../expenses/services';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderTree,
@@ -161,6 +162,7 @@ const itemVariants = {
 };
 
 export const CategoriesPage = () => {
+  const { isClientRole, ownClienteId } = getCurrentClientSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => getViewPreferences().defaultView);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,7 +178,7 @@ export const CategoriesPage = () => {
     isActive: true
   });
   const [formData, setFormData] = useState({
-    clienteId: '',
+    clienteId: isClientRole ? ownClienteId : '',
     name: '',
     type: 'expense',
     icon: 'utensils',
@@ -331,7 +333,7 @@ export const CategoriesPage = () => {
       setActiveClienteId(clienteId);
       await fetchCategories(clienteId);
       setShowCreateModal(false);
-      setFormData({ clienteId: '', name: '', type: 'expense', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
+      setFormData({ clienteId: isClientRole ? ownClienteId : '', name: '', type: 'expense', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
       toast.success('Categoría creada');
     } catch (e) {
       toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
@@ -1241,14 +1243,20 @@ export const CategoriesPage = () => {
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-5">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
-                    <select value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})}
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                      style={{ backgroundColor: '#1a0f14', color: 'white' }} required>
-                      <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                      {clientesList.map(c => (
-                        <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
-                      ))}
-                    </select>
+                    {isClientRole ? (
+                      <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/70">
+                        {clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}
+                      </div>
+                    ) : (
+                      <select value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
+                        style={{ backgroundColor: '#1a0f14', color: 'white' }} required>
+                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
+                        {clientesList.map(c => (
+                          <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
