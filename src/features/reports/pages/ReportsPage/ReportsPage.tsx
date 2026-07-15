@@ -248,7 +248,7 @@ export const ReportsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isClientRole, ownClienteId]);
+  },sClientRole, ownClienteId]);
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTipo]);

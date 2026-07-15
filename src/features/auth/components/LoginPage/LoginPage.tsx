@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { LoginForm } from './LoginForm';
-import { 
-  TrendingUp, 
-  Shield, 
-  CreditCard, 
+import { Logo } from '../../../../shared/components/ui/Logo';
+import {
+  Shield,
+  CreditCard,
   PieChart,
   ArrowRight,
   Star,
@@ -37,10 +37,8 @@ export const LoginPage = () => {
           {/* Logo y marca */}
           <div>
             <div className="flex items-center space-x-2 mb-12">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-                <TrendingUp size={24} className="text-white" />
-              </div>
-              <span className="text-2xl font-bold">FinanSys</span>
+              <Logo size={40} />
+              <span className="text-2xl font-bold">BudgEase</span>
             </div>
           </div>
 
@@ -102,11 +100,7 @@ export const LoginPage = () => {
             <div className="text-center space-y-8">
               {/* Logo para móvil */}
               <div className="lg:hidden flex justify-center mb-8">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
-                >
-                  <TrendingUp size={32} className="text-white" />
-                </div>
+                <Logo size={64} />
               </div>
 
               <div className="space-y-2">
@@ -150,7 +144,7 @@ export const LoginPage = () => {
                   <Star size={16} fill="currentColor" />
                 </div>
                 <p className="text-gray-600 italic">
-                  "Desde que uso FinanSys, el control de mis finanzas nunca fue tan fácil"
+                  "Desde que uso BudgEase, el control de mis finanzas nunca fue tan fácil"
                 </p>
                 <p className="text-sm font-semibold text-gray-900 mt-2">
                   — María González, Contadora

@@ -4,6 +4,7 @@ import {
   LogOut, FolderTree, FileText, Bell, Home, BarChart3, Repeat
 } from 'lucide-react';
 import { useUnreadNotificationsCount } from '../../../hooks/useUnreadNotificationsCount';
+import { Logo } from '../../ui/Logo';
 
 interface MenuItem {
   path: string;
@@ -79,7 +80,8 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
   return (
     <aside className="h-full w-64 bg-gradient-to-b from-[#321D28] via-[#6E4068] to-[#BC455F] flex flex-col">
       {/* Logo */}
-      <div className="flex items-center justify-center p-5 border-b border-white/10">
+      <div className="flex items-center justify-center gap-2.5 p-5 border-b border-white/10">
+        <Logo size={32} />
         <h1 className="text-xl font-bold text-white tracking-tight">BudgEase</h1>
       </div>
 

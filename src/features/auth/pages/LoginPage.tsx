@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
 import { authService } from '../services';
 import { clientesService } from '../../clients/services';
+import { Logo } from '../../../shared/components/ui/Logo';
 import {
-  TrendingUp,
   Shield,
   CreditCard,
   PieChart,
@@ -66,9 +66,7 @@ export const LoginPage = () => {
         <div className="relative z-10 flex flex-col w-full">
           <div className="p-12">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-                <TrendingUp size={24} className="text-white" />
-              </div>
+              <Logo size={40} />
               <span className="text-2xl font-bold">BudgEase</span>
             </div>
           </div>
@@ -117,11 +115,7 @@ export const LoginPage = () => {
           {!showLogin ? (
             <div className="text-center space-y-8">
               <div className="lg:hidden flex justify-center mb-8">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
-                >
-                  <TrendingUp size={32} className="text-white" />
-                </div>
+                <Logo size={64} />
               </div>
 
               <div className="space-y-2">
