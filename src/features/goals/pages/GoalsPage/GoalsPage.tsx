@@ -63,7 +63,11 @@ export const GoalsPage = () => {
   const fetchGoals = useCallback(async () => {
     setIsLoading(true);
     try {
-      const list = await metasService.getAll();
+      // Un usuario con rol cliente solo debe ver sus propias metas: se usa el endpoint
+      // ya scopeado por cliente en vez de traer y filtrar todas.
+      const list = isClientRole
+        ? await metasService.getByCliente(Number(ownClienteId))
+        : await metasService.getAll();
       const full = await Promise.all(list.map(item => metasService.getById(item.id!)));
       setGoals(full);
     } catch (e) {
@@ -71,10 +75,11 @@ export const GoalsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isClientRole, ownClienteId]);
 
   useEffect(() => { fetchGoals(); }, [fetchGoals]);
   useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedEstado, selectedPrioridad]);
 
   const progressOf = (g: ApiMeta) => {
     const objetivo = g.montoObjetivo ?? 0;
@@ -481,10 +486,10 @@ export const GoalsPage = () => {
                       <td className="py-3 px-4 text-right text-white font-semibold">{formatCurrency(goal.montoActual ?? 0)} <span className="text-white/40 font-normal">/ {formatCurrency(goal.montoObjetivo ?? 0)}</span></td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(goal)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(goal)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Meta">
                             <Edit size={14} />
                           </motion.button>
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteGoal(goal.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteGoal(goal.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Meta">
                             <Trash2 size={14} />
                           </motion.button>
                         </div>
@@ -552,17 +557,17 @@ export const GoalsPage = () => {
                         <span>{goal.fechaLimite ? formatDate(goal.fechaLimite) : 'Sin fecha límite'}</span>
                       </div>
                       {remaining !== null && (
-                        remaining > 0
-                          ? <span className={isAtRisk ? 'text-red-400 font-medium' : 'text-white/40'}>{remaining} días</span>
-                          : <span className="text-green-400">Vencida</span>
+                        remaining >= 0
+                          ? <span className={isAtRisk ? 'text-red-400 font-medium' : 'text-white/40'}>{remaining === 0 ? 'Vence hoy' : `${remaining} días`}</span>
+                          : <span className="text-red-400 font-medium">Vencida</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-2">{getPriorityBadge(goal.prioridad)}</div>
                     <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(goal)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar meta">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(goal)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Meta">
                         <Edit size={14} />
                       </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteGoal(goal.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar meta">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteGoal(goal.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Meta">
                         <Trash2 size={14} />
                       </motion.button>
                     </div>

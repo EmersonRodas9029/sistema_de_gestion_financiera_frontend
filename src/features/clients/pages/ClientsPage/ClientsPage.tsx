@@ -464,13 +464,13 @@ export const ClientsPage = () => {
                       {u.rol === 'CLIENTE' && u.cliente && (
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditOpen(u)}
-                          className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar perfil cliente">
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar Cliente">
                           <Edit size={14} />
                         </motion.button>
                       )}
                       <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                         onClick={() => handleDelete(u)}
-                        className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar">
+                        className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar Cliente">
                         <Trash2 size={14} />
                       </motion.button>
                     </div>
@@ -512,12 +512,12 @@ export const ClientsPage = () => {
                       <div className="flex items-center gap-1">
                         {u.rol === 'CLIENTE' && u.cliente && (
                           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400">
+                            onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar Cliente">
                             <Edit size={16} />
                           </motion.button>
                         )}
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400">
+                          onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar Cliente">
                           <Trash2 size={16} />
                         </motion.button>
                       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
 import { authService } from '../services';
+import { clientesService } from '../../clients/services';
 import {
   TrendingUp,
   Shield,
@@ -29,6 +30,15 @@ export const LoginPage = () => {
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userId', String(userId));
       localStorage.setItem('authToken', token);
+
+      if (rol === 'CLIENTE' && email) {
+        // Único enlace usuario -> cliente es el email; se resuelve una vez aquí para
+        // que todas las páginas tengan clienteId disponible sin depender de visitar Configuración.
+        const clientes = await clientesService.getAll().catch(() => []);
+        const cliente = clientes.find(c => c.email?.toLowerCase() === email.toLowerCase());
+        if (cliente?.id != null) localStorage.setItem('clienteId', String(cliente.id));
+      }
+
       navigate('/');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Credenciales incorrectas. Por favor, intenta de nuevo.');
