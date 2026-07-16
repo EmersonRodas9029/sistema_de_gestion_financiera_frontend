@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, UserPlus, Search, Filter, Edit, Trash2,
   ChevronDown, ChevronUp, BarChart3, Save, CheckCircle, XCircle,
-  Shield, User, MailIcon,
+  Shield, User, MailIcon, RotateCcw, UserCog, UserX,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip } from 'recharts';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
@@ -12,6 +12,7 @@ import { usuariosService, clientesService, type ApiUsuario } from '../../service
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { useManagedClient, setManagedClient, clearManagedClient } from '../../../../shared/hooks/useManagedClient';
 
 interface Usuario {
   id: string;
@@ -68,6 +69,7 @@ const RolTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ p
 };
 
 export const ClientsPage = () => {
+  const managedClient = useManagedClient();
   const [searchTerm, setSearchTerm]       = useState('');
   const [selectedRol, setSelectedRol]     = useState<string>('todos');
   const [selectedActivo, setSelectedActivo] = useState<string>('todos');
@@ -203,14 +205,41 @@ export const ClientsPage = () => {
   const handleDelete = async (u: Usuario) => {
     if (!window.confirm('¿Desactivar este usuario?')) return;
     try {
-      if (u.rol === 'CLIENTE' && u.cliente?.id) {
-        await clientesService.remove(u.cliente.id);
-      } else {
-        await usuariosService.remove(u.id);
-      }
+      // Siempre vía usuariosService: desactiva el usuario (bloquea login) y cascada al cliente asociado.
+      // clientesService.remove solo desactiva el cliente, sin bloquear el login del usuario.
+      await usuariosService.remove(u.id);
       await fetchUsuarios();
     } catch {
       setError('Error al desactivar el usuario.');
+    }
+  };
+
+  const handleActivar = async (u: Usuario) => {
+    if (!window.confirm('¿Reactivar este usuario? Podrá iniciar sesión de nuevo y su información volverá a estar activa.')) return;
+    try {
+      await usuariosService.activar(u.id);
+      await fetchUsuarios();
+    } catch {
+      setError('Error al activar el usuario.');
+    }
+  };
+
+  const handleDeletePermanente = async (u: Usuario) => {
+    if (!window.confirm('¿Eliminar DEFINITIVAMENTE este usuario? Esta acción no se puede deshacer. Si tiene registros asociados (gastos, ingresos, etc.) la operación será rechazada.')) return;
+    try {
+      await usuariosService.removePermanente(u.id);
+      await fetchUsuarios();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al eliminar el usuario definitivamente.');
+    }
+  };
+
+  const handleToggleGestionar = (u: Usuario) => {
+    if (!u.cliente?.id) return;
+    if (managedClient?.id === u.cliente.id) {
+      clearManagedClient();
+    } else {
+      setManagedClient(u.cliente.id, u.cliente.nombreCompleto || u.username);
     }
   };
 
@@ -429,7 +458,11 @@ export const ClientsPage = () => {
               {paginated.map((u, i) => (
                 <motion.div key={u.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4, scale: 1.02 }}
-                  className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all hover:shadow-xl">
+                  className={`bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all hover:shadow-xl ${
+                    managedClient?.id === u.cliente?.id && u.cliente
+                      ? 'border-[#F05984] shadow-lg shadow-[#F05984]/20'
+                      : 'border-white/10 hover:border-[#F05984]/50'
+                  }`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-r flex items-center justify-center text-white font-bold text-lg shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
@@ -442,6 +475,11 @@ export const ClientsPage = () => {
                         )}
                       </div>
                     </div>
+                    {managedClient?.id === u.cliente?.id && u.cliente && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F05984]/20 text-[#F05984] flex items-center gap-1">
+                        <UserCog size={10} /> Gestionando
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center gap-2 text-sm">
@@ -461,18 +499,41 @@ export const ClientsPage = () => {
                       {u.activo ? 'Activo' : 'Inactivo'}
                     </span>
                     <div className="flex gap-1">
+                      {u.rol === 'CLIENTE' && u.cliente && u.activo && (
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => handleToggleGestionar(u)}
+                          className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#F05984]/20 text-[#F05984]' : 'hover:bg-[#F05984]/20 text-white/50 hover:text-[#F05984]'}`}
+                          title={managedClient?.id === u.cliente.id ? 'Dejar de Gestionar' : 'Gestionar Cliente'}>
+                          {managedClient?.id === u.cliente.id ? <UserX size={14} /> : <UserCog size={14} />}
+                        </motion.button>
+                      )}
                       {u.rol === 'CLIENTE' && u.cliente && (
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditOpen(u)}
-                          className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar perfil cliente">
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar Cliente">
                           <Edit size={14} />
                         </motion.button>
                       )}
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(u)}
-                        className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Eliminar">
-                        <Trash2 size={14} />
-                      </motion.button>
+                      {u.activo ? (
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDelete(u)}
+                          className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Desactivar Cliente">
+                          <Trash2 size={14} />
+                        </motion.button>
+                      ) : (
+                        <>
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => handleActivar(u)}
+                            className="p-1.5 hover:bg-green-500/20 rounded-lg text-green-400" title="Activar Cliente">
+                            <RotateCcw size={14} />
+                          </motion.button>
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeletePermanente(u)}
+                            className="p-1.5 hover:bg-red-700/30 rounded-lg text-red-500" title="Eliminar Definitivamente">
+                            <Trash2 size={14} strokeWidth={2.5} />
+                          </motion.button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -488,7 +549,11 @@ export const ClientsPage = () => {
               {paginated.map((u, i) => (
                 <motion.div key={u.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }} transition={{ delay: i * 0.03 }} whileHover={{ scale: 1.01 }}
-                  className="bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border border-white/10 hover:border-[#F05984]/30 transition-all hover:shadow-lg">
+                  className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all hover:shadow-lg ${
+                    managedClient?.id === u.cliente?.id && u.cliente
+                      ? 'border-[#F05984] shadow-lg shadow-[#F05984]/10'
+                      : 'border-white/10 hover:border-[#F05984]/30'
+                  }`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-lg bg-gradient-to-r flex items-center justify-center text-white font-bold shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
                       {u.username.charAt(0).toUpperCase()}
@@ -502,6 +567,11 @@ export const ClientsPage = () => {
                         <span className={`px-2 py-0.5 rounded-full text-xs ${u.rol === 'CLIENTE' ? 'bg-[#F05984]/20 text-[#F05984]' : 'bg-purple-500/20 text-purple-400'}`}>
                           {u.rol}
                         </span>
+                        {managedClient?.id === u.cliente?.id && u.cliente && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F05984]/20 text-[#F05984] flex items-center gap-1">
+                            <UserCog size={10} /> Gestionando
+                          </span>
+                        )}
                       </div>
                       <p className="text-white/50 text-xs mt-0.5">{u.email}</p>
                     </div>
@@ -510,16 +580,37 @@ export const ClientsPage = () => {
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                       <div className="flex items-center gap-1">
+                        {u.rol === 'CLIENTE' && u.cliente && u.activo && (
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => handleToggleGestionar(u)}
+                            className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#F05984]/20 text-[#F05984]' : 'hover:bg-[#F05984]/20 text-white/50 hover:text-[#F05984]'}`}
+                            title={managedClient?.id === u.cliente.id ? 'Dejar de Gestionar' : 'Gestionar Cliente'}>
+                            {managedClient?.id === u.cliente.id ? <UserX size={16} /> : <UserCog size={16} />}
+                          </motion.button>
+                        )}
                         {u.rol === 'CLIENTE' && u.cliente && (
                           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400">
+                            onClick={() => handleEditOpen(u)} className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400" title="Editar Cliente">
                             <Edit size={16} />
                           </motion.button>
                         )}
-                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400">
-                          <Trash2 size={16} />
-                        </motion.button>
+                        {u.activo ? (
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDelete(u)} className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400" title="Desactivar Cliente">
+                            <Trash2 size={16} />
+                          </motion.button>
+                        ) : (
+                          <>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={() => handleActivar(u)} className="p-1.5 hover:bg-green-500/20 rounded-lg text-green-400" title="Activar Cliente">
+                              <RotateCcw size={16} />
+                            </motion.button>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDeletePermanente(u)} className="p-1.5 hover:bg-red-700/30 rounded-lg text-red-500" title="Eliminar Definitivamente">
+                              <Trash2 size={16} strokeWidth={2.5} />
+                            </motion.button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -125,7 +125,7 @@ export const IncomesPage = () => {
   const [sortOrder, setSortOrder]           = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage]       = useState(1);
 
-  const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
+  const [clientesList, setClientesList] = useState<{ id: number; nombre: string; activo: boolean }[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal]     = useState(false);
   const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
@@ -146,7 +146,10 @@ export const IncomesPage = () => {
       const detailed = await Promise.all(
         list.map(item => ingresosService.getById(item.id!).catch(() => item))
       );
-      setIngresos(detailed.map(toIngreso));
+      // El endpoint /ingresos no filtra por cliente en el backend: un usuario con rol cliente
+      // solo debe ver sus propios ingresos, así que se filtra en el cliente.
+      const scoped = isClientRole ? detailed.filter(i => Number(i.clienteId) === Number(ownClienteId)) : detailed;
+      setIngresos(scoped.map(toIngreso));
     } catch {
       setError('No se pudo conectar con el servidor.');
     } finally {
@@ -156,12 +159,16 @@ export const IncomesPage = () => {
 
   useEffect(() => { fetchIngresos(); }, []);
 
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTipo, selectedActivo, selectedMetodo, selectedPeriod]);
+
   useEffect(() => {
-    if (!showCreateModal) return;
     clientesService.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto, activo: c.activo !== false })));
     }).catch(() => {});
-  }, [showCreateModal]);
+  }, []);
+
+  const clienteNombre = (id: number) => clientesList.find(c => c.id === id)?.nombre ?? `Cliente #${id}`;
+  const clientesActivos = clientesList.filter(c => c.activo);
 
   // Stats
   const now = new Date();
@@ -276,7 +283,7 @@ export const IncomesPage = () => {
       tipo:            ingreso.tipo,
       fuente:          ingreso.fuente ?? '',
       descripcion:     ingreso.descripcion ?? '',
-      metodoRecepcion: ingreso.metodoRecepcion,
+      metodoRecepcion: ingreso.metodoRecepcion ?? '',
       esRecurrente:    ingreso.esRecurrente,
       frecuencia:      ingreso.frecuencia ?? '',
       activo:          ingreso.activo,
@@ -617,7 +624,7 @@ export const IncomesPage = () => {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-white/60 text-sm"># {ingreso.clienteId}</span>
+                          <span className="text-white/60 text-sm">{clienteNombre(ingreso.clienteId)}</span>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
@@ -638,15 +645,15 @@ export const IncomesPage = () => {
                           <span className="text-white font-bold">{formatCurrency(ingreso.monto)}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-1">
                             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                               onClick={() => handleEditOpen(ingreso)}
-                              className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400" title="Editar">
+                              className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400" title="Editar Ingreso">
                               <Edit size={16} />
                             </motion.button>
                             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                               onClick={() => handleDelete(ingreso)}
-                              className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400" title="Eliminar">
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400" title="Eliminar Ingreso">
                               <Trash2 size={16} />
                             </motion.button>
                           </div>
@@ -685,7 +692,7 @@ export const IncomesPage = () => {
                     <div className="space-y-2 mb-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Cliente:</span>
-                        <span className="text-white"># {ingreso.clienteId}</span>
+                        <span className="text-white">{clienteNombre(ingreso.clienteId)}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Fecha:</span>
@@ -693,7 +700,7 @@ export const IncomesPage = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/60">Método:</span>
-                        <span className="text-white">{METODO_LABEL[ingreso.metodoRecepcion]}</span>
+                        <span className="text-white">{ingreso.metodoRecepcion ? METODO_LABEL[ingreso.metodoRecepcion] : '—'}</span>
                       </div>
                       {ingreso.esRecurrente && ingreso.frecuencia && (
                         <div className="flex items-center justify-between text-sm">
@@ -705,15 +712,15 @@ export const IncomesPage = () => {
 
                     <div className="flex items-center justify-between pt-3 border-t border-white/10">
                       <span className="text-lg font-bold text-white">{formatCurrency(ingreso.monto)}</span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditOpen(ingreso)}
-                          className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400">
+                          className="p-1.5 rounded-lg hover:bg-blue-500/20 transition-all text-blue-400" title="Editar Ingreso">
                           <Edit size={16} />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleDelete(ingreso)}
-                          className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400">
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all text-red-400" title="Eliminar Ingreso">
                           <Trash2 size={16} />
                         </motion.button>
                       </div>
@@ -748,7 +755,7 @@ export const IncomesPage = () => {
                     onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
                     className={inputCls} style={selectStyle} required>
                     <option value="" style={optStyle}>Seleccionar cliente</option>
-                    {clientesList.map(c => (
+                    {clientesActivos.map(c => (
                       <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
                     ))}
                   </select>
@@ -756,7 +763,7 @@ export const IncomesPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
-                <input type="number" step="0.01" value={createForm.monto}
+                <input type="number" step="0.01" min="0.01" value={createForm.monto}
                   onChange={e => setCreateForm({...createForm, monto: e.target.value})}
                   className={inputCls} placeholder="0.00" required />
               </div>
@@ -843,7 +850,7 @@ export const IncomesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto</label>
-                <input type="number" step="0.01" value={editForm.monto}
+                <input type="number" step="0.01" min="0.01" value={editForm.monto}
                   onChange={e => setEditForm({...editForm, monto: e.target.value})} className={inputCls} />
               </div>
               <div>

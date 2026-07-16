@@ -33,9 +33,11 @@ export const gastosRecurrentesService = {
     diaMes?: number | null; diaSemana?: number | null;
   }): Promise<ApiGastoRecurrente> =>
     fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
-  // PUT pisa la fila completa (no es un patch real): hay que reenviar todos los campos
+  // PUT pisa la fila completa (no es un patch real): hay que reenviar todos los campos,
+  // incluyendo clienteId/categoriaId/fechaInicio o el backend los borra silenciosamente.
   update: (id: number, data: {
-    monto: number; descripcion?: string; frecuencia: Frecuencia; fechaFin?: string | null;
+    clienteId: number; categoriaId?: number; monto: number; descripcion?: string;
+    frecuencia: Frecuencia; fechaInicio: string; fechaFin?: string | null;
     diaMes?: number | null; diaSemana?: number | null; activo: boolean;
   }): Promise<ApiGastoRecurrente> =>
     fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),

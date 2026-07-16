@@ -340,13 +340,13 @@ export const AdminPage = () => {
                   <td className="py-3 px-4 text-white/60">{client.lastActive}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
+                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white" title={`Ver ${client.name}`}>
                         <Eye size={16} />
                       </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">
+                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white" title="Editar Cliente">
                         <Edit size={16} />
                       </button>
-                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-red-400">
+                      <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-red-400" title="Eliminar Cliente">
                         <Trash2 size={16} />
                       </button>
                       <button className="p-1 hover:bg-white/10 rounded transition-colors text-white/60 hover:text-white">

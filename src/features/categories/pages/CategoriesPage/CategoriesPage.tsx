@@ -231,13 +231,15 @@ export const CategoriesPage = () => {
     }
   }, []);
 
-  const [activeClienteId, setActiveClienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
+  const [activeClienteId, setActiveClienteId] = useState(() => Number(ownClienteId || 0));
   useEffect(() => { if (activeClienteId) fetchCategories(activeClienteId); else setIsLoading(false); }, [fetchCategories, activeClienteId]);
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTypeFilter, showInactive, showWithBudget]);
 
   useEffect(() => {
     if (!showCreateModal) return;
     clientesService.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null && c.activo !== false).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
     }).catch(() => {});
   }, [showCreateModal]);
 
@@ -327,7 +329,7 @@ export const CategoriesPage = () => {
         descripcion: formData.description || undefined,
         color: formData.color,
         icono: encodeIcono(formData.type, formData.icon),
-        presupuestoMensual: formData.budget ? parseFloat(formData.budget) : undefined,
+        presupuestoMensual: formData.type === 'expense' && formData.budget ? parseFloat(formData.budget) : undefined,
       });
       localStorage.setItem('clienteId', String(clienteId));
       setActiveClienteId(clienteId);
@@ -357,7 +359,7 @@ export const CategoriesPage = () => {
       await categoriasService.update(Number(selectedCategory.id), {
         nombre: editFormData.name,
         descripcion: editFormData.description || undefined,
-        presupuestoMensual: editFormData.budget ? parseFloat(editFormData.budget) : undefined,
+        presupuestoMensual: selectedCategory.type === 'expense' && editFormData.budget ? parseFloat(editFormData.budget) : undefined,
         activa: editFormData.isActive,
       });
       await fetchCategories(activeClienteId);
@@ -894,7 +896,7 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleEditCategory(category)}
                               className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                              title="Editar categoría"
+                              title="Editar Categoría"
                             >
                               <Edit size={14} />
                             </motion.button>
@@ -903,7 +905,7 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleDeleteCategory(category.id)}
                               className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                              title="Eliminar categoría"
+                              title="Eliminar Categoría"
                             >
                               <Trash2 size={14} />
                             </motion.button>
@@ -984,6 +986,7 @@ export const CategoriesPage = () => {
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleEditCategory(category)}
                                 className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                                title="Editar Categoría"
                               >
                                 <Edit size={16} />
                               </motion.button>
@@ -992,6 +995,7 @@ export const CategoriesPage = () => {
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleDeleteCategory(category.id)}
                                 className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                                title="Eliminar Categoría"
                               >
                                 <Trash2 size={16} />
                               </motion.button>
@@ -1067,6 +1071,7 @@ export const CategoriesPage = () => {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleEditCategory(category)}
                             className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                            title="Editar Categoría"
                           >
                             <Edit size={14} />
                           </motion.button>
@@ -1075,6 +1080,7 @@ export const CategoriesPage = () => {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleDeleteCategory(category.id)}
                             className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                            title="Eliminar Categoría"
                           >
                             <Trash2 size={14} />
                           </motion.button>
@@ -1125,6 +1131,7 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleEditCategory(category)}
                               className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
+                              title="Editar Categoría"
                             >
                               <Edit size={16} />
                             </motion.button>
@@ -1133,6 +1140,7 @@ export const CategoriesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleDeleteCategory(category.id)}
                               className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
+                              title="Eliminar Categoría"
                             >
                               <Trash2 size={16} />
                             </motion.button>
@@ -1304,13 +1312,15 @@ export const CategoriesPage = () => {
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
                     <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Descripción opcional..." />
                   </div>
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual (solo para gastos)</label>
-                    <div className="relative">
-                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                      <input type="number" step="0.01" value={formData.budget} onChange={(e) => setFormData({...formData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" />
+                  {formData.type === 'expense' && (
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual (solo para gastos)</label>
+                      <div className="relative">
+                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input type="number" step="0.01" min="0" value={formData.budget} onChange={(e) => setFormData({...formData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
                     <label htmlFor="isActive" className="text-white/60 text-sm">Activa (visible en transacciones)</label>
@@ -1386,13 +1396,15 @@ export const CategoriesPage = () => {
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
                     <textarea value={editFormData.description} onChange={(e) => setEditFormData({...editFormData, description: e.target.value})} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
                   </div>
-                  <div>
-                    <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual</label>
-                    <div className="relative">
-                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                      <input type="number" step="0.01" value={editFormData.budget} onChange={(e) => setEditFormData({...editFormData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+                  {selectedCategory?.type === 'expense' && (
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual</label>
+                      <div className="relative">
+                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input type="number" step="0.01" min="0" value={editFormData.budget} onChange={(e) => setEditFormData({...editFormData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="editIsActive" checked={editFormData.isActive} onChange={(e) => setEditFormData({...editFormData, isActive: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
                     <label htmlFor="editIsActive" className="text-white/60 text-sm">Activa</label>

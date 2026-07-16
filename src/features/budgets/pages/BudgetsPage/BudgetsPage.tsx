@@ -73,6 +73,7 @@ export const BudgetsPage = () => {
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
+  const clientesActivos = clientes.filter(c => c.activo !== false);
   const categoriaNombre = (clienteId?: number, categoriaId?: number) => {
     if (!categoriaId) return 'Sin categoría';
     const lista = categoriasByClient[clienteId ?? -1] ?? [];
@@ -90,9 +91,12 @@ export const BudgetsPage = () => {
     try {
       const list = await presupuestosService.getAll();
       const full = await Promise.all(list.map(item => presupuestosService.getById(item.id!)));
-      setBudgets(full);
+      // El endpoint /presupuestos no filtra por cliente en el backend: un usuario con rol cliente
+      // solo debe ver sus propios presupuestos, así que se filtra en el cliente.
+      const scoped = isClientRole ? full.filter(b => b.clienteId === Number(ownClienteId)) : full;
+      setBudgets(scoped);
 
-      const clienteIds = [...new Set(full.map(b => b.clienteId).filter((id): id is number => id != null))];
+      const clienteIds = [...new Set(scoped.map(b => b.clienteId).filter((id): id is number => id != null))];
       const entries = await Promise.all(
         clienteIds.map(async id => [id, await fetchCategoriasCompletas(id).catch(() => [])] as const)
       );
@@ -102,15 +106,19 @@ export const BudgetsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isClientRole, ownClienteId]);
 
   useEffect(() => { fetchBudgets(); }, [fetchBudgets]);
-  useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedEstado]);
+  useEffect(() => {
+    clientesService.getAll().then(setClientes)
+      .catch(() => toast.error('No se pudieron cargar los clientes.'));
+  }, []);
   useEffect(() => {
     gastosService.getAll()
       .then(list => Promise.all(list.map(g => gastosService.getById(g.id!).catch(() => g))))
       .then(setGastos)
-      .catch(() => {});
+      .catch(() => toast.error('No se pudieron cargar los gastos para calcular el presupuesto usado.'));
   }, []);
 
   // Gastado real por presupuesto: gastos del mismo cliente/mes/año, filtrando por categoría si el presupuesto la tiene
@@ -360,7 +368,7 @@ export const BudgetsPage = () => {
             <div className="space-y-4">
               {topThreeCategories.map((cat, index) => (
                 <motion.div
-                  key={cat.nombre}
+                  key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -532,10 +540,10 @@ export const BudgetsPage = () => {
                       <td className="py-3 px-4 text-right text-white font-semibold">{formatCurrency(budget.montoPresupuestado ?? 0)}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Presupuesto">
                             <Edit size={14} />
                           </motion.button>
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Presupuesto">
                             <Trash2 size={14} />
                           </motion.button>
                         </div>
@@ -607,10 +615,10 @@ export const BudgetsPage = () => {
                       />
                     </div>
                     <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(budget)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Presupuesto">
                         <Edit size={14} />
                       </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteBudget(budget.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Presupuesto">
                         <Trash2 size={14} />
                       </motion.button>
                     </div>
@@ -652,7 +660,7 @@ export const BudgetsPage = () => {
                   required
                 >
                   <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                  {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                 </select>
               )}
             </div>

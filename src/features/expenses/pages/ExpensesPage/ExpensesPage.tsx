@@ -44,6 +44,7 @@ import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 
 interface Expense {
   id: string;
+  clienteId: number;
   description: string;
   amount: number;
   category: string;
@@ -67,6 +68,7 @@ const PM_FROM_API: Record<string, Expense['paymentMethod']> = {
 
 const toExpense = (api: ApiGasto, categoryName?: string): Expense => ({
   id: String(api.id),
+  clienteId: api.clienteId ?? 0,
   description: api.descripcion ?? '',
   amount: api.monto ?? 0,
   category: categoryName ?? String(api.categoriaId ?? ''),
@@ -94,6 +96,9 @@ export const ExpensesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [editStatus, setEditStatus] = useState<'completado' | 'cancelado'>('completado');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'category'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [formData, setFormData] = useState({
@@ -118,27 +123,35 @@ export const ExpensesPage = () => {
       const full = await Promise.all(
         list.map(item => gastosService.getById(item.id!).catch(() => item))
       );
-      const categoriaIds = [...new Set(full.map(g => g.categoriaId).filter((id): id is number => id != null))];
+      // El endpoint /gastos no filtra por cliente en el backend: un usuario con rol cliente
+      // solo debe ver sus propios gastos, así que se filtra en el cliente.
+      const scoped = isClientRole ? full.filter(g => g.clienteId === Number(ownClienteId)) : full;
+      const categoriaIds = [...new Set(scoped.map(g => g.categoriaId).filter((id): id is number => id != null))];
       const categoriaEntries = await Promise.all(
         categoriaIds.map(id => categoriasService.getById(id).then(c => [id, c.nombre] as const).catch(() => [id, undefined] as const))
       );
       const categoriaNombres = new Map(categoriaEntries);
-      setExpenses(full.map(g => toExpense(g, categoriaNombres.get(g.categoriaId ?? -1))));
+      setExpenses(scoped.map(g => toExpense(g, categoriaNombres.get(g.categoriaId ?? -1))));
     } catch (e) {
       console.error('Error cargando gastos:', e);
+      toast.error('No se pudo conectar con el servidor.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isClientRole, ownClienteId]);
 
   useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
 
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedCategory, selectedStatus, selectedPaymentMethod, selectedPeriod]);
+
   useEffect(() => {
-    if (!showCreateModal) return;
+    if (!showCreateModal && !showEditModal) return;
     clientesSvc.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null && c.activo !== false).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
     }).catch(() => {});
-  }, [showCreateModal]);
+  }, [showCreateModal, showEditModal]);
+
+  const clienteNombre = (id: number) => clientesList.find(c => c.id === id)?.nombre ?? `Cliente #${id}`;
 
   useEffect(() => {
     if (!formData.clienteId) { setCategoriasList([]); return; }
@@ -313,21 +326,38 @@ export const ExpensesPage = () => {
     }
   };
 
-  const handleToggleActivo = async (expense: Expense) => {
+  const openEditModal = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setFormData({
+      clienteId: String(expense.clienteId),
+      categoriaId: expense.categoryId,
+      description: expense.description,
+      amount: String(expense.amount),
+      date: expense.date,
+      paymentMethod: expense.paymentMethod,
+    });
+    setEditStatus(expense.status);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateExpense = async () => {
+    if (!selectedExpense) return;
     try {
       // PUT /gastos/{id} pisa la fila completa (no es un patch real): hay que reenviar todos los campos
-      await gastosService.update(Number(expense.id), {
-        categoriaId: Number(expense.categoryId),
-        monto: expense.amount,
-        fecha: expense.date,
-        descripcion: expense.description,
-        metodoPago: PM_TO_API[expense.paymentMethod] ?? 'EFECTIVO',
-        esRecurrente: expense.recurring,
-        frecuencia: expense.recurringFrequency ?? null,
-        activo: expense.status === 'cancelado',
+      await gastosService.update(Number(selectedExpense.id), {
+        categoriaId: Number(formData.categoriaId),
+        monto: parseFloat(formData.amount),
+        fecha: formData.date,
+        descripcion: formData.description || undefined,
+        metodoPago: PM_TO_API[formData.paymentMethod] ?? 'EFECTIVO',
+        esRecurrente: selectedExpense.recurring,
+        frecuencia: selectedExpense.recurringFrequency ?? null,
+        activo: editStatus === 'completado',
       });
       await fetchExpenses();
-      toast.success(expense.status === 'cancelado' ? 'Gasto activado' : 'Gasto cancelado');
+      setShowEditModal(false);
+      setSelectedExpense(null);
+      toast.success('Gasto actualizado');
     } catch (e) {
       toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
@@ -426,7 +456,14 @@ export const ExpensesPage = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setFormData({
+                clienteId: isClientRole ? ownClienteId : '',
+                categoriaId: '', description: '', amount: '',
+                date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia',
+              });
+              setShowCreateModal(true);
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
           >
             <Plus size={20} />
@@ -925,9 +962,9 @@ export const ExpensesPage = () => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => handleToggleActivo(expense)}
+                              onClick={() => openEditModal(expense)}
                               className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400"
-                              title={expense.status === 'cancelado' ? 'Activar' : 'Cancelar'}
+                              title="Editar Gasto"
                             >
                               <Edit size={16} />
                             </motion.button>
@@ -936,7 +973,7 @@ export const ExpensesPage = () => {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleDeleteExpense(expense.id)}
                               className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
-                              title="Eliminar"
+                              title="Eliminar Gasto"
                             >
                               <Trash2 size={16} />
                             </motion.button>
@@ -1010,9 +1047,9 @@ export const ExpensesPage = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleToggleActivo(expense)}
+                          onClick={() => openEditModal(expense)}
                           className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400"
-                          title={expense.status === 'cancelado' ? 'Activar' : 'Cancelar'}
+                          title="Editar Gasto"
                         >
                           <Edit size={16} />
                         </motion.button>
@@ -1021,6 +1058,7 @@ export const ExpensesPage = () => {
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleDeleteExpense(expense.id)}
                           className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
+                          title="Eliminar Gasto"
                         >
                           <Trash2 size={16} />
                         </motion.button>
@@ -1117,6 +1155,7 @@ export const ExpensesPage = () => {
                         <input
                           type="number"
                           step="0.01"
+                          min="0.01"
                           value={formData.amount}
                           onChange={(e) => setFormData({...formData, amount: e.target.value})}
                           className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
@@ -1175,6 +1214,136 @@ export const ExpensesPage = () => {
                     >
                       <Save size={18} />
                       <span>Guardar Gasto</span>
+                    </motion.button>
+                  </div>
+                </form>
+          </div>
+        </ModalOverlay>
+      </AnimatePresence>
+
+      {/* Modal para editar gasto */}
+      <AnimatePresence>
+        <ModalOverlay
+          isOpen={showEditModal && !!selectedExpense}
+          onClose={() => setShowEditModal(false)}
+          title="Editar Gasto"
+          subtitle="Modifica los datos del gasto"
+          icon={<Edit size={20} className="text-white" />}
+        >
+          <div>
+                <form onSubmit={(e) => { e.preventDefault(); handleUpdateExpense(); }} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Cliente</label>
+                      <div className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/60">
+                        {clienteNombre(Number(formData.clienteId))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
+                      <select
+                        value={formData.categoriaId}
+                        onChange={(e) => setFormData({...formData, categoriaId: e.target.value})}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                        required
+                      >
+                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar categoría</option>
+                        {categoriasList.map(cat => (
+                          <option key={cat.id} value={cat.id} style={{ backgroundColor: '#1a0f14' }}>{cat.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Descripción *</label>
+                      <div className="relative">
+                        <FileText size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input
+                          type="text"
+                          value={formData.description}
+                          onChange={(e) => setFormData({...formData, description: e.target.value})}
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          placeholder="Ej: Supermercado"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
+                      <div className="relative">
+                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={formData.amount}
+                          onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
+                      <div className="relative">
+                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                        <input
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) => setFormData({...formData, date: e.target.value})}
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
+                      <select
+                        value={formData.paymentMethod}
+                        onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+                      >
+                        <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
+                        <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
+                        <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
+                        <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer w-fit">
+                    <div className={`w-10 h-5 rounded-full transition-colors relative ${editStatus === 'completado' ? 'bg-green-500' : 'bg-white/20'}`}
+                      onClick={() => setEditStatus(editStatus === 'completado' ? 'cancelado' : 'completado')}>
+                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${editStatus === 'completado' ? 'translate-x-5' : ''}`} />
+                    </div>
+                    <span className="text-white/60 text-sm">{editStatus === 'completado' ? 'Completado' : 'Cancelado'}</span>
+                  </label>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors font-medium"
+                    >
+                      Cancelar
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                    >
+                      <Save size={18} />
+                      <span>Guardar Cambios</span>
                     </motion.button>
                   </div>
                 </form>

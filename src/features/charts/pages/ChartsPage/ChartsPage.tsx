@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { gastosService } from '../../../expenses/services';
 import { ingresosService } from '../../../incomes/services';
 import { categoriasService } from '../../../categories/services';
@@ -274,7 +275,7 @@ export const ChartsPage = () => {
   const [incomeCategories, setIncomeCategories] = useState<CategoryData[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<CategoryData[]>([]);
 
-  const [clienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
+  const [clienteId] = useState(() => Number(getCurrentClientSession().ownClienteId || 0));
 
   const fetchChartData = useCallback(async () => {
     if (!clienteId) { setIsLoading(false); return; }

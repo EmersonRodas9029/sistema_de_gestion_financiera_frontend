@@ -27,7 +27,7 @@ const DIA_SEMANA_LABEL: Record<number, string> = { 1: 'Lunes', 2: 'Martes', 3: '
 const monthlyEquivalent = (e: ApiGastoRecurrente) => {
   const monto = e.monto ?? 0;
   if (e.frecuencia === 'DIARIO') return monto * 30;
-  if (e.frecuencia === 'SEMANAL') return monto * 4;
+  if (e.frecuencia === 'SEMANAL') return monto * (52 / 12); // ~4.33 semanas/mes, no 4
   if (e.frecuencia === 'ANUAL') return monto / 12;
   return monto; // MENSUAL
 };
@@ -74,6 +74,7 @@ export const RecurringExpensesPage = () => {
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
+  const clientesActivos = clientes.filter(c => c.activo !== false);
   const allCategorias = Object.values(categoriasByClient).flat();
   const categoriaOf = (id?: number) => id == null ? undefined : allCategorias.find(c => c.id === id);
   const categoriaNombre = (id?: number) => id == null ? 'Sin categoría' : (categoriaOf(id)?.nombre ?? `Categoría #${id}`);
@@ -112,9 +113,16 @@ export const RecurringExpensesPage = () => {
 
   useEffect(() => {
     clientesService.getAll()
-      .then(list => { setClientes(list); return fetchExpenses(list); })
+      .then(list => {
+        setClientes(list);
+        // Un usuario con rol cliente solo debe ver/agregar sus propios gastos recurrentes.
+        const scoped = isClientRole ? list.filter(c => Number(c.id) === Number(ownClienteId)) : list;
+        return fetchExpenses(scoped);
+      })
       .catch(() => setIsLoading(false));
-  }, [fetchExpenses]);
+  }, [fetchExpenses, isClientRole, ownClienteId]);
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedCliente, selectedCategoria, selectedFrecuencia, selectedEstado]);
 
   // Categorías de gasto del cliente seleccionado en el formulario (crear)
   useEffect(() => {
@@ -191,9 +199,12 @@ export const RecurringExpensesPage = () => {
     if (!validatePayload(monto, formData.frecuencia, fechaInicio, fechaFin, diaMes, diaSemana)) return;
     try {
       await gastosRecurrentesService.update(selectedExpense.id, {
+        clienteId: selectedExpense.clienteId!,
+        categoriaId: selectedExpense.categoriaId,
         monto,
         descripcion: formData.descripcion || undefined,
         frecuencia: formData.frecuencia,
+        fechaInicio,
         fechaFin,
         diaMes,
         diaSemana,
@@ -538,10 +549,10 @@ export const RecurringExpensesPage = () => {
                       <td className="py-3 px-4 text-right text-white font-semibold">{formatCurrency(expense.monto ?? 0)}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-2">
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(expense)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(expense)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Gasto Recurrente">
                             <Edit size={14} />
                           </motion.button>
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Gasto Recurrente">
                             <Trash2 size={14} />
                           </motion.button>
                         </div>
@@ -605,10 +616,10 @@ export const RecurringExpensesPage = () => {
                     )}
                   </div>
                   <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(expense)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar gasto">
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(expense)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Gasto Recurrente">
                       <Edit size={14} />
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar gasto">
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDeleteExpense(expense.id)} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Gasto Recurrente">
                       <Trash2 size={14} />
                     </motion.button>
                   </div>
@@ -637,7 +648,7 @@ export const RecurringExpensesPage = () => {
                 ) : (
                   <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
                     <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                   </select>
                 )}
               </div>

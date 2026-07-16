@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import {
   Bell, CheckCheck, Trash2,
   Clock, AlertCircle, Target, CreditCard, Archive, BellOff, XCircle
@@ -62,7 +63,7 @@ export const NotificationsPage = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const clienteId = Number(localStorage.getItem('clienteId'));
+      const clienteId = Number(getCurrentClientSession().ownClienteId || 0);
       const list = await notificacionesService.getAll();
       setNotifications(clienteId ? list.filter(n => n.clienteId === clienteId) : list);
     } catch (e) {

@@ -114,7 +114,7 @@ const monthsInRange = (inicio: string, fin: string) => {
 const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: string, fin: string): Promise<string | null> => {
   if (tipo === 'GASTOS_MENSUAL' || tipo === 'GASTOS_ANUAL') {
     const [lista, categorias] = await Promise.all([gastosService.getAll(), categoriasService.getByCliente(clienteId)]);
-    const candidatos = lista.filter(g => g.fecha && g.fecha >= inicio && g.fecha <= fin);
+    const candidatos = lista.filter(g => g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
     const detalleCompleto = await Promise.all(candidatos.map(g => gastosService.getById(g.id!)));
     const catName = new Map(categorias.map(c => [c.id, c.nombre ?? 'Sin categoría']));
     const filtrados = detalleCompleto.filter(g => g.clienteId === clienteId);
@@ -131,7 +131,7 @@ const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: st
   }
   if (tipo === 'INGRESOS_MENSUAL' || tipo === 'INGRESOS_ANUAL') {
     const lista = await ingresosService.getAll();
-    const candidatos = lista.filter(i => i.fecha && i.fecha >= inicio && i.fecha <= fin);
+    const candidatos = lista.filter(i => i.fecha && i.fecha.slice(0, 10) >= inicio && i.fecha.slice(0, 10) <= fin);
     const detalleCompleto = await Promise.all(candidatos.map(i => ingresosService.getById(i.id!)));
     const filtrados = detalleCompleto.filter(i => i.clienteId === clienteId);
     const fuentesTotales: Record<string, number> = {};
@@ -153,7 +153,7 @@ const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: st
       presupuestosService.getAll(), gastosService.getAll(), categoriasService.getByCliente(clienteId),
     ]);
     const presupuestoCandidatos = presupuestosLista.filter(p => mesesSet.has(`${p.anio}-${p.mes}`));
-    const gastoCandidatos = gastosLista.filter(g => g.fecha && g.fecha >= inicio && g.fecha <= fin);
+    const gastoCandidatos = gastosLista.filter(g => g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
     const [presupuestoDetalle, gastoDetalle] = await Promise.all([
       Promise.all(presupuestoCandidatos.map(p => presupuestosService.getById(p.id!))),
       Promise.all(gastoCandidatos.map(g => gastosService.getById(g.id!))),
@@ -231,12 +231,17 @@ export const ReportsPage = () => {
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? (id ? `Cliente #${id}` : '—');
+  const clientesActivos = clientes.filter(c => c.activo !== false);
   const contadorNombre = (id?: number) => contadores.find(c => Number(c.id) === id)?.username ?? (id ? `Contador #${id}` : 'Sin asignar');
 
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
     try {
-      const list = await reportesService.getAll();
+      // Un usuario con rol cliente solo debe ver sus propios reportes: se usa el endpoint
+      // ya scopeado por cliente en vez de traer y filtrar todos.
+      const list = isClientRole
+        ? await reportesService.getByCliente(Number(ownClienteId))
+        : await reportesService.getAll();
       const full = await Promise.all(list.map(item => reportesService.getById(item.id!)));
       setReports(full);
     } catch (e) {
@@ -244,9 +249,10 @@ export const ReportsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isClientRole, ownClienteId]);
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTipo]);
   useEffect(() => { clientesService.getAll().then(setClientes).catch(() => {}); }, []);
   useEffect(() => { usuariosService.getAll().then(list => setContadores(list.filter(u => u.rol === 'CONTADOR'))).catch(() => {}); }, []);
 
@@ -671,10 +677,10 @@ export const ReportsPage = () => {
                           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} disabled={downloadingId === report.id} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-green-400 disabled:opacity-50" title="Descargar PDF">
                             {downloadingId === report.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                           </motion.button>
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Reporte">
                             <Edit size={14} />
                           </motion.button>
-                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { setSelectedReport(report); setShowDeleteModal(true); }} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400">
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { setSelectedReport(report); setShowDeleteModal(true); }} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400" title="Eliminar Reporte">
                             <Trash2 size={14} />
                           </motion.button>
                         </div>
@@ -740,10 +746,10 @@ export const ReportsPage = () => {
                       <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDownloadPdf(report)} disabled={downloadingId === report.id} className="p-1.5 hover:bg-green-500/20 rounded-lg transition-all duration-300 text-white/60 hover:text-green-400 disabled:opacity-50" title="Descargar PDF">
                         {downloadingId === report.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                       </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => openEditModal(report)} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400" title="Editar Reporte">
                         <Edit size={14} />
                       </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { setSelectedReport(report); setShowDeleteModal(true); }} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-white/60 hover:text-red-400" title="Eliminar">
+                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => { setSelectedReport(report); setShowDeleteModal(true); }} className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-white/60 hover:text-red-400" title="Eliminar Reporte">
                         <Trash2 size={14} />
                       </motion.button>
                     </div>
@@ -773,7 +779,7 @@ export const ReportsPage = () => {
                 ) : (
                   <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
                     <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                   </select>
                 )}
               </div>
@@ -850,7 +856,7 @@ export const ReportsPage = () => {
                   </div>
                 ) : (
                   <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                   </select>
                 )}
               </div>
