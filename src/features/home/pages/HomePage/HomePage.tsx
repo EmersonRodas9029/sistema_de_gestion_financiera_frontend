@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import {
   TrendingUp,
   TrendingDown,
@@ -134,7 +135,7 @@ export const HomePage = () => {
   const [period, setPeriod] = useState<ChartPeriod>('week');
   const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
   const [data, setData] = useState<DashboardData>(emptyDashboard);
-  const [clienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
+  const [clienteId] = useState(() => Number(getCurrentClientSession().ownClienteId || 0));
 
   const fetchDashboard = useCallback(async () => {
     if (!clienteId) { setIsLoading(false); return; }

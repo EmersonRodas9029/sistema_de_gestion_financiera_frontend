@@ -231,7 +231,7 @@ export const CategoriesPage = () => {
     }
   }, []);
 
-  const [activeClienteId, setActiveClienteId] = useState(() => Number(localStorage.getItem('clienteId') ?? 0));
+  const [activeClienteId, setActiveClienteId] = useState(() => Number(ownClienteId || 0));
   useEffect(() => { if (activeClienteId) fetchCategories(activeClienteId); else setIsLoading(false); }, [fetchCategories, activeClienteId]);
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTypeFilter, showInactive, showWithBudget]);
@@ -239,7 +239,7 @@ export const CategoriesPage = () => {
   useEffect(() => {
     if (!showCreateModal) return;
     clientesService.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null && c.activo !== false).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
     }).catch(() => {});
   }, [showCreateModal]);
 

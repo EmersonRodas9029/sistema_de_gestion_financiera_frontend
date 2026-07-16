@@ -73,6 +73,7 @@ export const BudgetsPage = () => {
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
+  const clientesActivos = clientes.filter(c => c.activo !== false);
   const categoriaNombre = (clienteId?: number, categoriaId?: number) => {
     if (!categoriaId) return 'Sin categoría';
     const lista = categoriasByClient[clienteId ?? -1] ?? [];
@@ -659,7 +660,7 @@ export const BudgetsPage = () => {
                   required
                 >
                   <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                  {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                  {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                 </select>
               )}
             </div>

@@ -147,7 +147,7 @@ export const ExpensesPage = () => {
   useEffect(() => {
     if (!showCreateModal && !showEditModal) return;
     clientesSvc.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null && c.activo !== false).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
     }).catch(() => {});
   }, [showCreateModal, showEditModal]);
 

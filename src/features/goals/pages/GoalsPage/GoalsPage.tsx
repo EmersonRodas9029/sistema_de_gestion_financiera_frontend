@@ -59,6 +59,7 @@ export const GoalsPage = () => {
   const itemsPerPage = getViewPreferences().itemsPerPage;
 
   const clienteNombre = (id?: number) => clientes.find(c => Number(c.id) === id)?.nombreCompleto ?? `Cliente #${id}`;
+  const clientesActivos = clientes.filter(c => c.activo !== false);
 
   const fetchGoals = useCallback(async () => {
     setIsLoading(true);
@@ -597,7 +598,7 @@ export const GoalsPage = () => {
                 ) : (
                   <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
                     <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
+                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
                   </select>
                 )}
               </div>

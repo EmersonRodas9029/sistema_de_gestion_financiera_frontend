@@ -125,7 +125,7 @@ export const IncomesPage = () => {
   const [sortOrder, setSortOrder]           = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage]       = useState(1);
 
-  const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
+  const [clientesList, setClientesList] = useState<{ id: number; nombre: string; activo: boolean }[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal]     = useState(false);
   const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
@@ -163,11 +163,12 @@ export const IncomesPage = () => {
 
   useEffect(() => {
     clientesService.getAll().then(clientes => {
-      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto })));
+      setClientesList(clientes.filter(c => c.id != null).map(c => ({ id: Number(c.id), nombre: c.nombreCompleto, activo: c.activo !== false })));
     }).catch(() => {});
   }, []);
 
   const clienteNombre = (id: number) => clientesList.find(c => c.id === id)?.nombre ?? `Cliente #${id}`;
+  const clientesActivos = clientesList.filter(c => c.activo);
 
   // Stats
   const now = new Date();
@@ -754,7 +755,7 @@ export const IncomesPage = () => {
                     onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
                     className={inputCls} style={selectStyle} required>
                     <option value="" style={optStyle}>Seleccionar cliente</option>
-                    {clientesList.map(c => (
+                    {clientesActivos.map(c => (
                       <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
                     ))}
                   </select>
