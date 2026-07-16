@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useEffect } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutoNotifications } from '../../hooks/useAutoNotifications';
 import { useManagedClient } from '../../hooks/useManagedClient';
@@ -7,7 +7,7 @@ import { LeftBar } from './LeftBar/LeftBar';
 import {
   Home, TrendingUp, TrendingDown, Repeat, Wallet, Target,
   FolderTree, BarChart3, FileText, Users, Settings,
-  Bell, LogOut, User, Clock, ChevronDown, Menu, UserCog
+  Bell, LogOut, User, ChevronDown, Menu, UserCog
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -69,20 +69,9 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
   const pageTitle = getPageTitle(currentPath);
   const pageIcon = getPageIcon(currentPath);
   
-  const [currentTime, setCurrentTime] = useState('');
   const managedClient = useManagedClient();
 
   useAutoNotifications();
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -134,12 +123,6 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
 
               {/* Iconos de acción rápida en móvil */}
               <div className="flex items-center gap-1">
-                {/* Hora - solo en móvil */}
-                <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1.5">
-                  <Clock size={12} className="text-white/60" />
-                  <span className="text-white/80 text-xs font-mono">{currentTime}</span>
-                </div>
-
                 {/* Usuario dropdown - simplificado para móvil */}
                 <div className="relative group">
                   <button className="flex items-center gap-1 sm:gap-2 bg-white/10 rounded-lg px-2 py-1.5 hover:bg-white/20 transition-all">
