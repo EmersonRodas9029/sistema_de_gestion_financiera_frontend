@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { gastosService, type ApiGasto } from '../../services';
 import { clientesService as clientesSvc } from '../../../clients/services';
 import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
+import { gastosRecurrentesService, type ApiGastoRecurrente } from '../../../recurring-expenses/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -108,6 +109,7 @@ export const ExpensesPage = () => {
     amount: '',
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'transferencia',
+    recurringId: '',
   });
 
   const itemsPerPage = getViewPreferences().itemsPerPage;
@@ -115,6 +117,7 @@ export const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriasList, setCategoriasList] = useState<ApiCategoria[]>([]);
+  const [recurringList, setRecurringList] = useState<ApiGastoRecurrente[]>([]);
 
   const fetchExpenses = useCallback(async () => {
     setIsLoading(true);
@@ -161,6 +164,26 @@ export const ExpensesPage = () => {
       setCategoriasList(full.filter(isCategoriaGasto));
     }).catch(() => {});
   }, [formData.clienteId]);
+
+  useEffect(() => {
+    if (!showCreateModal || !formData.clienteId) { setRecurringList([]); return; }
+    // GET /gastos-recurrentes/cliente/{id} viene "liviano" (sin descripcion/categoriaId), hace falta el detalle por id
+    gastosRecurrentesService.getByCliente(Number(formData.clienteId)).then(async list => {
+      const full = await Promise.all(list.map(r => gastosRecurrentesService.getById(r.id!).catch(() => r as ApiGastoRecurrente)));
+      setRecurringList(full.filter(r => r.activo !== false));
+    }).catch(() => setRecurringList([]));
+  }, [showCreateModal, formData.clienteId]);
+
+  const handleSelectRecurring = (id: string) => {
+    const r = recurringList.find(x => String(x.id) === id);
+    setFormData(prev => ({
+      ...prev,
+      recurringId: id,
+      categoriaId: r?.categoriaId != null ? String(r.categoriaId) : prev.categoriaId,
+      description: r?.descripcion || prev.description,
+      amount: r?.monto != null ? String(r.monto) : prev.amount,
+    }));
+  };
 
   const categoryBudgets = Object.entries(
     expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] ?? 0) + e.amount; return acc; }, {} as Record<string, number>)
@@ -306,7 +329,7 @@ export const ExpensesPage = () => {
       setShowCreateModal(false);
       setFormData({
         clienteId: isClientRole ? ownClienteId : '', categoriaId: '', description: '', amount: '',
-        date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia',
+        date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia', recurringId: '',
       });
       toast.success('Gasto creado');
     } catch (e) {
@@ -334,6 +357,7 @@ export const ExpensesPage = () => {
       description: expense.description,
       amount: String(expense.amount),
       date: expense.date,
+      recurringId: '',
       paymentMethod: expense.paymentMethod,
     });
     setEditStatus(expense.status);
@@ -460,7 +484,7 @@ export const ExpensesPage = () => {
               setFormData({
                 clienteId: isClientRole ? ownClienteId : '',
                 categoriaId: '', description: '', amount: '',
-                date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia',
+                date: new Date().toISOString().split('T')[0], paymentMethod: 'transferencia', recurringId: '',
               });
               setShowCreateModal(true);
             }}
@@ -1092,6 +1116,25 @@ export const ExpensesPage = () => {
         >
           <div>
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateExpense(); }} className="space-y-5">
+                  {recurringList.length > 0 && (
+                    <div>
+                      <label className="text-white/60 text-sm mb-1.5 block">Gasto recurrente</label>
+                      <select
+                        value={formData.recurringId}
+                        onChange={(e) => handleSelectRecurring(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                      >
+                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Ninguno, registrar gasto nuevo</option>
+                        {recurringList.map(r => (
+                          <option key={r.id} value={r.id} style={{ backgroundColor: '#1a0f14' }}>
+                            {r.descripcion || 'Sin descripción'} · {formatCurrency(r.monto ?? 0)} · {r.frecuencia}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-white/40 text-xs mt-1">Selecciona uno para autocompletar y registrar ese pago.</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>

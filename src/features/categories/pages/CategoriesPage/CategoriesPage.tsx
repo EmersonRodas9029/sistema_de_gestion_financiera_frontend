@@ -98,6 +98,9 @@ const HEX_TO_TW: Record<string, string> = {
   '#6366F1': 'from-indigo-500 to-indigo-600',
 };
 const hexToTw = (hex: string) => HEX_TO_TW[hex] ?? 'from-amber-500 to-amber-600';
+// bg-opacity-* no afecta bg-gradient-to-r (solo a bg-{color}), así que el atenuado del chip
+// de ícono se hace poniendo el modificador /20 directo en cada stop del gradiente.
+const softBg = (twGradient: string) => twGradient.split(' ').map(c => `${c}/20`).join(' ');
 
 const toCategory = (api: ApiCategoria): Category => {
   const { type, icon } = decodeIcono(api.icono ?? 'expense:home');
@@ -119,35 +122,42 @@ const toCategory = (api: ApiCategoria): Category => {
 };
 
 // Mapa de iconos disponibles
-const iconMap: { [key: string]: React.ReactNode } = {
-  home: <HomeIcon size={20} />,
-  utensils: <Utensils size={20} />,
-  car: <Car size={20} />,
-  heart: <Heart size={20} />,
-  shopping: <ShoppingBag size={20} />,
-  film: <Film size={20} />,
-  zap: <Zap size={20} />,
-  wifi: <Wifi size={20} />,
-  droplet: <Droplet size={20} />,
-  briefcase: <Briefcase size={20} />,
-  gift: <Gift size={20} />,
-  award: <Award size={20} />,
-  smartphone: <Smartphone size={20} />,
-  laptop: <Laptop size={20} />,
-  plane: <Plane size={20} />,
-  hotel: <Hotel size={20} />,
-  shirt: <Shirt size={20} />,
-  dumbbell: <Dumbbell size={20} />,
-  book: <BookOpen size={20} />,
-  coffee: <Coffee size={20} />,
-  dog: <Dog size={20} />,
-  sparkles: <Sparkles size={20} />,
-  shield: <Shield size={20} />,
-  dollar: <DollarSign size={20} />,
-  credit: <CreditCard size={20} />,
-  wallet: <Wallet size={20} />,
-  users: <Users size={20} />,
-  home2: <Home size={20} />
+const iconMap: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
+  home: HomeIcon,
+  utensils: Utensils,
+  car: Car,
+  heart: Heart,
+  shopping: ShoppingBag,
+  film: Film,
+  zap: Zap,
+  wifi: Wifi,
+  droplet: Droplet,
+  briefcase: Briefcase,
+  gift: Gift,
+  award: Award,
+  smartphone: Smartphone,
+  laptop: Laptop,
+  plane: Plane,
+  hotel: Hotel,
+  shirt: Shirt,
+  dumbbell: Dumbbell,
+  book: BookOpen,
+  coffee: Coffee,
+  dog: Dog,
+  sparkles: Sparkles,
+  shield: Shield,
+  dollar: DollarSign,
+  credit: CreditCard,
+  wallet: Wallet,
+  users: Users,
+  home2: Home
+};
+
+// Tamaño y color consistentes entre el ícono resuelto y el fallback (antes divergían: iconMap
+// quedaba fijo en size=20 sin color mientras el fallback usaba size=16 con text-white).
+const renderCategoryIcon = (icon: string, size: 16 | 20 = 20) => {
+  const Icon = iconMap[icon] ?? Tag;
+  return <Icon size={size} className="text-white" />;
 };
 
 
@@ -605,8 +615,8 @@ export const CategoriesPage = () => {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} bg-opacity-20`}>
-                        {iconMap[cat.icon] || <Tag size={16} />}
+                      <div className={`p-1.5 rounded-lg bg-gradient-to-r ${softBg(cat.color)}`}>
+                        {renderCategoryIcon(cat.icon, 16)}
                       </div>
                       <span className="text-white text-sm font-medium">{cat.name}</span>
                       <span className="text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-full">
@@ -832,8 +842,8 @@ export const CategoriesPage = () => {
                           )}
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl bg-gradient-to-r ${category.color} bg-opacity-20 shadow-lg`}>
-                                {iconMap[category.icon] || <Tag size={20} className="text-white" />}
+                              <div className={`p-2 rounded-xl bg-gradient-to-r ${softBg(category.color)} shadow-lg`}>
+                                {renderCategoryIcon(category.icon, 20)}
                               </div>
                               <div>
                                 <h3 className="text-white font-semibold">{category.name}</h3>
@@ -934,8 +944,8 @@ export const CategoriesPage = () => {
                           }`}
                         >
                           <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-lg bg-gradient-to-r ${category.color} bg-opacity-20`}>
-                              {iconMap[category.icon] || <Tag size={16} className="text-white" />}
+                            <div className={`p-2 rounded-lg bg-gradient-to-r ${softBg(category.color)}`}>
+                              {renderCategoryIcon(category.icon, 16)}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
@@ -1037,8 +1047,8 @@ export const CategoriesPage = () => {
                         )}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-xl bg-gradient-to-r ${category.color} bg-opacity-20 shadow-lg`}>
-                              {iconMap[category.icon] || <Tag size={20} className="text-white" />}
+                            <div className={`p-2 rounded-xl bg-gradient-to-r ${softBg(category.color)} shadow-lg`}>
+                              {renderCategoryIcon(category.icon, 20)}
                             </div>
                             <div>
                               <h3 className="text-white font-semibold">{category.name}</h3>
@@ -1104,8 +1114,8 @@ export const CategoriesPage = () => {
                         }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg bg-gradient-to-r ${category.color} bg-opacity-20`}>
-                            {iconMap[category.icon] || <Tag size={16} className="text-white" />}
+                          <div className={`p-2 rounded-lg bg-gradient-to-r ${softBg(category.color)}`}>
+                            {renderCategoryIcon(category.icon, 16)}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
