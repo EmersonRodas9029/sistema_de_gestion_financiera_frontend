@@ -61,7 +61,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend 
 interface Category {
   id: string;
   name: string;
-  type: 'income' | 'expense';
   icon: string;
   color: string;
   description?: string;
@@ -79,13 +78,11 @@ interface Category {
 // Colores para el gráfico de pastel
 const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#321D28', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1'];
 
-// ponytail: tipo no existe en la API, se codifica como "expense:utensils" en el campo icono
-const encodeIcono = (type: string, icon: string) => `${type}:${icon}`;
-const decodeIcono = (icono: string): { type: 'income' | 'expense'; icon: string } => {
+// ponytail: registros antiguos guardaban el tipo como prefijo "expense:utensils" en el campo
+// icono (los ingresos nunca llegaron a usar categorías); se sigue aceptando el prefijo al leer.
+const decodeIcono = (icono: string): string => {
   const i = icono.indexOf(':');
-  return i > -1
-    ? { type: icono.slice(0, i) as 'income' | 'expense', icon: icono.slice(i + 1) }
-    : { type: 'expense', icon: icono };
+  return i > -1 ? icono.slice(i + 1) : icono;
 };
 
 const HEX_TO_TW: Record<string, string> = {
@@ -102,24 +99,20 @@ const hexToTw = (hex: string) => HEX_TO_TW[hex] ?? 'from-amber-500 to-amber-600'
 // de ícono se hace poniendo el modificador /20 directo en cada stop del gradiente.
 const softBg = (twGradient: string) => twGradient.split(' ').map(c => `${c}/20`).join(' ');
 
-const toCategory = (api: ApiCategoria): Category => {
-  const { type, icon } = decodeIcono(api.icono ?? 'expense:home');
-  return {
-    id: String(api.id),
-    name: api.nombre ?? '',
-    type,
-    icon,
-    color: hexToTw(api.color ?? '#F59E0B'),
-    description: api.descripcion,
-    budget: api.presupuestoMensual,
-    spent: 0,
-    transactions: 0,
-    totalAmount: 0,
-    isActive: api.activa ?? true,
-    createdAt: api.fechaCreacion ?? new Date().toISOString(),
-    updatedAt: api.fechaModificacion ?? new Date().toISOString(),
-  };
-};
+const toCategory = (api: ApiCategoria): Category => ({
+  id: String(api.id),
+  name: api.nombre ?? '',
+  icon: decodeIcono(api.icono ?? 'home'),
+  color: hexToTw(api.color ?? '#F59E0B'),
+  description: api.descripcion,
+  budget: api.presupuestoMensual,
+  spent: 0,
+  transactions: 0,
+  totalAmount: 0,
+  isActive: api.activa ?? true,
+  createdAt: api.fechaCreacion ?? new Date().toISOString(),
+  updatedAt: api.fechaModificacion ?? new Date().toISOString(),
+});
 
 // Mapa de iconos disponibles
 const iconMap: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
@@ -190,7 +183,6 @@ export const CategoriesPage = () => {
   const [formData, setFormData] = useState({
     clienteId: isClientRole ? ownClienteId : '',
     name: '',
-    type: 'expense',
     icon: 'utensils',
     color: '#F59E0B',
     description: '',
@@ -199,7 +191,6 @@ export const CategoriesPage = () => {
   });
   const [showInactive, setShowInactive] = useState(false);
   const [showWithBudget, setShowWithBudget] = useState(false);
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('todas');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'name' | 'transactions' | 'amount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -244,7 +235,7 @@ export const CategoriesPage = () => {
   const [activeClienteId, setActiveClienteId] = useState(() => Number(ownClienteId || 0));
   useEffect(() => { if (activeClienteId) fetchCategories(activeClienteId); else setIsLoading(false); }, [fetchCategories, activeClienteId]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedTypeFilter, showInactive, showWithBudget]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, showInactive, showWithBudget]);
 
   useEffect(() => {
     if (!showCreateModal) return;
@@ -253,11 +244,6 @@ export const CategoriesPage = () => {
     }).catch(() => {});
   }, [showCreateModal]);
 
-  // Categorías de Gastos
-  const expenseCategories = categories.filter(c => c.type === 'expense');
-  // Categorías de Ingresos
-  const incomeCategories = categories.filter(c => c.type === 'income');
-
   // Calcular estadísticas
   const totalCategories = categories.length;
   const activeCategories = categories.filter(c => c.isActive).length;
@@ -265,7 +251,7 @@ export const CategoriesPage = () => {
   const mostUsedCategory = categories.reduce((max, cat) => cat.transactions > max.transactions ? cat : max, categories[0]);
 
   // Datos para el gráfico de pastel
-  const expensePieData = expenseCategories.map((cat, idx) => ({
+  const categoryPieData = categories.map((cat, idx) => ({
     name: cat.name,
     value: cat.totalAmount,
     color: CHART_COLORS[idx % CHART_COLORS.length],
@@ -273,32 +259,21 @@ export const CategoriesPage = () => {
   }));
 
   // Top 3 categorías más utilizadas
-  const topCategories = [...expenseCategories]
+  const topCategories = [...categories]
     .sort((a, b) => b.transactions - a.transactions)
     .slice(0, 3);
 
-  // Filtrar categorías de gastos
-  const filteredExpenseCategories = expenseCategories.filter(category => {
+  // Filtrar categorías
+  const filteredCategories = categories.filter(category => {
     const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          category.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesActive = showInactive ? true : category.isActive;
     const matchesBudget = showWithBudget ? (category.budget || 0) > 0 : true;
-    const matchesType = selectedTypeFilter === 'todas' || category.type === selectedTypeFilter;
-    return matchesSearch && matchesActive && matchesBudget && matchesType;
-  });
-
-  // Filtrar categorías de ingresos
-  const filteredIncomeCategories = incomeCategories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesActive = showInactive ? true : category.isActive;
-    const matchesBudget = showWithBudget ? (category.budget || 0) > 0 : true;
-    const matchesType = selectedTypeFilter === 'todas' || category.type === selectedTypeFilter;
-    return matchesSearch && matchesActive && matchesBudget && matchesType;
+    return matchesSearch && matchesActive && matchesBudget;
   });
 
   // Ordenar categorías
-  const sortedExpenseCategories = [...filteredExpenseCategories].sort((a, b) => {
+  const sortedCategories = [...filteredCategories].sort((a, b) => {
     if (sortBy === 'name') {
       return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     } else if (sortBy === 'transactions') {
@@ -308,23 +283,8 @@ export const CategoriesPage = () => {
     }
   });
 
-  const sortedIncomeCategories = [...filteredIncomeCategories].sort((a, b) => {
-    if (sortBy === 'name') {
-      return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-    } else if (sortBy === 'transactions') {
-      return sortOrder === 'asc' ? a.transactions - b.transactions : b.transactions - a.transactions;
-    } else {
-      return sortOrder === 'asc' ? a.totalAmount - b.totalAmount : b.totalAmount - a.totalAmount;
-    }
-  });
-
-  const totalExpensePages = Math.ceil(sortedExpenseCategories.length / itemsPerPage);
-  const totalIncomePages = Math.ceil(sortedIncomeCategories.length / itemsPerPage);
-  const paginatedExpenseCategories = sortedExpenseCategories.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  const paginatedIncomeCategories = sortedIncomeCategories.slice(
+  const totalPages = Math.ceil(sortedCategories.length / itemsPerPage);
+  const paginatedCategories = sortedCategories.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -338,14 +298,14 @@ export const CategoriesPage = () => {
         nombre: formData.name,
         descripcion: formData.description || undefined,
         color: formData.color,
-        icono: encodeIcono(formData.type, formData.icon),
-        presupuestoMensual: formData.type === 'expense' && formData.budget ? parseFloat(formData.budget) : undefined,
+        icono: formData.icon,
+        presupuestoMensual: formData.budget ? parseFloat(formData.budget) : undefined,
       });
       localStorage.setItem('clienteId', String(clienteId));
       setActiveClienteId(clienteId);
       await fetchCategories(clienteId);
       setShowCreateModal(false);
-      setFormData({ clienteId: isClientRole ? ownClienteId : '', name: '', type: 'expense', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
+      setFormData({ clienteId: isClientRole ? ownClienteId : '', name: '', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
       toast.success('Categoría creada');
     } catch (e) {
       toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
@@ -369,7 +329,7 @@ export const CategoriesPage = () => {
       await categoriasService.update(Number(selectedCategory.id), {
         nombre: editFormData.name,
         descripcion: editFormData.description || undefined,
-        presupuestoMensual: selectedCategory.type === 'expense' && editFormData.budget ? parseFloat(editFormData.budget) : undefined,
+        presupuestoMensual: editFormData.budget ? parseFloat(editFormData.budget) : undefined,
         activa: editFormData.isActive,
       });
       await fetchCategories(activeClienteId);
@@ -398,7 +358,6 @@ export const CategoriesPage = () => {
     setSearchTerm('');
     setShowInactive(false);
     setShowWithBudget(false);
-    setSelectedTypeFilter('todas');
     setCurrentPage(1);
   };
 
@@ -410,15 +369,7 @@ export const CategoriesPage = () => {
     }).format(amount);
   };
 
-  const getTypeBadge = (type: string) => {
-    if (type === 'income') {
-      return <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><TrendingUp size={12} /> Ingreso</span>;
-    } else {
-      return <span className="bg-rose-500/20 text-rose-400 px-2 py-1 rounded-full text-xs flex items-center gap-1"><TrendingDown size={12} /> Gasto</span>;
-    }
-  };
-
-  const hasActiveFilters = searchTerm !== '' || showInactive || showWithBudget || selectedTypeFilter !== 'todas';
+  const hasActiveFilters = searchTerm !== '' || showInactive || showWithBudget;
 
   // Skeleton Loader
   if (isLoading) {
@@ -466,7 +417,7 @@ export const CategoriesPage = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">Categorías</h1>
-              <p className="text-white/50 text-sm mt-1">Organiza y gestiona tus categorías de ingresos y gastos</p>
+              <p className="text-white/50 text-sm mt-1">Organiza y gestiona tus categorías de gastos</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -544,7 +495,7 @@ export const CategoriesPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Total Gastos</p>
-              <p className="text-2xl font-bold text-rose-400 mt-1 tracking-tight">{formatCurrency(expenseCategories.reduce((sum, c) => sum + c.totalAmount, 0))}</p>
+              <p className="text-2xl font-bold text-rose-400 mt-1 tracking-tight">{formatCurrency(categories.reduce((sum, c) => sum + c.totalAmount, 0))}</p>
             </div>
             <div className="p-3 rounded-xl bg-rose-500/20">
               <TrendingDown size={24} className="text-rose-400" />
@@ -565,7 +516,7 @@ export const CategoriesPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <Pie
-                  data={expensePieData}
+                  data={categoryPieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -575,7 +526,7 @@ export const CategoriesPage = () => {
                   animationBegin={0}
                   animationDuration={800}
                 >
-                  {expensePieData.map((entry, index) => (
+                  {categoryPieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
@@ -603,7 +554,7 @@ export const CategoriesPage = () => {
           </h3>
           <div className="space-y-4">
             {topCategories.map((cat, index) => {
-              const totalTransactions = expenseCategories.reduce((sum, c) => sum + c.transactions, 0);
+              const totalTransactions = categories.reduce((sum, c) => sum + c.transactions, 0);
               const usagePercentage = totalTransactions > 0 ? (cat.transactions / totalTransactions) * 100 : 0;
               return (
                 <motion.div 
@@ -619,9 +570,6 @@ export const CategoriesPage = () => {
                         {renderCategoryIcon(cat.icon, 16)}
                       </div>
                       <span className="text-white text-sm font-medium">{cat.name}</span>
-                      <span className="text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-full">
-                        Gasto
-                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-white/50 text-xs">{usagePercentage.toFixed(1)}%</span>
@@ -716,20 +664,7 @@ export const CategoriesPage = () => {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Tipo</label>
-                    <select
-                      value={selectedTypeFilter}
-                      onChange={(e) => setSelectedTypeFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                    >
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas</option>
-                      <option value="expense" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Gastos</option>
-                      <option value="income" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Ingresos</option>
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-white/60 text-xs mb-1 block">Estado</label>
                     <label className="flex items-center gap-2 mt-2">
@@ -778,12 +713,12 @@ export const CategoriesPage = () => {
               {sortBy === 'amount' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
             </button>
           </div>
-          <span className="text-white/40 text-sm">{filteredExpenseCategories.length + filteredIncomeCategories.length} resultados</span>
+          <span className="text-white/40 text-sm">{filteredCategories.length} resultados</span>
         </div>
 
         {/* Estado Vacío */}
-        {filteredExpenseCategories.length === 0 && filteredIncomeCategories.length === 0 && (
-          <motion.div 
+        {filteredCategories.length === 0 && (
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center justify-center py-12 px-4"
@@ -808,230 +743,17 @@ export const CategoriesPage = () => {
           </motion.div>
         )}
 
-        {/* Sección de Gastos */}
-        {(filteredExpenseCategories.length > 0 || filteredIncomeCategories.length > 0) && (
+        {/* Lista de Categorías */}
+        {filteredCategories.length > 0 && (
           <div className="p-4">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
-                <TrendingDown size={20} className="text-rose-400" />
-                <h2 className="text-lg font-semibold text-white">Categorías de Gastos</h2>
-                <span className="bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full">{filteredExpenseCategories.length}</span>
-              </div>
-              {filteredExpenseCategories.length === 0 ? (
-                <div className="text-center py-8 text-white/40">No hay categorías de gastos que coincidan con los filtros</div>
-              ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <AnimatePresence>
-                    {paginatedExpenseCategories.map((category) => {
-                      const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
-                      const isOverBudget = budgetPercentage >= 90;
-                      const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
-                      return (
-                        <motion.div
-                          key={category.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          whileHover={{ y: -4, scale: 1.02 }}
-                          className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                            category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-rose-500/20 opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          {!category.isActive && (
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-2xl" />
-                          )}
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl bg-gradient-to-r ${softBg(category.color)} shadow-lg`}>
-                                {renderCategoryIcon(category.icon, 20)}
-                              </div>
-                              <div>
-                                <h3 className="text-white font-semibold">{category.name}</h3>
-                                <p className="text-white/40 text-xs">{category.id.slice(-8)}</p>
-                              </div>
-                            </div>
-                            {getTypeBadge(category.type)}
-                          </div>
-                          {category.description && (
-                            <p className="text-white/60 text-sm mb-3 line-clamp-2">{category.description}</p>
-                          )}
-                          <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-white/50">Transacciones:</span>
-                              <span className="text-white font-medium">{category.transactions}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-white/50">Total gastado:</span>
-                              <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
-                            </div>
-                            {category.budget && (
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-white/50">Presupuesto:</span>
-                                  <span className={`font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
-                                    {formatCurrency(category.budget)}
-                                  </span>
-                                </div>
-                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                                    transition={{ duration: 0.8 }}
-                                    className={`h-full rounded-full ${
-                                      isOverBudget ? 'bg-rose-500' : 
-                                      isWarning ? 'bg-yellow-500' : 
-                                      'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                                    }`}
-                                  />
-                                </div>
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className={`${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white/40'}`}>
-                                    {budgetPercentage.toFixed(0)}% utilizado
-                                  </span>
-                                  <span className={`${(category.budget - (category.spent || 0)) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                                    Restante: {formatCurrency((category.budget - (category.spent || 0)))}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          {!category.isActive && (
-                            <div className="mt-2">
-                              <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleEditCategory(category)}
-                              className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                              title="Editar Categoría"
-                            >
-                              <Edit size={14} />
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => handleDeleteCategory(category.id)}
-                              className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                              title="Eliminar Categoría"
-                            >
-                              <Trash2 size={14} />
-                            </motion.button>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <AnimatePresence>
-                    {paginatedExpenseCategories.map((category) => {
-                      const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
-                      const isOverBudget = budgetPercentage >= 90;
-                      const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
-                      return (
-                        <motion.div
-                          key={category.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          whileHover={{ scale: 1.01 }}
-                          className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                            category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-rose-500/20 opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-lg bg-gradient-to-r ${softBg(category.color)}`}>
-                              {renderCategoryIcon(category.icon, 16)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-white font-medium">{category.name}</h3>
-                                {getTypeBadge(category.type)}
-                                {!category.isActive && <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>}
-                              </div>
-                              {category.description && <p className="text-white/40 text-sm">{category.description}</p>}
-                            </div>
-                            <div className="flex items-center gap-6">
-                              <div className="text-right">
-                                <p className="text-white/50 text-xs">Transacciones</p>
-                                <p className="text-white text-sm">{category.transactions}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-white/50 text-xs">Total</p>
-                                <p className="text-white text-sm font-medium">{formatCurrency(category.totalAmount)}</p>
-                              </div>
-                              {category.budget && (
-                                <div className="text-right">
-                                  <p className="text-white/50 text-xs">Presupuesto</p>
-                                  <p className={`text-sm font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
-                                    {formatCurrency(category.budget)}
-                                  </p>
-                                </div>
-                              )}
-                              {category.budget && (
-                                <div className="w-32">
-                                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                    <motion.div 
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                                      transition={{ duration: 0.6 }}
-                                      className={`h-full rounded-full ${
-                                        isOverBudget ? 'bg-rose-500' : 
-                                        isWarning ? 'bg-yellow-500' : 
-                                        'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
-                                      }`}
-                                    />
-                                  </div>
-                                  <p className="text-white/40 text-xs text-right mt-1">{budgetPercentage.toFixed(0)}%</p>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handleEditCategory(category)}
-                                className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-all duration-300 text-blue-400"
-                                title="Editar Categoría"
-                              >
-                                <Edit size={16} />
-                              </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handleDeleteCategory(category.id)}
-                                className="p-1.5 hover:bg-red-500/20 rounded-lg transition-all duration-300 text-red-400"
-                                title="Eliminar Categoría"
-                              >
-                                <Trash2 size={16} />
-                              </motion.button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-
-            {/* Sección de Ingresos */}
-            <div>
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
-                <TrendingUp size={20} className="text-emerald-400" />
-                <h2 className="text-lg font-semibold text-white">Categorías de Ingresos</h2>
-                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">{filteredIncomeCategories.length}</span>
-              </div>
-              {filteredIncomeCategories.length === 0 ? (
-                <div className="text-center py-8 text-white/40">No hay categorías de ingresos que coincidan con los filtros</div>
-              ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <AnimatePresence>
-                    {paginatedIncomeCategories.map((category) => (
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AnimatePresence>
+                  {paginatedCategories.map((category) => {
+                    const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                    const isOverBudget = budgetPercentage >= 90;
+                    const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
+                    return (
                       <motion.div
                         key={category.id}
                         initial={{ opacity: 0 }}
@@ -1039,11 +761,11 @@ export const CategoriesPage = () => {
                         exit={{ opacity: 0 }}
                         whileHover={{ y: -4, scale: 1.02 }}
                         className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 cursor-pointer hover:shadow-xl ${
-                          category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                          category.isActive ? 'border-white/10 hover:border-[#F05984]/50' : 'border-rose-500/20 opacity-60 hover:opacity-100'
                         }`}
                       >
                         {!category.isActive && (
-                          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-2xl" />
+                          <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/10 rounded-full blur-2xl" />
                         )}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -1055,7 +777,6 @@ export const CategoriesPage = () => {
                               <p className="text-white/40 text-xs">{category.id.slice(-8)}</p>
                             </div>
                           </div>
-                          {getTypeBadge(category.type)}
                         </div>
                         {category.description && (
                           <p className="text-white/60 text-sm mb-3 line-clamp-2">{category.description}</p>
@@ -1066,13 +787,43 @@ export const CategoriesPage = () => {
                             <span className="text-white font-medium">{category.transactions}</span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-white/50">Total ingresado:</span>
+                            <span className="text-white/50">Total gastado:</span>
                             <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
                           </div>
+                          {category.budget && (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">Presupuesto:</span>
+                                <span className={`font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
+                                  {formatCurrency(category.budget)}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                                  transition={{ duration: 0.8 }}
+                                  className={`h-full rounded-full ${
+                                    isOverBudget ? 'bg-rose-500' :
+                                    isWarning ? 'bg-yellow-500' :
+                                    'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
+                                  }`}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className={`${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white/40'}`}>
+                                  {budgetPercentage.toFixed(0)}% utilizado
+                                </span>
+                                <span className={`${(category.budget - (category.spent || 0)) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                                  Restante: {formatCurrency((category.budget - (category.spent || 0)))}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {!category.isActive && (
                           <div className="mt-2">
-                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>
+                            <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>
                           </div>
                         )}
                         <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-white/10">
@@ -1096,13 +847,18 @@ export const CategoriesPage = () => {
                           </motion.button>
                         </div>
                       </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <AnimatePresence>
-                    {paginatedIncomeCategories.map((category) => (
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <AnimatePresence>
+                  {paginatedCategories.map((category) => {
+                    const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                    const isOverBudget = budgetPercentage >= 90;
+                    const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
+                    return (
                       <motion.div
                         key={category.id}
                         initial={{ opacity: 0 }}
@@ -1110,7 +866,7 @@ export const CategoriesPage = () => {
                         exit={{ opacity: 0 }}
                         whileHover={{ scale: 1.01 }}
                         className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                          category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-emerald-500/20 opacity-60 hover:opacity-100'
+                          category.isActive ? 'border-white/10 hover:border-[#F05984]/30' : 'border-rose-500/20 opacity-60 hover:opacity-100'
                         }`}
                       >
                         <div className="flex items-center gap-4">
@@ -1120,8 +876,7 @@ export const CategoriesPage = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="text-white font-medium">{category.name}</h3>
-                              {getTypeBadge(category.type)}
-                              {!category.isActive && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Inactiva</span>}
+                              {!category.isActive && <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full">Inactiva</span>}
                             </div>
                             {category.description && <p className="text-white/40 text-sm">{category.description}</p>}
                           </div>
@@ -1134,6 +889,31 @@ export const CategoriesPage = () => {
                               <p className="text-white/50 text-xs">Total</p>
                               <p className="text-white text-sm font-medium">{formatCurrency(category.totalAmount)}</p>
                             </div>
+                            {category.budget && (
+                              <div className="text-right">
+                                <p className="text-white/50 text-xs">Presupuesto</p>
+                                <p className={`text-sm font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
+                                  {formatCurrency(category.budget)}
+                                </p>
+                              </div>
+                            )}
+                            {category.budget && (
+                              <div className="w-32">
+                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                                    transition={{ duration: 0.6 }}
+                                    className={`h-full rounded-full ${
+                                      isOverBudget ? 'bg-rose-500' :
+                                      isWarning ? 'bg-yellow-500' :
+                                      'bg-gradient-to-r from-[#F05984] to-[#BC455F]'
+                                    }`}
+                                  />
+                                </div>
+                                <p className="text-white/40 text-xs text-right mt-1">{budgetPercentage.toFixed(0)}%</p>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1">
                             <motion.button
@@ -1157,19 +937,19 @@ export const CategoriesPage = () => {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         )}
 
         {/* Pagination */}
-        {(filteredExpenseCategories.length > 0 || filteredIncomeCategories.length > 0) && (
+        {filteredCategories.length > 0 && (
           <div className="p-4 border-t border-white/10 flex items-center justify-between">
             <p className="text-white/40 text-sm">
-              Mostrando página {currentPage} de {Math.max(totalExpensePages, totalIncomePages)}
+              Mostrando página {currentPage} de {totalPages}
             </p>
             <div className="flex gap-2">
               <motion.button
@@ -1181,15 +961,14 @@ export const CategoriesPage = () => {
               >
                 <ChevronLeft size={16} />
               </motion.button>
-              {Array.from({ length: Math.min(5, Math.max(totalExpensePages, totalIncomePages)) }, (_, i) => {
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum;
-                const maxPages = Math.max(totalExpensePages, totalIncomePages);
-                if (maxPages <= 5) {
+                if (totalPages <= 5) {
                   pageNum = i + 1;
                 } else if (currentPage <= 3) {
                   pageNum = i + 1;
-                } else if (currentPage >= maxPages - 2) {
-                  pageNum = maxPages - 4 + i;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
                 } else {
                   pageNum = currentPage - 2 + i;
                 }
@@ -1212,8 +991,8 @@ export const CategoriesPage = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.min(Math.max(totalExpensePages, totalIncomePages), p + 1))}
-                disabled={currentPage === Math.max(totalExpensePages, totalIncomePages)}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
                 className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={16} />
@@ -1276,18 +1055,9 @@ export const CategoriesPage = () => {
                       </select>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Nombre *</label>
-                      <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Alimentación" required />
-                    </div>
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Tipo *</label>
-                      <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="expense">Gasto</option>
-                        <option value="income">Ingreso</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Nombre *</label>
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Alimentación" required />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1322,15 +1092,13 @@ export const CategoriesPage = () => {
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
                     <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Descripción opcional..." />
                   </div>
-                  {formData.type === 'expense' && (
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual (solo para gastos)</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input type="number" step="0.01" min="0" value={formData.budget} onChange={(e) => setFormData({...formData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" />
-                      </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual</label>
+                    <div className="relative">
+                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input type="number" step="0.01" min="0" value={formData.budget} onChange={(e) => setFormData({...formData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" />
                     </div>
-                  )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
                     <label htmlFor="isActive" className="text-white/60 text-sm">Activa (visible en transacciones)</label>
@@ -1406,15 +1174,13 @@ export const CategoriesPage = () => {
                     <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
                     <textarea value={editFormData.description} onChange={(e) => setEditFormData({...editFormData, description: e.target.value})} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
                   </div>
-                  {selectedCategory?.type === 'expense' && (
-                    <div>
-                      <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input type="number" step="0.01" min="0" value={editFormData.budget} onChange={(e) => setEditFormData({...editFormData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-                      </div>
+                  <div>
+                    <label className="text-white/60 text-sm mb-1.5 block">Presupuesto mensual</label>
+                    <div className="relative">
+                      <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+                      <input type="number" step="0.01" min="0" value={editFormData.budget} onChange={(e) => setEditFormData({...editFormData, budget: e.target.value})} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
                     </div>
-                  )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="editIsActive" checked={editFormData.isActive} onChange={(e) => setEditFormData({...editFormData, isActive: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
                     <label htmlFor="editIsActive" className="text-white/60 text-sm">Activa</label>
