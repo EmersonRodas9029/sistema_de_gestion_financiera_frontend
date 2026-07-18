@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useUnreadNotificationsCount } from '../../../hooks/useUnreadNotificationsCount';
 import { Logo } from '../../ui/Logo';
+import { logout } from '../../../utils';
 
 interface MenuItem {
   path: string;
@@ -144,9 +145,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
         </button>
         <button
           onClick={() => {
-            localStorage.removeItem('isAuthenticated');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userName');
+            logout();
             onNavigate?.();
             navigate('/login');
           }}

@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiFetch, apiJson } from '../../../lib/api';
 
 export type TipoReporte = 'GASTOS_MENSUAL' | 'GASTOS_ANUAL' | 'INGRESOS_MENSUAL' | 'INGRESOS_ANUAL' | 'PRESUPUESTO' | 'PERSONALIZADO';
 
@@ -18,27 +18,25 @@ export interface ApiReporte extends ReporteList {
   fechaGeneracion?: string;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-const BASE = `${config.apiUrl}/reportes`;
-const h = { 'Content-Type': 'application/json' };
+const BASE = '/reportes';
 
 export const reportesService = {
-  getAll: (): Promise<ReporteList[]> => fetch(BASE).then(json),
-  getById: (id: number): Promise<ApiReporte> => fetch(`${BASE}/${id}`).then(json),
-  getByCliente: (clienteId: number): Promise<ReporteList[]> => fetch(`${BASE}/cliente/${clienteId}`).then(json),
+  getAll: (): Promise<ReporteList[]> => apiJson(BASE),
+  getById: (id: number): Promise<ApiReporte> => apiJson(`${BASE}/${id}`),
+  getByCliente: (clienteId: number): Promise<ReporteList[]> => apiJson(`${BASE}/cliente/${clienteId}`),
   create: (data: {
     clienteId: number; contadorId?: number; nombre: string; tipoReporte: TipoReporte;
     periodoInicio: string; periodoFin: string; contenido?: string; rutaArchivo?: string | null;
   }): Promise<ApiReporte> =>
-    fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(BASE, { method: 'POST', body: JSON.stringify(data) }),
   // PUT pisa la fila completa, incluyendo clienteId (a diferencia de Metas/GastoRecurrente)
   update: (id: number, data: {
     clienteId: number; contadorId?: number; nombre: string; tipoReporte: TipoReporte;
     periodoInicio: string; periodoFin: string; contenido?: string; rutaArchivo?: string | null;
   }): Promise<ApiReporte> =>
-    fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: number): Promise<void> =>
-    fetch(`${BASE}/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`${BASE}/${id}`, { method: 'DELETE' }),
   downloadPdf: (id: number): Promise<Blob> =>
-    fetch(`${BASE}/${id}/pdf`).then(r => { if (!r.ok) throw new Error(r.statusText); return r.blob(); }),
+    apiFetch(`${BASE}/${id}/pdf`).then(r => { if (!r.ok) throw new Error(r.statusText); return r.blob(); }),
 };

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clientesService, usuariosService } from '../../../clients/services';
+import { authService } from '../../../auth/services';
 import { type TipoNotificacion } from '../../../notifications/services';
 import { configuracionesService } from '../../services';
 import {
@@ -25,7 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
-import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants, logout, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE } from '../../../../shared/utils';
 
 interface SettingsSection {
   id: string;
@@ -126,6 +127,8 @@ export const SettingsPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [passwordData, setPasswordData] = useState({
     current: '',
     new: '',
@@ -310,8 +313,8 @@ export const SettingsPage = () => {
       toast.error('Las contraseñas no coinciden');
       return;
     }
-    if (passwordData.new.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+    if (!isStrongPassword(passwordData.new)) {
+      toast.error(PASSWORD_REQUIREMENT_MESSAGE);
       return;
     }
     const userId = localStorage.getItem('userId');
@@ -334,20 +337,33 @@ export const SettingsPage = () => {
 
   const handleDeleteAccount = () => {
     setDeleteConfirmText('');
+    setDeletePassword('');
     setShowDeleteConfirm(true);
   };
 
   const confirmDeleteAccount = async () => {
     const userId = Number(localStorage.getItem('userId'));
-    if (!userId) return;
+    const username = localStorage.getItem('userName');
+    if (!userId || !username) return;
+    setIsDeletingAccount(true);
+    try {
+      // Re-verificar la contraseña actual contra el backend antes de un borrado irreversible
+      await authService.login(username, deletePassword);
+    } catch {
+      toast.error('Contraseña incorrecta');
+      setIsDeletingAccount(false);
+      return;
+    }
     try {
       if (clienteId != null) await clientesService.remove(clienteId);
       await usuariosService.remove(userId);
-      localStorage.clear();
+      logout();
       toast.success('Cuenta eliminada');
       navigate('/login');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error al eliminar la cuenta');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -784,6 +800,20 @@ export const SettingsPage = () => {
                     placeholder="ELIMINAR"
                   />
                 </div>
+                <div className="mb-4">
+                  <label htmlFor="delete-account-password" className="block text-white text-sm mb-2">
+                    Confirma tu contraseña actual:
+                  </label>
+                  <input
+                    id="delete-account-password"
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-red-400 transition-all"
+                    placeholder="Contraseña"
+                    autoComplete="current-password"
+                  />
+                </div>
                 <div className="flex justify-end gap-3">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -797,10 +827,10 @@ export const SettingsPage = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={confirmDeleteAccount}
-                    disabled={deleteConfirmText !== 'ELIMINAR'}
+                    disabled={deleteConfirmText !== 'ELIMINAR' || !deletePassword || isDeletingAccount}
                     className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Eliminar cuenta
+                    {isDeletingAccount ? 'Eliminando…' : 'Eliminar cuenta'}
                   </motion.button>
                 </div>
               </div>

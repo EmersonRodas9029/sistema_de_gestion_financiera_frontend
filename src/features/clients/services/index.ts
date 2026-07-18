@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiJson } from '../../../lib/api';
 
 export interface ApiCliente {
   id?: number | string;
@@ -22,47 +22,28 @@ export interface ApiUsuario {
   cliente?: ApiCliente;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-
 export const clientesService = {
-  getAll: (): Promise<ApiCliente[]> => fetch(`${config.apiUrl}/clientes`).then(json),
+  getAll: (): Promise<ApiCliente[]> => apiJson('/clientes'),
   update: (id: string | number, data: Partial<ApiCliente>): Promise<ApiCliente> =>
-    fetch(`${config.apiUrl}/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
+    apiJson(`/clientes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string | number): Promise<void> =>
-    fetch(`${config.apiUrl}/clientes/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`/clientes/${id}`, { method: 'DELETE' }),
 };
 
 export const usuariosService = {
-  getAll: (): Promise<ApiUsuario[]> => fetch(`${config.apiUrl}/usuarios`).then(json),
+  getAll: (): Promise<ApiUsuario[]> => apiJson('/usuarios'),
   create: (data: {
     username: string; password: string; email?: string; rol: string;
     nombreCompleto?: string; telefono?: string; fechaNacimiento?: string;
     direccion?: string; documentoIdentidad?: string; tipoDocumento?: string;
   }): Promise<ApiUsuario> =>
-    fetch(`${config.apiUrl}/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
+    apiJson('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
   remove: (id: string | number): Promise<void> =>
-    fetch(`${config.apiUrl}/usuarios/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`/usuarios/${id}`, { method: 'DELETE' }),
   activar: (id: string | number): Promise<void> =>
-    fetch(`${config.apiUrl}/usuarios/${id}/activar`, { method: 'PUT' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
-  removePermanente: async (id: string | number): Promise<void> => {
-    const r = await fetch(`${config.apiUrl}/usuarios/${id}/permanente`, { method: 'DELETE' });
-    if (!r.ok) {
-      const body = await r.json().catch(() => null) as { message?: string } | null;
-      throw new Error(body?.message || r.statusText);
-    }
-  },
-  changePassword: async (id: string | number, data: { passwordActual: string; passwordNueva: string }): Promise<void> => {
-    const r = await fetch(`${config.apiUrl}/usuarios/${id}/password`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
-      },
-      body: JSON.stringify(data),
-    });
-    if (!r.ok) {
-      const body = await r.json().catch(() => null) as { message?: string } | null;
-      throw new Error(body?.message || r.statusText);
-    }
-  },
+    apiJson(`/usuarios/${id}/activar`, { method: 'PUT' }),
+  removePermanente: (id: string | number): Promise<void> =>
+    apiJson(`/usuarios/${id}/permanente`, { method: 'DELETE' }),
+  changePassword: (id: string | number, data: { passwordActual: string; passwordNueva: string }): Promise<void> =>
+    apiJson(`/usuarios/${id}/password`, { method: 'PUT', body: JSON.stringify(data) }),
 };

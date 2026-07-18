@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutoNotifications } from '../../hooks/useAutoNotifications';
 import { useManagedClient } from '../../hooks/useManagedClient';
+import { logout } from '../../utils';
 import { MobileLeftBar } from './LeftBar/MobileLeftBar';
 import { LeftBar } from './LeftBar/LeftBar';
 import {
@@ -74,9 +75,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
   useAutoNotifications();
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
+    logout();
     navigate('/login');
   };
 

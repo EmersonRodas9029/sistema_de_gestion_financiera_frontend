@@ -385,8 +385,8 @@ export const ChartsPage = () => {
     >
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10"
-        aria-label="Abrir menú"
+        className="lg:hidden fixed top-3 right-3 z-50 p-2 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10"
+        aria-label="Abrir filtros"
       >
         {isSidebarOpen ? <XIcon size={24} className="text-white" /> : <Menu size={24} className="text-white" />}
       </button>

@@ -12,6 +12,20 @@ export const formatDate = (date: string): string => {
 export const generateUniqueId = (prefix = 'ID'): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
+const SESSION_KEYS = [
+  'isAuthenticated', 'userRole', 'userName', 'authToken',
+  'clienteId', 'userId', 'userEmail', 'managedClienteId', 'managedClienteNombre',
+];
+
+export const logout = (): void => {
+  SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+};
+
+// ponytail: mínimo aceptable, no un validador de fuerza completo
+export const PASSWORD_REQUIREMENT_MESSAGE = 'La contraseña debe tener al menos 8 caracteres, con letras y números';
+export const isStrongPassword = (password: string): boolean =>
+  password.length >= 8 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+
 export const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } },

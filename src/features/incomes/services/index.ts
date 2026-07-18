@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiJson } from '../../../lib/api';
 
 export interface ApiIngreso {
   id?: number;
@@ -16,25 +16,23 @@ export interface ApiIngreso {
   fechaModificacion?: string;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-const BASE = `${config.apiUrl}/ingresos`;
-const h = { 'Content-Type': 'application/json' };
+const BASE = '/ingresos';
 
 export const ingresosService = {
-  getAll: (): Promise<ApiIngreso[]> => fetch(BASE).then(json),
-  getById: (id: string | number): Promise<ApiIngreso> => fetch(`${BASE}/${id}`).then(json),
+  getAll: (): Promise<ApiIngreso[]> => apiJson(BASE),
+  getById: (id: string | number): Promise<ApiIngreso> => apiJson(`${BASE}/${id}`),
   create: (data: {
     clienteId: number; monto: number; fecha: string; tipo: string;
     fuente?: string; descripcion?: string; metodoRecepcion?: string;
     esRecurrente?: boolean; frecuencia?: string;
   }): Promise<ApiIngreso> =>
-    fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(BASE, { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string | number, data: Partial<{
     monto: number; fecha: string; tipo: string; fuente: string;
     descripcion: string; metodoRecepcion: string;
     esRecurrente: boolean; frecuencia: string; activo: boolean;
   }>): Promise<ApiIngreso> =>
-    fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string | number): Promise<void> =>
-    fetch(`${BASE}/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`${BASE}/${id}`, { method: 'DELETE' }),
 };

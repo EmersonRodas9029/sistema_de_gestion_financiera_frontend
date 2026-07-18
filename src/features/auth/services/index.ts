@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiFetch } from '../../../lib/api';
 
 export interface LoginResponse {
   token: string;
@@ -18,9 +18,8 @@ export interface ApiError {
 
 export const authService = {
   login: async (username: string, password: string): Promise<LoginResponse> => {
-    const res = await fetch(`${config.apiUrl}/auth/login`, {
+    const res = await apiFetch('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {

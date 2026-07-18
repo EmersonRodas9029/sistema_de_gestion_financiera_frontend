@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiJson } from '../../../lib/api';
 
 export interface ApiGasto {
   id?: number;
@@ -16,25 +16,23 @@ export interface ApiGasto {
   fechaModificacion?: string;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-const BASE = `${config.apiUrl}/gastos`;
-const h = { 'Content-Type': 'application/json' };
+const BASE = '/gastos';
 
 export const gastosService = {
-  getAll: (): Promise<ApiGasto[]> => fetch(BASE).then(json),
-  getById: (id: number): Promise<ApiGasto> => fetch(`${BASE}/${id}`).then(json),
+  getAll: (): Promise<ApiGasto[]> => apiJson(BASE),
+  getById: (id: number): Promise<ApiGasto> => apiJson(`${BASE}/${id}`),
   create: (data: {
     clienteId: number; categoriaId: number; monto: number; fecha: string;
     descripcion?: string; metodoPago: string; esRecurrente?: boolean;
     frecuencia?: string | null; adjunto?: string | null; activo?: boolean;
   }): Promise<ApiGasto> =>
-    fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(BASE, { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<{
     categoriaId: number; monto: number; fecha: string; descripcion: string;
     metodoPago: string; esRecurrente: boolean; frecuencia: string | null;
     adjunto: string | null; activo: boolean;
   }>): Promise<ApiGasto> =>
-    fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: number): Promise<void> =>
-    fetch(`${BASE}/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`${BASE}/${id}`, { method: 'DELETE' }),
 };

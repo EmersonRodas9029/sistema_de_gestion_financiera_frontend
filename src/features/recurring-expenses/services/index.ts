@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiJson } from '../../../lib/api';
 
 export type Frecuencia = 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'ANUAL';
 
@@ -20,19 +20,17 @@ export interface ApiGastoRecurrente extends GastoRecurrenteList {
   ultimoProcesamiento?: string | null;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-const BASE = `${config.apiUrl}/gastos-recurrentes`;
-const h = { 'Content-Type': 'application/json' };
+const BASE = '/gastos-recurrentes';
 
 export const gastosRecurrentesService = {
-  getById: (id: number): Promise<ApiGastoRecurrente> => fetch(`${BASE}/${id}`).then(json),
-  getByCliente: (clienteId: number): Promise<GastoRecurrenteList[]> => fetch(`${BASE}/cliente/${clienteId}`).then(json),
+  getById: (id: number): Promise<ApiGastoRecurrente> => apiJson(`${BASE}/${id}`),
+  getByCliente: (clienteId: number): Promise<GastoRecurrenteList[]> => apiJson(`${BASE}/cliente/${clienteId}`),
   create: (data: {
     clienteId: number; categoriaId?: number; monto: number; descripcion?: string;
     frecuencia: Frecuencia; fechaInicio: string; fechaFin?: string | null;
     diaMes?: number | null; diaSemana?: number | null;
   }): Promise<ApiGastoRecurrente> =>
-    fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(BASE, { method: 'POST', body: JSON.stringify(data) }),
   // PUT pisa la fila completa (no es un patch real): hay que reenviar todos los campos,
   // incluyendo clienteId/categoriaId/fechaInicio o el backend los borra silenciosamente.
   update: (id: number, data: {
@@ -40,7 +38,7 @@ export const gastosRecurrentesService = {
     frecuencia: Frecuencia; fechaInicio: string; fechaFin?: string | null;
     diaMes?: number | null; diaSemana?: number | null; activo: boolean;
   }): Promise<ApiGastoRecurrente> =>
-    fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: number): Promise<void> =>
-    fetch(`${BASE}/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`${BASE}/${id}`, { method: 'DELETE' }),
 };

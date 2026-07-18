@@ -1,4 +1,4 @@
-import { config } from '../../../lib/config';
+import { apiJson } from '../../../lib/api';
 
 export type TipoNotificacion =
   | 'PRESUPUESTO_EXCEDIDO'
@@ -20,23 +20,21 @@ export interface NotificacionResponse {
   fechaCreacion: string;
 }
 
-const json = (r: Response) => { if (!r.ok) throw new Error(r.statusText); return r.json(); };
-const BASE = `${config.apiUrl}/notificaciones`;
-const h = { 'Content-Type': 'application/json' };
+const BASE = '/notificaciones';
 
 export const notificacionesService = {
-  getAll: (): Promise<NotificacionResponse[]> => fetch(BASE).then(json),
-  getById: (id: number): Promise<NotificacionResponse> => fetch(`${BASE}/${id}`).then(json),
+  getAll: (): Promise<NotificacionResponse[]> => apiJson(BASE),
+  getById: (id: number): Promise<NotificacionResponse> => apiJson(`${BASE}/${id}`),
   create: (data: {
     clienteId: number; tipo: TipoNotificacion; titulo: string; mensaje: string;
     leida?: boolean; fechaProgramada?: string | null; fechaEnviada?: string | null; activa?: boolean;
   }): Promise<NotificacionResponse> =>
-    fetch(BASE, { method: 'POST', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(BASE, { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<{
     tipo: TipoNotificacion; titulo: string; mensaje: string; leida: boolean;
     fechaProgramada: string | null; fechaEnviada: string | null; activa: boolean;
   }>): Promise<NotificacionResponse> =>
-    fetch(`${BASE}/${id}`, { method: 'PUT', headers: h, body: JSON.stringify(data) }).then(json),
+    apiJson(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: number): Promise<void> =>
-    fetch(`${BASE}/${id}`, { method: 'DELETE' }).then(r => { if (!r.ok) throw new Error(r.statusText); }),
+    apiJson(`${BASE}/${id}`, { method: 'DELETE' }),
 };

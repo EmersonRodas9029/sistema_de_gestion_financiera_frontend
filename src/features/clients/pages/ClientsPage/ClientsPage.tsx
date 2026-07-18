@@ -6,7 +6,7 @@ import {
   Shield, User, MailIcon, RotateCcw, UserCog, UserX,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip } from 'recharts';
-import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { usuariosService, clientesService, type ApiUsuario } from '../../services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
@@ -144,7 +144,7 @@ export const ClientsPage = () => {
   const handleCreate = async () => {
     const errs: Record<string, string> = {};
     if (createForm.username.length < 3) errs.username = 'Mínimo 3 caracteres';
-    if (createForm.password.length < 6) errs.password = 'Mínimo 6 caracteres';
+    if (!isStrongPassword(createForm.password)) errs.password = PASSWORD_REQUIREMENT_MESSAGE;
     if (Object.keys(errs).length) { setCreateErrors(errs); return; }
 
     try {
@@ -655,7 +655,7 @@ export const ClientsPage = () => {
                 <input type="password" value={createForm.password}
                   onChange={e => { setCreateForm({...createForm, password: e.target.value}); setCreateErrors({...createErrors, password: ''}); }}
                   className={`${inputCls} ${createErrors.password ? 'border-red-500' : ''}`}
-                  placeholder="mín 6 caracteres" />
+                  placeholder="mín 8 caracteres, letras y números" />
                 {createErrors.password && <p className="text-red-400 text-xs mt-1">{createErrors.password}</p>}
               </div>
               <div>

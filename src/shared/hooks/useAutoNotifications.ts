@@ -6,6 +6,7 @@ import { gastosService } from '../../features/expenses/services';
 import { metasService } from '../../features/goals/services';
 import { gastosRecurrentesService, type ApiGastoRecurrente } from '../../features/recurring-expenses/services';
 import { configuracionesService } from '../../features/settings/services';
+import { getCurrentClientSession } from './useCurrentClient';
 
 const DIAS_AVISO_RECURRENTE = 3; // avisar si el próximo cobro cae dentro de estos días
 const DIAS_AVISO_META = 7; // avisar si la meta vence dentro de estos días
@@ -214,7 +215,8 @@ export async function generarNotificacionesAutomaticas(clienteId: number): Promi
 let ejecucionEnCurso: Promise<void> | null = null;
 
 const ejecutarChequeo = () => {
-  const clienteId = Number(localStorage.getItem('clienteId'));
+  const { ownClienteId } = getCurrentClientSession();
+  const clienteId = Number(ownClienteId);
   if (!clienteId || ejecucionEnCurso) return;
   ejecucionEnCurso = generarNotificacionesAutomaticas(clienteId)
     .then(({ creadas }) => {
