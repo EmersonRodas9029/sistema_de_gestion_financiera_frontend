@@ -13,6 +13,8 @@ import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { useManagedClient, setManagedClient, clearManagedClient } from '../../../../shared/hooks/useManagedClient';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 
 interface Usuario {
   id: string;
@@ -71,6 +73,7 @@ const RolTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ p
 export const ClientsPage = () => {
   const managedClient = useManagedClient();
   const [searchTerm, setSearchTerm]       = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedRol, setSelectedRol]     = useState<string>('todos');
   const [selectedActivo, setSelectedActivo] = useState<string>('todos');
   const [viewMode, setViewMode]           = useState<'grid' | 'list'>(() => getViewPreferences().defaultView);
@@ -84,6 +87,7 @@ export const ClientsPage = () => {
   const [sortOrder, setSortOrder]         = useState<'asc' | 'desc'>('asc');
   const [usuarios, setUsuarios]           = useState<Usuario[]>([]);
   const [error, setError]                 = useState<string | null>(null);
+  const { confirm, ConfirmDialogElement } = useConfirm();
 
   const [createForm, setCreateForm] = useState({
     username: '', password: '', email: '', rol: 'CLIENTE',
@@ -124,7 +128,7 @@ export const ClientsPage = () => {
   ].filter(d => d.value > 0);
 
   const filtered = usuarios.filter(u => {
-    const q = searchTerm.toLowerCase();
+    const q = debouncedSearchTerm.toLowerCase();
     const matchSearch = u.username.toLowerCase().includes(q) ||
                         u.email.toLowerCase().includes(q) ||
                         (u.cliente?.nombreCompleto ?? '').toLowerCase().includes(q);
@@ -203,7 +207,7 @@ export const ClientsPage = () => {
   };
 
   const handleDelete = async (u: Usuario) => {
-    if (!window.confirm('¿Desactivar este usuario?')) return;
+    if (!(await confirm('¿Desactivar este usuario?'))) return;
     try {
       // Siempre vía usuariosService: desactiva el usuario (bloquea login) y cascada al cliente asociado.
       // clientesService.remove solo desactiva el cliente, sin bloquear el login del usuario.
@@ -215,7 +219,7 @@ export const ClientsPage = () => {
   };
 
   const handleActivar = async (u: Usuario) => {
-    if (!window.confirm('¿Reactivar este usuario? Podrá iniciar sesión de nuevo y su información volverá a estar activa.')) return;
+    if (!(await confirm('¿Reactivar este usuario? Podrá iniciar sesión de nuevo y su información volverá a estar activa.', { danger: false }))) return;
     try {
       await usuariosService.activar(u.id);
       await fetchUsuarios();
@@ -225,7 +229,7 @@ export const ClientsPage = () => {
   };
 
   const handleDeletePermanente = async (u: Usuario) => {
-    if (!window.confirm('¿Eliminar DEFINITIVAMENTE este usuario? Esta acción no se puede deshacer. Si tiene registros asociados (gastos, ingresos, etc.) la operación será rechazada.')) return;
+    if (!(await confirm('¿Eliminar DEFINITIVAMENTE este usuario? Esta acción no se puede deshacer. Si tiene registros asociados (gastos, ingresos, etc.) la operación será rechazada.'))) return;
     try {
       await usuariosService.removePermanente(u.id);
       await fetchUsuarios();
@@ -813,6 +817,7 @@ export const ClientsPage = () => {
           </form>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

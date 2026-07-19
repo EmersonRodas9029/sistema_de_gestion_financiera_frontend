@@ -27,6 +27,9 @@ import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Toggle } from '../../../../shared/components/ui/Toggle';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
 
 type Tipo       = 'ESTABLE' | 'VOLATIL';
@@ -85,16 +88,6 @@ const emptyCreate = (clienteId = '') => ({
   metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '',
 });
 
-const Toggle = ({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) => (
-  <label className="flex items-center gap-3 cursor-pointer">
-    <div className={`w-10 h-5 rounded-full transition-colors relative ${value ? 'bg-[#F05984]' : 'bg-white/20'}`}
-      onClick={() => onChange(!value)}>
-      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : ''}`} />
-    </div>
-    <span className="text-white/60 text-sm">{label}</span>
-  </label>
-);
-
 const FrecuenciaSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
   <div>
     <label className="text-white/60 text-sm mb-1.5 block">Frecuencia</label>
@@ -110,11 +103,13 @@ const FrecuenciaSelect = ({ value, onChange }: { value: string; onChange: (v: st
 
 export const IncomesPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [ingresos, setIngresos]   = useState<Ingreso[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError]         = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm]         = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedTipo, setSelectedTipo]     = useState<string>('todos');
   const [selectedActivo, setSelectedActivo] = useState<string>('todos');
   const [selectedMetodo, setSelectedMetodo] = useState<string>('todos');
@@ -142,13 +137,9 @@ export const IncomesPage = () => {
     setError(null);
     try {
       const list = await ingresosService.getAll();
-      // IngresoList solo devuelve campos básicos; getById trae el registro completo
-      const detailed = await Promise.all(
-        list.map(item => ingresosService.getById(item.id!).catch(() => item))
-      );
       // El endpoint /ingresos no filtra por cliente en el backend: un usuario con rol cliente
       // solo debe ver sus propios ingresos, así que se filtra en el cliente.
-      const scoped = isClientRole ? detailed.filter(i => Number(i.clienteId) === Number(ownClienteId)) : detailed;
+      const scoped = isClientRole ? list.filter(i => Number(i.clienteId) === Number(ownClienteId)) : list;
       setIngresos(scoped.map(toIngreso));
     } catch {
       setError('No se pudo conectar con el servidor.');
@@ -218,7 +209,7 @@ export const IncomesPage = () => {
 
   // Filters
   const filteredIncomes = ingresos.filter(i => {
-    const q = searchTerm.toLowerCase();
+    const q = debouncedSearchTerm.toLowerCase();
     const matchesSearch = (i.descripcion ?? '').toLowerCase().includes(q) ||
                           (i.fuente ?? '').toLowerCase().includes(q) ||
                           String(i.clienteId).includes(q);
@@ -313,7 +304,7 @@ export const IncomesPage = () => {
   };
 
   const handleDelete = async (ingreso: Ingreso) => {
-    if (!window.confirm('¿Eliminar este ingreso?')) return;
+    if (!(await confirm('¿Eliminar este ingreso?'))) return;
     try {
       await ingresosService.remove(ingreso.id);
       await fetchIngresos();
@@ -896,13 +887,8 @@ export const IncomesPage = () => {
             <div className="flex items-center gap-6 pt-1">
               <Toggle value={editForm.esRecurrente}
                 onChange={v => setEditForm({...editForm, esRecurrente: v})} label="Recurrente" />
-              <label className="flex items-center gap-3 cursor-pointer">
-                <div className={`w-10 h-5 rounded-full transition-colors relative ${editForm.activo ? 'bg-green-500' : 'bg-white/20'}`}
-                  onClick={() => setEditForm({...editForm, activo: !editForm.activo})}>
-                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${editForm.activo ? 'translate-x-5' : ''}`} />
-                </div>
-                <span className="text-white/60 text-sm">Activo</span>
-              </label>
+              <Toggle value={editForm.activo}
+                onChange={v => setEditForm({...editForm, activo: v})} label="Activo" activeColor="bg-green-500" />
             </div>
             <AnimatePresence>
               {editForm.esRecurrente && (
@@ -927,6 +913,7 @@ export const IncomesPage = () => {
           </form>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

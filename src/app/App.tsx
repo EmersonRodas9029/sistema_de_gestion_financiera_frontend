@@ -5,7 +5,6 @@ import { MainLayout } from '../shared/components/layout/MainLayout';
 import { NotFound } from '../shared/components/ui/NotFound';
 import { ErrorBoundary } from '../shared/components/ui/ErrorBoundary';
 import { HomePage } from '../features/home/pages/HomePage';
-import { AdminPage } from '../features/admin/pages/AdminPage';
 import { IncomesPage } from '../features/incomes/pages/IncomesPage';
 import { ExpensesPage } from '../features/expenses/pages/ExpensesPage';
 import { CategoriesPage } from '../features/categories/pages/CategoriesPage';
@@ -42,7 +41,7 @@ const ProtectedRoutes = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<HomePage />} />
-        <Route path="/admin" element={<AdminOnly userRole={userRole}><AdminPage /></AdminOnly>} />
+        <Route path="/admin" element={<Navigate to="/admin/clients" replace />} />
         <Route path="/admin/clients" element={<AdminOnly userRole={userRole}><ClientsPage /></AdminOnly>} />
         <Route path="/admin/reports" element={<AdminOnly userRole={userRole}><ReportsPage /></AdminOnly>} />
         <Route path="/incomes" element={<IncomesPage />} />

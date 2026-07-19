@@ -6,6 +6,7 @@ import { containerVariants, itemVariants } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import {
   Bell, CheckCheck, Trash2,
   Clock, AlertCircle, Target, CreditCard, Archive, BellOff, XCircle
@@ -53,6 +54,7 @@ export const NotificationsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedType, setSelectedType] = useState<'todas' | TipoNotificacion>('todas');
   const [showArchived, setShowArchived] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,8 +92,8 @@ export const NotificationsPage = () => {
 
   const filteredNotifications = notifications.filter(n => {
     if (!showArchived && !n.activa) return false;
-    const matchesSearch = n.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.mensaje.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = n.titulo.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      n.mensaje.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesType = selectedType === 'todas' || n.tipo === selectedType;
     return matchesSearch && matchesType;
   });

@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 
 interface ChartData {
+  key: string; // "YYYY-MM", usado para filtrar por rango de fechas personalizado
   month: string;
   income: number;
   expense: number;
@@ -284,13 +285,8 @@ export const ChartsPage = () => {
       const [gastosLista, ingresosLista, categorias] = await Promise.all([
         gastosService.getAll(), ingresosService.getAll(), categoriasService.getByCliente(clienteId),
       ]);
-      // ponytail: /gastos y /ingresos solo listan campos resumidos (sin clienteId) — se pide el detalle completo de cada uno
-      const [gastosDetalle, ingresosDetalle] = await Promise.all([
-        Promise.all(gastosLista.map(g => gastosService.getById(g.id!).catch(() => g))),
-        Promise.all(ingresosLista.map(i => ingresosService.getById(i.id!).catch(() => i))),
-      ]);
-      const gastos = gastosDetalle.filter(g => g.clienteId === clienteId && g.activo !== false);
-      const ingresos = ingresosDetalle.filter(i => i.clienteId === clienteId && i.activo !== false);
+      const gastos = gastosLista.filter(g => g.clienteId === clienteId && g.activo !== false);
+      const ingresos = ingresosLista.filter(i => i.clienteId === clienteId && i.activo !== false);
       const catById = new Map(categorias.map(c => [c.id, c]));
 
       const now = new Date();
@@ -301,7 +297,7 @@ export const ChartsPage = () => {
       const monthly: ChartData[] = months.map(({ key, label }) => {
         const income = sumBy(ingresos.filter(i => i.fecha?.slice(0, 7) === key).map(i => i.monto ?? 0));
         const expense = sumBy(gastos.filter(g => g.fecha?.slice(0, 7) === key).map(g => g.monto ?? 0));
-        return { month: label, income, expense, savings: income - expense };
+        return { key, month: label, income, expense, savings: income - expense };
       });
       setMonthlyData(monthly);
 
@@ -350,6 +346,11 @@ export const ChartsPage = () => {
     if (selectedPeriod === '3m') filtered = filtered.slice(-3);
     if (selectedPeriod === '6m') filtered = filtered.slice(-6);
     if (selectedPeriod === '1y') filtered = filtered.slice(-12);
+    if (selectedPeriod === 'custom') {
+      const start = dateRange.start.slice(0, 7);
+      const end = dateRange.end.slice(0, 7);
+      filtered = filtered.filter(d => d.key >= start && d.key <= end);
+    }
     return filtered;
   };
 

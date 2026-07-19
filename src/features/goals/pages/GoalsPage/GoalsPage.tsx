@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Target, Plus, Search, Filter, Edit, Trash2, Calendar, TrendingUp,
+  Target, Plus, Edit, Trash2, Calendar, TrendingUp,
   PieChart as PieChartIcon, DollarSign, Activity, XCircle, CheckCircle,
   User,
 } from 'lucide-react';
@@ -12,7 +12,10 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { metasService, type ApiMeta, type Prioridad } from '../../services';
@@ -38,11 +41,13 @@ type Estado = 'todas' | 'activa' | 'completada' | 'inactiva';
 
 export const GoalsPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [goals, setGoals] = useState<ApiMeta[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedEstado, setSelectedEstado] = useState<Estado>('todas');
   const [selectedPrioridad, setSelectedPrioridad] = useState<'todas' | Prioridad>('todas');
   const [showFilters, setShowFilters] = useState(false);
@@ -69,8 +74,7 @@ export const GoalsPage = () => {
       const list = isClientRole
         ? await metasService.getByCliente(Number(ownClienteId))
         : await metasService.getAll();
-      const full = await Promise.all(list.map(item => metasService.getById(item.id!)));
-      setGoals(full);
+      setGoals(list);
     } catch (e) {
       toast.error(`Error al cargar metas: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     } finally {
@@ -172,7 +176,7 @@ export const GoalsPage = () => {
 
   const handleDeleteGoal = async (id?: number) => {
     if (!id) return;
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta meta?')) return;
+    if (!(await confirm('¿Estás seguro de que deseas eliminar esta meta?'))) return;
     try {
       await metasService.remove(id);
       toast.success('Meta eliminada');
@@ -184,7 +188,7 @@ export const GoalsPage = () => {
 
   const filteredGoals = goals.filter(g => {
     const texto = `${g.nombre ?? ''} ${g.descripcion ?? ''}`.toLowerCase();
-    const matchesSearch = texto.includes(searchTerm.toLowerCase());
+    const matchesSearch = texto.includes(debouncedSearchTerm.toLowerCase());
     const matchesEstado = selectedEstado === 'todas' || estadoOf(g) === selectedEstado;
     const matchesPrioridad = selectedPrioridad === 'todas' || g.prioridad === selectedPrioridad;
     return matchesSearch && matchesEstado && matchesPrioridad;
@@ -368,58 +372,36 @@ export const GoalsPage = () => {
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar metas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar metas..."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Estado</label>
+              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                <option value="activa" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activas</option>
+                <option value="completada" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completadas</option>
+                <option value="inactiva" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivas</option>
+              </select>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>
-                <Filter size={20} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} onClick={clearAllFilters} className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm">
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Prioridad</label>
+              <select value={selectedPrioridad} onChange={(e) => setSelectedPrioridad(e.target.value as 'todas' | Prioridad)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las prioridades</option>
+                <option value="ALTA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alta</option>
+                <option value="MEDIA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Media</option>
+                <option value="BAJA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Baja</option>
+              </select>
             </div>
           </div>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-white/10 overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                      <option value="activa" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activas</option>
-                      <option value="completada" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completadas</option>
-                      <option value="inactiva" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivas</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Prioridad</label>
-                    <select value={selectedPrioridad} onChange={(e) => setSelectedPrioridad(e.target.value as 'todas' | Prioridad)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las prioridades</option>
-                      <option value="ALTA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alta</option>
-                      <option value="MEDIA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Media</option>
-                      <option value="BAJA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Baja</option>
-                    </select>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </SearchFilterBar>
 
         <SortBar
           sortBy={sortBy}
@@ -730,6 +712,7 @@ export const GoalsPage = () => {
           </form>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

@@ -2,6 +2,8 @@ import { apiJson } from '../../../lib/api';
 
 export interface ApiPresupuestoList {
   id?: number;
+  clienteId?: number;
+  categoriaId?: number;
   montoPresupuestado?: number;
   mes?: number;
   anio?: number;
@@ -9,8 +11,6 @@ export interface ApiPresupuestoList {
 }
 
 export interface ApiPresupuesto extends ApiPresupuestoList {
-  clienteId?: number;
-  categoriaId?: number;
   fechaCreacion?: string;
   fechaModificacion?: string;
 }

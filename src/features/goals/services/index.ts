@@ -4,19 +4,19 @@ export type Prioridad = 'BAJA' | 'MEDIA' | 'ALTA';
 
 export interface MetaFinancieraList {
   id?: number;
+  clienteId?: number;
   nombre?: string;
+  descripcion?: string;
   montoObjetivo?: number;
   montoActual?: number;
   fechaLimite?: string;
   prioridad?: Prioridad;
+  activa?: boolean;
   completada?: boolean;
+  fechaCompletada?: string | null;
 }
 
 export interface ApiMeta extends MetaFinancieraList {
-  clienteId?: number;
-  descripcion?: string;
-  activa?: boolean;
-  fechaCompletada?: string | null;
   fechaCreacion?: string;
   fechaModificacion?: string;
 }

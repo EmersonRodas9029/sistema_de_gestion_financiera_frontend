@@ -5,8 +5,8 @@ import { Search, Filter, XCircle } from 'lucide-react';
 interface SearchFilterBarProps {
   searchTerm: string;
   onSearch: (value: string) => void;
-  selectedPeriod: string;
-  onPeriodChange: (period: string) => void;
+  selectedPeriod?: string;
+  onPeriodChange?: (period: string) => void;
   showFilters: boolean;
   onToggleFilters: () => void;
   hasActiveFilters: boolean;
@@ -33,17 +33,19 @@ export const SearchFilterBar = ({
         />
       </div>
       <div className="flex flex-wrap gap-2">
-        <select
-          value={selectedPeriod}
-          onChange={(e) => onPeriodChange(e.target.value)}
-          className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-        >
-          <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-          <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
-          <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
-          <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
-        </select>
+        {onPeriodChange && (
+          <select
+            value={selectedPeriod}
+            onChange={(e) => onPeriodChange(e.target.value)}
+            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+          >
+            <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
+            <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
+            <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
+            <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
+          </select>
+        )}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

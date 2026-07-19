@@ -4,18 +4,18 @@ export type TipoReporte = 'GASTOS_MENSUAL' | 'GASTOS_ANUAL' | 'INGRESOS_MENSUAL'
 
 export interface ReporteList {
   id?: number;
+  clienteId?: number;
+  contadorId?: number;
   nombre?: string;
   tipoReporte?: TipoReporte;
   periodoInicio?: string;
   periodoFin?: string;
+  fechaGeneracion?: string;
 }
 
 export interface ApiReporte extends ReporteList {
-  clienteId?: number;
-  contadorId?: number;
   contenido?: string;
   rutaArchivo?: string | null;
-  fechaGeneracion?: string;
 }
 
 const BASE = '/reportes';

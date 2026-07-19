@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Repeat, Plus, Search, Filter, Edit, Trash2, Calendar, DollarSign,
+  Repeat, Plus, Edit, Trash2, Calendar, DollarSign,
   Clock, CheckCircle, XCircle, Activity, Tag, PieChart, User,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
@@ -12,6 +12,9 @@ import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { gastosRecurrentesService, type ApiGastoRecurrente, type Frecuencia } from '../../services';
@@ -49,12 +52,14 @@ type Estado = 'todos' | 'activo' | 'inactivo';
 
 export const RecurringExpensesPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [expenses, setExpenses] = useState<ApiGastoRecurrente[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [categoriasByClient, setCategoriasByClient] = useState<Record<number, ApiCategoria[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedCliente, setSelectedCliente] = useState<string>('todos');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('todas');
   const [selectedFrecuencia, setSelectedFrecuencia] = useState<'todos' | Frecuencia>('todos');
@@ -79,29 +84,19 @@ export const RecurringExpensesPage = () => {
   const categoriaOf = (id?: number) => id == null ? undefined : allCategorias.find(c => c.id === id);
   const categoriaNombre = (id?: number) => id == null ? 'Sin categoría' : (categoriaOf(id)?.nombre ?? `Categoría #${id}`);
 
-  // GET /categorias/cliente/{id} viene "liviano" (sin icono/color/descripcion), hace falta el detalle por id
-  const fetchCategoriasCompletas = async (clienteId: number): Promise<ApiCategoria[]> => {
-    const list = await categoriasService.getByCliente(clienteId);
-    return Promise.all(list.map(c => categoriasService.getById(c.id!).catch(() => c)));
-  };
-
   // No existe GET /gastos-recurrentes global: se agrega por cliente
   const fetchExpenses = useCallback(async (clientesList: ApiCliente[]) => {
     setIsLoading(true);
     try {
       const perClient = await Promise.all(
-        clientesList.map(async c => {
-          const clienteId = Number(c.id);
-          const list = await gastosRecurrentesService.getByCliente(clienteId).catch(() => []);
-          return Promise.all(list.map(item => gastosRecurrentesService.getById(item.id!).catch(() => ({ ...item, clienteId }))));
-        })
+        clientesList.map(c => gastosRecurrentesService.getByCliente(Number(c.id)).catch(() => []))
       );
       const full = perClient.flat();
       setExpenses(full);
 
       const clienteIds = [...new Set(full.map(e => e.clienteId).filter((id): id is number => id != null))];
       const entries = await Promise.all(
-        clienteIds.map(async id => [id, await fetchCategoriasCompletas(id).catch(() => [])] as const)
+        clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
       );
       setCategoriasByClient(Object.fromEntries(entries));
     } catch (e) {
@@ -129,7 +124,7 @@ export const RecurringExpensesPage = () => {
     if (!formData.clienteId) { setFormCategorias([]); return; }
     const clienteId = Number(formData.clienteId);
     if (categoriasByClient[clienteId]) { setFormCategorias(categoriasByClient[clienteId].filter(isCategoriaGasto)); return; }
-    fetchCategoriasCompletas(clienteId).then(cats => {
+    categoriasService.getByCliente(clienteId).then(cats => {
       setFormCategorias(cats.filter(isCategoriaGasto));
       setCategoriasByClient(prev => ({ ...prev, [clienteId]: cats }));
     }).catch(() => setFormCategorias([]));
@@ -221,7 +216,7 @@ export const RecurringExpensesPage = () => {
 
   const handleDeleteExpense = async (id?: number) => {
     if (!id) return;
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este gasto recurrente?')) return;
+    if (!(await confirm('¿Estás seguro de que deseas eliminar este gasto recurrente?'))) return;
     try {
       await gastosRecurrentesService.remove(id);
       toast.success('Gasto recurrente eliminado');
@@ -233,7 +228,7 @@ export const RecurringExpensesPage = () => {
 
   const filteredExpenses = expenses.filter(e => {
     const texto = `${e.descripcion ?? ''} ${clienteNombre(e.clienteId)}`.toLowerCase();
-    const matchesSearch = texto.includes(searchTerm.toLowerCase());
+    const matchesSearch = texto.includes(debouncedSearchTerm.toLowerCase());
     const matchesCliente = selectedCliente === 'todos' || String(e.clienteId) === selectedCliente;
     const matchesCategoria = selectedCategoria === 'todas' || String(e.categoriaId) === selectedCategoria;
     const matchesFrecuencia = selectedFrecuencia === 'todos' || e.frecuencia === selectedFrecuencia;
@@ -422,74 +417,52 @@ export const RecurringExpensesPage = () => {
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar gastos recurrentes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar gastos recurrentes..."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Cliente</label>
+              <select value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los clientes</option>
+                {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombreCompleto}</option>)}
+              </select>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>
-                <Filter size={20} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} onClick={clearAllFilters} className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm">
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Categoría</label>
+              <select value={selectedCategoria} onChange={(e) => setSelectedCategoria(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                {[...new Map(allCategorias.map(c => [c.id, c])).values()].map(c => (
+                  <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Frecuencia</label>
+              <select value={selectedFrecuencia} onChange={(e) => setSelectedFrecuencia(e.target.value as 'todos' | Frecuencia)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las frecuencias</option>
+                <option value="DIARIO" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Diario</option>
+                <option value="SEMANAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semanal</option>
+                <option value="MENSUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
+                <option value="ANUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Estado</label>
+              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
+                <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
+                <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
+              </select>
             </div>
           </div>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-white/10 overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Cliente</label>
-                    <select value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los clientes</option>
-                      {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombreCompleto}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Categoría</label>
-                    <select value={selectedCategoria} onChange={(e) => setSelectedCategoria(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
-                      {[...new Map(allCategorias.map(c => [c.id, c])).values()].map(c => (
-                        <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Frecuencia</label>
-                    <select value={selectedFrecuencia} onChange={(e) => setSelectedFrecuencia(e.target.value as 'todos' | Frecuencia)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las frecuencias</option>
-                      <option value="DIARIO" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Diario</option>
-                      <option value="SEMANAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semanal</option>
-                      <option value="MENSUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
-                      <option value="ANUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                      <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                      <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
-                      <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
-                    </select>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </SearchFilterBar>
 
         <SortBar
           sortBy={sortBy}
@@ -804,6 +777,7 @@ export const RecurringExpensesPage = () => {
           </form>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

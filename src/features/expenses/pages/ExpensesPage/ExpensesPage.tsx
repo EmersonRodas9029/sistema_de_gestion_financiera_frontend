@@ -41,6 +41,9 @@ import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Toggle } from '../../../../shared/components/ui/Toggle';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 
 interface Expense {
@@ -86,7 +89,9 @@ const CHART_COLORS = ['#F59E0B', '#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#E
 
 export const ExpensesPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [selectedStatus, setSelectedStatus] = useState<string>('todos');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('todos');
@@ -123,12 +128,9 @@ export const ExpensesPage = () => {
     setIsLoading(true);
     try {
       const list = await gastosService.getAll();
-      const full = await Promise.all(
-        list.map(item => gastosService.getById(item.id!).catch(() => item))
-      );
       // El endpoint /gastos no filtra por cliente en el backend: un usuario con rol cliente
       // solo debe ver sus propios gastos, así que se filtra en el cliente.
-      const scoped = isClientRole ? full.filter(g => g.clienteId === Number(ownClienteId)) : full;
+      const scoped = isClientRole ? list.filter(g => g.clienteId === Number(ownClienteId)) : list;
       const categoriaIds = [...new Set(scoped.map(g => g.categoriaId).filter((id): id is number => id != null))];
       const categoriaEntries = await Promise.all(
         categoriaIds.map(id => categoriasService.getById(id).then(c => [id, c.nombre] as const).catch(() => [id, undefined] as const))
@@ -158,19 +160,15 @@ export const ExpensesPage = () => {
 
   useEffect(() => {
     if (!formData.clienteId) { setCategoriasList([]); return; }
-    // GET /categorias/cliente/{id} viene "liviano" (sin icono), hace falta el detalle por id para saber el tipo
-    categoriasService.getByCliente(Number(formData.clienteId)).then(async list => {
-      const full = await Promise.all(list.map(c => categoriasService.getById(c.id!).catch(() => c)));
-      setCategoriasList(full.filter(isCategoriaGasto));
+    categoriasService.getByCliente(Number(formData.clienteId)).then(list => {
+      setCategoriasList(list.filter(isCategoriaGasto));
     }).catch(() => {});
   }, [formData.clienteId]);
 
   useEffect(() => {
     if (!showCreateModal || !formData.clienteId) { setRecurringList([]); return; }
-    // GET /gastos-recurrentes/cliente/{id} viene "liviano" (sin descripcion/categoriaId), hace falta el detalle por id
-    gastosRecurrentesService.getByCliente(Number(formData.clienteId)).then(async list => {
-      const full = await Promise.all(list.map(r => gastosRecurrentesService.getById(r.id!).catch(() => r as ApiGastoRecurrente)));
-      setRecurringList(full.filter(r => r.activo !== false));
+    gastosRecurrentesService.getByCliente(Number(formData.clienteId)).then(list => {
+      setRecurringList(list.filter(r => r.activo !== false));
     }).catch(() => setRecurringList([]));
   }, [showCreateModal, formData.clienteId]);
 
@@ -338,14 +336,13 @@ export const ExpensesPage = () => {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
-      try {
-        await gastosService.remove(Number(id));
-        await fetchExpenses();
-        toast.success('Gasto eliminado');
-      } catch (e) {
-        toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
-      }
+    if (!(await confirm('¿Estás seguro de que deseas eliminar este gasto?'))) return;
+    try {
+      await gastosService.remove(Number(id));
+      await fetchExpenses();
+      toast.success('Gasto eliminado');
+    } catch (e) {
+      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
   };
 
@@ -388,8 +385,8 @@ export const ExpensesPage = () => {
   };
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         expense.id.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'todas' || expense.category === selectedCategory;
     const matchesStatus = selectedStatus === 'todos' || expense.status === selectedStatus;
     const matchesPaymentMethod = selectedPaymentMethod === 'todos' || expense.paymentMethod === selectedPaymentMethod;
@@ -1361,13 +1358,12 @@ export const ExpensesPage = () => {
                     </div>
                   </div>
 
-                  <label className="flex items-center gap-3 cursor-pointer w-fit">
-                    <div className={`w-10 h-5 rounded-full transition-colors relative ${editStatus === 'completado' ? 'bg-green-500' : 'bg-white/20'}`}
-                      onClick={() => setEditStatus(editStatus === 'completado' ? 'cancelado' : 'completado')}>
-                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${editStatus === 'completado' ? 'translate-x-5' : ''}`} />
-                    </div>
-                    <span className="text-white/60 text-sm">{editStatus === 'completado' ? 'Completado' : 'Cancelado'}</span>
-                  </label>
+                  <Toggle
+                    value={editStatus === 'completado'}
+                    onChange={(v) => setEditStatus(v ? 'completado' : 'cancelado')}
+                    label={editStatus === 'completado' ? 'Completado' : 'Cancelado'}
+                    activeColor="bg-green-500"
+                  />
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                     <motion.button
@@ -1393,6 +1389,7 @@ export const ExpensesPage = () => {
           </div>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

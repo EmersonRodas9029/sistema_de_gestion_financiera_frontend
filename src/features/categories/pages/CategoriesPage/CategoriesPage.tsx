@@ -5,20 +5,22 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { clientesService } from '../../../clients/services';
 import { gastosService } from '../../../expenses/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
+import { formatCurrency } from '../../../../shared/utils';
+import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Pagination } from '../../../../shared/components/ui/Pagination';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderTree,
   Plus,
-  Search,
   Edit,
   Trash2,
-  ChevronRight,
-  ChevronLeft,
   Tag,
   TrendingDown,
   TrendingUp,
   BarChart3,
-  Filter,
   Home as HomeIcon,
   Utensils,
   Car,
@@ -42,7 +44,6 @@ import {
   Dog,
   Sparkles,
   Save,
-  X,
   Shield,
   DollarSign,
   CreditCard,
@@ -50,7 +51,6 @@ import {
   Users,
   Home,
   Activity,
-  XCircle,
   ChevronDown,
   ChevronUp,
   PieChart as PieChartIcon,
@@ -166,7 +166,9 @@ const itemVariants = {
 
 export const CategoriesPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => getViewPreferences().defaultView);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -202,13 +204,9 @@ export const CategoriesPage = () => {
   const fetchCategories = useCallback(async (clienteId: number) => {
     setIsLoading(true);
     try {
-      const [list, gastosList] = await Promise.all([
+      const [fullCats, fullGastos] = await Promise.all([
         categoriasService.getByCliente(clienteId),
         gastosService.getAll(),
-      ]);
-      const [fullCats, fullGastos] = await Promise.all([
-        Promise.all(list.map(item => categoriasService.getById(item.id!).catch(() => item))),
-        Promise.all(gastosList.map(g => gastosService.getById(g.id!).catch(() => g))),
       ]);
 
       // Agregar gastos activos de este cliente por categoriaId
@@ -265,8 +263,8 @@ export const CategoriesPage = () => {
 
   // Filtrar categorías
   const filteredCategories = categories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = category.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         category.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesActive = showInactive ? true : category.isActive;
     const matchesBudget = showWithBudget ? (category.budget || 0) > 0 : true;
     return matchesSearch && matchesActive && matchesBudget;
@@ -342,14 +340,13 @@ export const CategoriesPage = () => {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta categoría?')) {
-      try {
-        await categoriasService.remove(Number(id));
-        await fetchCategories(activeClienteId);
-        toast.success('Categoría eliminada');
-      } catch (e) {
-        toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
-      }
+    if (!(await confirm('¿Estás seguro de que deseas eliminar esta categoría?'))) return;
+    try {
+      await categoriasService.remove(Number(id));
+      await fetchCategories(activeClienteId);
+      toast.success('Categoría eliminada');
+    } catch (e) {
+      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     }
   };
 
@@ -359,14 +356,6 @@ export const CategoriesPage = () => {
     setShowInactive(false);
     setShowWithBudget(false);
     setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
   };
 
   const hasActiveFilters = searchTerm !== '' || showInactive || showWithBudget;
@@ -617,73 +606,32 @@ export const CategoriesPage = () => {
             <FolderTree size={20} />
           </motion.button>
         </div>
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar categorías..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar categorías..."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Estado</label>
+              <label className="flex items-center gap-2 mt-2">
+                <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+                <span className="text-white/60 text-sm">Mostrar inactivas</span>
+              </label>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                }`}
-              >
-                <Filter size={20} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
-                >
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
+            <div>
+              <label className="text-white/60 text-xs mb-1 block">Filtros adicionales</label>
+              <label className="flex items-center gap-2 mt-2">
+                <input type="checkbox" checked={showWithBudget} onChange={(e) => setShowWithBudget(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+                <span className="text-white/60 text-sm">Solo con presupuesto</span>
+              </label>
             </div>
           </div>
-
-          {/* Panel de filtros colapsable */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                    <label className="flex items-center gap-2 mt-2">
-                      <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white/60 text-sm">Mostrar inactivas</span>
-                    </label>
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs mb-1 block">Filtros adicionales</label>
-                    <label className="flex items-center gap-2 mt-2">
-                      <input type="checkbox" checked={showWithBudget} onChange={(e) => setShowWithBudget(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
-                      <span className="text-white/60 text-sm">Solo con presupuesto</span>
-                    </label>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </SearchFilterBar>
 
         {/* Sort Bar */}
         <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
@@ -947,96 +895,28 @@ export const CategoriesPage = () => {
 
         {/* Pagination */}
         {filteredCategories.length > 0 && (
-          <div className="p-4 border-t border-white/10 flex items-center justify-between">
-            <p className="text-white/40 text-sm">
-              Mostrando página {currentPage} de {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-              </motion.button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
-                  <motion.button
-                    key={i}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
-                      currentPage === pageNum
-                        ? 'bg-[#F05984] text-white shadow-md'
-                        : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {pageNum}
-                  </motion.button>
-                );
-              })}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-white/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={16} />
-              </motion.button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredCategories.length}
+            itemsPerPage={itemsPerPage}
+            label="categorías"
+            onPageChange={setCurrentPage}
+          />
         )}
       </motion.div>
 
       {/* Modal para crear nueva categoría */}
       <AnimatePresence>
         {showCreateModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          <ModalOverlay
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            title="Nueva Categoría"
+            subtitle="Define una nueva categoría para tus finanzas"
+            icon={<FolderTree size={20} className="text-white" />}
+            maxWidth="max-w-2xl"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg shadow-lg">
-                    <FolderTree size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Nueva Categoría</h2>
-                    <p className="text-white/40 text-sm">Define una nueva categoría para tus finanzas</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-              <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }} className="space-y-5">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Cliente *</label>
@@ -1124,47 +1004,21 @@ export const CategoriesPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </motion.div>
+          </ModalOverlay>
         )}
       </AnimatePresence>
 
       {/* Modal para editar categoría */}
       <AnimatePresence>
         {showEditModal && selectedCategory && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          <ModalOverlay
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            title="Editar Categoría"
+            subtitle="Modifica los datos de la categoría"
+            icon={<Edit size={20} className="text-blue-400" />}
+            maxWidth="max-w-md"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Edit size={20} className="text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Editar Categoría</h2>
-                    <p className="text-white/40 text-sm">Modifica los datos de la categoría</p>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowEditModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X size={20} className="text-white/60" />
-                </motion.button>
-              </div>
-              <div className="p-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleUpdateCategory(); }} className="space-y-4">
                   <div>
                     <label className="text-white/60 text-sm mb-1.5 block">Nombre</label>
@@ -1205,11 +1059,10 @@ export const CategoriesPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
-            </motion.div>
-          </motion.div>
+          </ModalOverlay>
         )}
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

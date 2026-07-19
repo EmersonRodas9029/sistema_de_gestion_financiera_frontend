@@ -4,21 +4,20 @@ export type Frecuencia = 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'ANUAL';
 
 export interface GastoRecurrenteList {
   id?: number;
-  monto?: number;
-  frecuencia?: Frecuencia;
-  fechaInicio?: string;
-  activo?: boolean;
-}
-
-export interface ApiGastoRecurrente extends GastoRecurrenteList {
   clienteId?: number;
   categoriaId?: number;
+  monto?: number;
   descripcion?: string;
+  frecuencia?: Frecuencia;
+  fechaInicio?: string;
   fechaFin?: string | null;
   diaMes?: number | null;
   diaSemana?: number | null;
+  activo?: boolean;
   ultimoProcesamiento?: string | null;
 }
+
+export type ApiGastoRecurrente = GastoRecurrenteList;
 
 const BASE = '/gastos-recurrentes';
 

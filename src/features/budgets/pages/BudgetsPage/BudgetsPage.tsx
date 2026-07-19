@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet,
   Plus,
-  Search,
-  Filter,
   Edit,
   Trash2,
   DollarSign,
@@ -23,7 +21,10 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { presupuestosService, type ApiPresupuesto } from '../../services';
@@ -50,6 +51,7 @@ const emptyForm = (clienteId = '') => ({
 
 export const BudgetsPage = () => {
   const { isClientRole, ownClienteId } = getCurrentClientSession();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [budgets, setBudgets] = useState<ApiPresupuesto[]>([]);
   const [clientes, setClientes] = useState<ApiCliente[]>([]);
   const [categoriasByClient, setCategoriasByClient] = useState<Record<number, ApiCategoria[]>>({});
@@ -57,6 +59,7 @@ export const BudgetsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedEstado, setSelectedEstado] = useState<'todos' | 'activo' | 'inactivo'>('todos');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
@@ -80,25 +83,18 @@ export const BudgetsPage = () => {
     return lista.find(c => c.id === categoriaId)?.nombre ?? `Categoría #${categoriaId}`;
   };
 
-  // GET /categorias/cliente/{id} viene "liviano" (sin icono/color/descripcion), hace falta el detalle por id
-  const fetchCategoriasCompletas = async (clienteId: number): Promise<ApiCategoria[]> => {
-    const list = await categoriasService.getByCliente(clienteId);
-    return Promise.all(list.map(c => categoriasService.getById(c.id!).catch(() => c)));
-  };
-
   const fetchBudgets = useCallback(async () => {
     setIsLoading(true);
     try {
       const list = await presupuestosService.getAll();
-      const full = await Promise.all(list.map(item => presupuestosService.getById(item.id!)));
       // El endpoint /presupuestos no filtra por cliente en el backend: un usuario con rol cliente
       // solo debe ver sus propios presupuestos, así que se filtra en el cliente.
-      const scoped = isClientRole ? full.filter(b => b.clienteId === Number(ownClienteId)) : full;
+      const scoped = isClientRole ? list.filter(b => b.clienteId === Number(ownClienteId)) : list;
       setBudgets(scoped);
 
       const clienteIds = [...new Set(scoped.map(b => b.clienteId).filter((id): id is number => id != null))];
       const entries = await Promise.all(
-        clienteIds.map(async id => [id, await fetchCategoriasCompletas(id).catch(() => [])] as const)
+        clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
       );
       setCategoriasByClient(Object.fromEntries(entries));
     } catch (e) {
@@ -116,7 +112,6 @@ export const BudgetsPage = () => {
   }, []);
   useEffect(() => {
     gastosService.getAll()
-      .then(list => Promise.all(list.map(g => gastosService.getById(g.id!).catch(() => g))))
       .then(setGastos)
       .catch(() => toast.error('No se pudieron cargar los gastos para calcular el presupuesto usado.'));
   }, []);
@@ -136,7 +131,7 @@ export const BudgetsPage = () => {
     if (!formData.clienteId) { setFormCategorias([]); return; }
     const clienteId = Number(formData.clienteId);
     if (categoriasByClient[clienteId]) { setFormCategorias(categoriasByClient[clienteId].filter(isCategoriaGasto)); return; }
-    fetchCategoriasCompletas(clienteId).then(cats => {
+    categoriasService.getByCliente(clienteId).then(cats => {
       setFormCategorias(cats.filter(isCategoriaGasto));
       setCategoriasByClient(prev => ({ ...prev, [clienteId]: cats }));
     }).catch(() => setFormCategorias([]));
@@ -195,7 +190,7 @@ export const BudgetsPage = () => {
 
   const handleDeleteBudget = async (id?: number) => {
     if (!id) return;
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este presupuesto?')) return;
+    if (!(await confirm('¿Estás seguro de que deseas eliminar este presupuesto?'))) return;
     try {
       await presupuestosService.remove(id);
       toast.success('Presupuesto eliminado');
@@ -207,7 +202,7 @@ export const BudgetsPage = () => {
 
   const filteredBudgets = budgets.filter(b => {
     const nombre = `${clienteNombre(b.clienteId)} ${categoriaNombre(b.clienteId, b.categoriaId)}`.toLowerCase();
-    const matchesSearch = nombre.includes(searchTerm.toLowerCase());
+    const matchesSearch = nombre.includes(debouncedSearchTerm.toLowerCase());
     const matchesEstado = selectedEstado === 'todos' || (selectedEstado === 'activo' ? b.activo : !b.activo);
     return matchesSearch && matchesEstado;
   });
@@ -410,67 +405,29 @@ export const BudgetsPage = () => {
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar por cliente o categoría..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}
-              >
-                <Filter size={20} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm"
-                >
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
-            </div>
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar por cliente o categoría..."
+        >
+          <div>
+            <label className="text-white/60 text-xs mb-1 block">Estado</label>
+            <select
+              value={selectedEstado}
+              onChange={(e) => setSelectedEstado(e.target.value as typeof selectedEstado)}
+              className="w-full md:w-64 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+            >
+              <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
+              <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
+              <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
+            </select>
           </div>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
-              >
-                <div>
-                  <label className="text-white/60 text-xs mb-1 block">Estado</label>
-                  <select
-                    value={selectedEstado}
-                    onChange={(e) => setSelectedEstado(e.target.value as typeof selectedEstado)}
-                    className="w-full md:w-64 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                  >
-                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-                    <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
-                    <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
-                  </select>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </SearchFilterBar>
 
         <SortBar
           sortBy={sortBy}
@@ -785,6 +742,7 @@ export const BudgetsPage = () => {
           </form>
         </ModalOverlay>
       </AnimatePresence>
+      {ConfirmDialogElement}
     </motion.div>
   );
 };

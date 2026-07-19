@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Calendar, Filter, BarChart3,
-  Plus, X, Search, PieChart as PieChartIcon, Trash2, Edit,
-  XCircle, AlertCircle, User, Clock, Download, Eye, Loader2, TrendingUp,
+  FileText, Calendar, BarChart3,
+  Plus, X, PieChart as PieChartIcon, Trash2, Edit,
+  AlertCircle, User, Clock, Download, Eye, Loader2, TrendingUp,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
 import { formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
@@ -12,6 +12,8 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
+import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
@@ -109,15 +111,11 @@ const monthsInRange = (inicio: string, fin: string) => {
   return meses;
 };
 
-// ponytail: /gastos y /ingresos solo listan campos resumidos (sin clienteId) — se filtra por fecha primero
-// y se pide el detalle completo solo de los candidatos, en vez de pedir el detalle de todo.
 const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: string, fin: string): Promise<string | null> => {
   if (tipo === 'GASTOS_MENSUAL' || tipo === 'GASTOS_ANUAL') {
     const [lista, categorias] = await Promise.all([gastosService.getAll(), categoriasService.getByCliente(clienteId)]);
-    const candidatos = lista.filter(g => g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
-    const detalleCompleto = await Promise.all(candidatos.map(g => gastosService.getById(g.id!)));
     const catName = new Map(categorias.map(c => [c.id, c.nombre ?? 'Sin categoría']));
-    const filtrados = detalleCompleto.filter(g => g.clienteId === clienteId);
+    const filtrados = lista.filter(g => g.clienteId === clienteId && g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
     const categoriasTotales: Record<string, number> = {};
     filtrados.forEach(g => {
       const nombre = catName.get(g.categoriaId!) ?? 'Sin categoría';
@@ -131,9 +129,7 @@ const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: st
   }
   if (tipo === 'INGRESOS_MENSUAL' || tipo === 'INGRESOS_ANUAL') {
     const lista = await ingresosService.getAll();
-    const candidatos = lista.filter(i => i.fecha && i.fecha.slice(0, 10) >= inicio && i.fecha.slice(0, 10) <= fin);
-    const detalleCompleto = await Promise.all(candidatos.map(i => ingresosService.getById(i.id!)));
-    const filtrados = detalleCompleto.filter(i => i.clienteId === clienteId);
+    const filtrados = lista.filter(i => i.clienteId === clienteId && i.fecha && i.fecha.slice(0, 10) >= inicio && i.fecha.slice(0, 10) <= fin);
     const fuentesTotales: Record<string, number> = {};
     filtrados.forEach(i => {
       const nombre = i.fuente || i.tipo || 'Otro';
@@ -152,14 +148,8 @@ const buildAutoContent = async (clienteId: number, tipo: TipoReporte, inicio: st
     const [presupuestosLista, gastosLista, categorias] = await Promise.all([
       presupuestosService.getAll(), gastosService.getAll(), categoriasService.getByCliente(clienteId),
     ]);
-    const presupuestoCandidatos = presupuestosLista.filter(p => mesesSet.has(`${p.anio}-${p.mes}`));
-    const gastoCandidatos = gastosLista.filter(g => g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
-    const [presupuestoDetalle, gastoDetalle] = await Promise.all([
-      Promise.all(presupuestoCandidatos.map(p => presupuestosService.getById(p.id!))),
-      Promise.all(gastoCandidatos.map(g => gastosService.getById(g.id!))),
-    ]);
-    const presupuestosCliente = presupuestoDetalle.filter(p => p.clienteId === clienteId && p.activo !== false);
-    const gastosCliente = gastoDetalle.filter(g => g.clienteId === clienteId);
+    const presupuestosCliente = presupuestosLista.filter(p => p.clienteId === clienteId && p.activo !== false && mesesSet.has(`${p.anio}-${p.mes}`));
+    const gastosCliente = gastosLista.filter(g => g.clienteId === clienteId && g.fecha && g.fecha.slice(0, 10) >= inicio && g.fecha.slice(0, 10) <= fin);
 
     const catName = new Map(categorias.map(c => [c.id, c.nombre ?? 'Sin categoría']));
     const presupuestadoPorCategoria: Record<string, number> = {};
@@ -212,6 +202,7 @@ export const ReportsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(searchTerm);
   const [selectedTipo, setSelectedTipo] = useState<'todos' | TipoReporte>('todos');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => getViewPreferences().defaultView === 'list' ? 'table' : 'grid');
@@ -242,8 +233,7 @@ export const ReportsPage = () => {
       const list = isClientRole
         ? await reportesService.getByCliente(Number(ownClienteId))
         : await reportesService.getAll();
-      const full = await Promise.all(list.map(item => reportesService.getById(item.id!)));
-      setReports(full);
+      setReports(list);
     } catch (e) {
       toast.error(`Error al cargar reportes: ${e instanceof Error ? e.message : 'Error desconocido'}`);
     } finally {
@@ -305,17 +295,19 @@ export const ReportsPage = () => {
     }
   };
 
-  const openEditModal = (report: ApiReporte) => {
-    setSelectedReport(report);
+  const openEditModal = async (report: ApiReporte) => {
+    // El listado no trae "contenido" (puede ser un JSON grande); se pide el detalle solo al editar.
+    const full = await reportesService.getById(report.id!).catch(() => report);
+    setSelectedReport(full);
     setFormData({
-      clienteId: String(report.clienteId ?? ''),
-      contadorId: String(report.contadorId ?? ''),
-      nombre: report.nombre ?? '',
-      tipoReporte: report.tipoReporte ?? 'GASTOS_MENSUAL',
-      periodoInicio: report.periodoInicio ?? '',
-      periodoFin: report.periodoFin ?? '',
-      contenido: report.contenido ?? '',
-      rutaArchivo: report.rutaArchivo ?? '',
+      clienteId: String(full.clienteId ?? ''),
+      contadorId: String(full.contadorId ?? ''),
+      nombre: full.nombre ?? '',
+      tipoReporte: full.tipoReporte ?? 'GASTOS_MENSUAL',
+      periodoInicio: full.periodoInicio ?? '',
+      periodoFin: full.periodoFin ?? '',
+      contenido: full.contenido ?? '',
+      rutaArchivo: full.rutaArchivo ?? '',
     });
     setShowEditModal(true);
   };
@@ -352,9 +344,12 @@ export const ReportsPage = () => {
     }
   };
 
-  const openDetailModal = (report: ApiReporte) => {
+  const openDetailModal = async (report: ApiReporte) => {
     setSelectedReport(report);
     setShowDetailModal(true);
+    // El listado no trae "contenido" (puede ser un JSON grande); se pide el detalle solo al ver.
+    const full = await reportesService.getById(report.id!).catch(() => report);
+    setSelectedReport(full);
   };
 
   const handleDeleteReport = async () => {
@@ -371,7 +366,7 @@ export const ReportsPage = () => {
   };
 
   const filteredReports = reports.filter(r => {
-    const matchesSearch = (r.nombre ?? '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (r.nombre ?? '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesTipo = selectedTipo === 'todos' || r.tipoReporte === selectedTipo;
     return matchesSearch && matchesTipo;
   });
@@ -570,51 +565,27 @@ export const ReportsPage = () => {
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar reportes por nombre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'}`}>
-                <Filter size={20} />
-              </motion.button>
-              {hasActiveFilters && (
-                <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} onClick={clearAllFilters}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors text-red-400 hover:text-red-300 text-sm">
-                  <XCircle size={16} />
-                  <span>Limpiar filtros</span>
-                </motion.button>
-              )}
-            </div>
+        <SearchFilterBar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          placeholder="Buscar reportes por nombre..."
+        >
+          <div>
+            <label className="text-white/60 text-xs mb-1 block">Tipo de Reporte</label>
+            <select value={selectedTipo} onChange={(e) => setSelectedTipo(e.target.value as 'todos' | TipoReporte)}
+              className="w-full md:w-64 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+              <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los tipos</option>
+              {(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => (
+                <option key={tipo} value={tipo} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{TIPO_LABEL[tipo]}</option>
+              ))}
+            </select>
           </div>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-white/10 overflow-hidden">
-                <div>
-                  <label className="text-white/60 text-xs mb-1 block">Tipo de Reporte</label>
-                  <select value={selectedTipo} onChange={(e) => setSelectedTipo(e.target.value as 'todos' | TipoReporte)}
-                    className="w-full md:w-64 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                    <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los tipos</option>
-                    {(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => (
-                      <option key={tipo} value={tipo} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{TIPO_LABEL[tipo]}</option>
-                    ))}
-                  </select>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        </SearchFilterBar>
 
         <SortBar
           sortBy={sortBy}

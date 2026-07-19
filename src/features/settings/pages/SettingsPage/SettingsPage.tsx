@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
 import { containerVariants, itemVariants, logout, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE } from '../../../../shared/utils';
+import { useConfirm } from '../../../../shared/hooks/useConfirm';
 
 interface SettingsSection {
   id: string;
@@ -62,8 +63,7 @@ const NOTIFICATION_TYPES: { value: TipoNotificacion; label: string; description:
 const CLAVE_TIPOS_NOTIFICACION = 'notif_tipos_habilitados';
 
 interface SecuritySettings {
-  twoFactorAuth: boolean;
-  lastPasswordChange: string;
+  lastPasswordChange: string | null;
 }
 
 interface PreferenceSettings {
@@ -88,8 +88,7 @@ const getDefaultNotifications = (): NotificationSettings => ({
 });
 
 const getDefaultSecurity = (): SecuritySettings => ({
-  twoFactorAuth: false,
-  lastPasswordChange: '2024-01-15'
+  lastPasswordChange: null
 });
 
 const getDefaultPreferences = (): PreferenceSettings => ({
@@ -119,6 +118,7 @@ const CustomSwitch = ({ enabled, onChange, label, description }: { enabled: bool
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
+  const { confirm, ConfirmDialogElement } = useConfirm();
   const [activeSection, setActiveSection] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -275,7 +275,7 @@ export const SettingsPage = () => {
   const activeConfigurations = [
     profile.name !== getDefaultProfile().name,
     notifications.enabledTypes.includes('PRESUPUESTO_EXCEDIDO'),
-    security.twoFactorAuth,
+    security.lastPasswordChange != null,
     preferences.colorScheme !== 'default'
   ].filter(Boolean).length;
 
@@ -286,6 +286,12 @@ export const SettingsPage = () => {
     setIsSaving(true);
     try {
       if (clienteId != null) {
+        try {
+          await clientesService.update(clienteId, { telefono: profile.phone });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'Error al guardar el teléfono');
+        }
+
         const valor = JSON.stringify(notifications.enabledTypes);
         try {
           if (notifConfigId != null) {
@@ -367,14 +373,13 @@ export const SettingsPage = () => {
     }
   };
 
-  const resetData = () => {
-    if (window.confirm('¿Esto restaurará todas las configuraciones a los valores por defecto. ¿Continuar?')) {
-      setProfile(getDefaultProfile());
-      setNotifications(getDefaultNotifications());
-      setSecurity(getDefaultSecurity());
-      setPreferences(getDefaultPreferences());
-      toast.success('Configuración restaurada a valores por defecto');
-    }
+  const resetData = async () => {
+    if (!(await confirm('¿Esto restaurará todas las configuraciones a los valores por defecto. ¿Continuar?', { danger: false }))) return;
+    setProfile(getDefaultProfile());
+    setNotifications(getDefaultNotifications());
+    setSecurity(getDefaultSecurity());
+    setPreferences(getDefaultPreferences());
+    toast.success('Configuración restaurada a valores por defecto');
   };
 
   // Skeleton Loader
@@ -504,11 +509,15 @@ export const SettingsPage = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/50 text-sm font-medium">Seguridad Activa</p>
+              <p className="text-white/50 text-sm font-medium">Contraseña</p>
               <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">
-                {security.twoFactorAuth ? 'Alta' : 'Media'}
+                {security.lastPasswordChange ? 'Actualizada' : 'Sin cambios'}
               </p>
-              <p className="text-white/30 text-xs mt-1">2FA: {security.twoFactorAuth ? 'Activado' : 'Desactivado'}</p>
+              <p className="text-white/30 text-xs mt-1">
+                {security.lastPasswordChange
+                  ? `Último cambio: ${new Date(security.lastPasswordChange).toLocaleDateString()}`
+                  : 'Nunca se ha cambiado'}
+              </p>
             </div>
             <div className="p-3 rounded-xl bg-yellow-500/20">
               <Shield size={24} className="text-yellow-400" />
@@ -662,7 +671,9 @@ export const SettingsPage = () => {
                   >
                     {isChangingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
                   </motion.button>
-                  <p className="text-white/40 text-sm">Último cambio de contraseña: {new Date(security.lastPasswordChange).toLocaleDateString()}</p>
+                  <p className="text-white/40 text-sm">
+                    Último cambio de contraseña: {security.lastPasswordChange ? new Date(security.lastPasswordChange).toLocaleDateString() : 'nunca'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -838,7 +849,7 @@ export const SettingsPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
+      {ConfirmDialogElement}
     </motion.div>
   );
 };
