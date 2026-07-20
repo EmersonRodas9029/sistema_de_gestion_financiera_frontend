@@ -276,13 +276,13 @@ export const GoalsPage = () => {
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Progreso General</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{overallProgress.toFixed(0)}%</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{overallProgress.toFixed(0)}%</p>
               <p className="text-white/30 text-xs mt-1">{formatCurrency(totalActual)} ahorrados</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><Target size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Target size={24} className="text-[#F05984]" /></div>
           </div>
           <div className="w-full h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
             <motion.div initial={{ width: 0 }} animate={{ width: `${overallProgress}%` }} transition={{ duration: 1 }} className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full" />
@@ -290,33 +290,33 @@ export const GoalsPage = () => {
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Ahorrado</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{formatCurrency(totalActual)}</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">{formatCurrency(totalActual)}</p>
               <p className="text-white/30 text-xs mt-1">de {formatCurrency(totalObjetivo)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20"><DollarSign size={24} className="text-green-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20"><DollarSign size={24} className="text-green-400" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Metas Activas</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">{activeCount}</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight break-words">{activeCount}</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20"><Activity size={24} className="text-yellow-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-yellow-500/20"><Activity size={24} className="text-yellow-400" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Completadas</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight">{completedCount}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight break-words">{completedCount}</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/20"><CheckCircle size={24} className="text-blue-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-blue-500/20"><CheckCircle size={24} className="text-blue-400" /></div>
           </div>
         </motion.div>
       </motion.div>
@@ -350,7 +350,7 @@ export const GoalsPage = () => {
             <div className="space-y-4">
               {topGoals.map((goal) => (
                 <motion.div key={goal.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                     <span className="text-white text-sm font-medium truncate">{goal.nombre}</span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-white/50 text-xs">{progressOf(goal).toFixed(0)}%</span>

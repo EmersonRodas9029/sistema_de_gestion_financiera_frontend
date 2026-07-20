@@ -282,30 +282,30 @@ export const BudgetsPage = () => {
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Presupuesto Total</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalBudget)}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalBudget)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><Wallet size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Wallet size={24} className="text-[#F05984]" /></div>
           </div>
         </div>
         <div className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Activos</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{activeCount}</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">{activeCount}</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20"><Activity size={24} className="text-green-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20"><Activity size={24} className="text-green-400" /></div>
           </div>
         </div>
         <div className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Inactivos</p>
-              <p className="text-2xl font-bold text-white/60 mt-1 tracking-tight">{inactiveCount}</p>
+              <p className="text-2xl font-bold text-white/60 mt-1 tracking-tight break-words">{inactiveCount}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><XCircle size={24} className="text-white/50" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><XCircle size={24} className="text-white/50" /></div>
           </div>
         </div>
       </motion.div>
@@ -366,7 +366,7 @@ export const BudgetsPage = () => {
                   transition={{ delay: index * 0.1 }}
                   className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${cat.color}33` }}>
                         <Tag size={14} style={{ color: cat.color }} />

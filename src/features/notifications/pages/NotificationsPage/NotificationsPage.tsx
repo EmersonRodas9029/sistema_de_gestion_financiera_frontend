@@ -255,7 +255,7 @@ export const NotificationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Total</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{notifications.length}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{notifications.length}</p>
             </div>
             <div className="p-2 rounded-xl bg-white/10"><Bell size={20} className="text-[#F05984]" /></div>
           </div>
@@ -264,7 +264,7 @@ export const NotificationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">No leídas</p>
-              <p className="text-2xl font-bold text-amber-400 mt-1 tracking-tight">{unreadCount}</p>
+              <p className="text-2xl font-bold text-amber-400 mt-1 tracking-tight break-words">{unreadCount}</p>
             </div>
             <div className="p-2 rounded-xl bg-amber-500/20"><Bell size={20} className="text-amber-400" /></div>
           </div>
@@ -273,7 +273,7 @@ export const NotificationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Leídas</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight">{readCount}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight break-words">{readCount}</p>
             </div>
             <div className="p-2 rounded-xl bg-blue-500/20"><CheckCheck size={20} className="text-blue-400" /></div>
           </div>
@@ -282,7 +282,7 @@ export const NotificationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Archivadas</p>
-              <p className="text-2xl font-bold text-gray-400 mt-1 tracking-tight">{archivedCount}</p>
+              <p className="text-2xl font-bold text-gray-400 mt-1 tracking-tight break-words">{archivedCount}</p>
             </div>
             <div className="p-2 rounded-xl bg-gray-500/20"><Archive size={20} className="text-gray-400" /></div>
           </div>

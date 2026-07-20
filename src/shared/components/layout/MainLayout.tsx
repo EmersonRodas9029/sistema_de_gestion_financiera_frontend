@@ -109,7 +109,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
           <div className="px-3 py-2 sm:px-4 sm:py-3">
             <div className="flex items-center justify-between gap-2">
               {/* Título e icono - centrado en móvil, con margen para el botón de menú */}
-              <div className="flex items-center gap-2 ml-8 lg:ml-0">
+              <div className="flex items-center gap-2 ml-12 lg:ml-0">
                 <div className="p-1.5 rounded-lg bg-white/10 hidden sm:block">
                   {pageIcon}
                 </div>

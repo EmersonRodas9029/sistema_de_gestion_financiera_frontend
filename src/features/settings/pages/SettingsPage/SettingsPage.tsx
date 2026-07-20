@@ -465,13 +465,13 @@ export const SettingsPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Configuraciones Activas</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{activeConfigurations}/{totalConfigurations}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{activeConfigurations}/{totalConfigurations}</p>
               <p className="text-white/30 text-xs mt-1">Completado: {completionPercentage.toFixed(0)}%</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
+            <div className="shrink-0 p-3 rounded-xl bg-white/10">
               <Settings size={24} className="text-[#F05984]" />
             </div>
           </div>
@@ -490,13 +490,13 @@ export const SettingsPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Última Actualización</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">Hoy</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">Hoy</p>
               <p className="text-white/30 text-xs mt-1">{new Date().toLocaleDateString()}</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20">
               <Activity size={24} className="text-green-400" />
             </div>
           </div>
@@ -507,10 +507,10 @@ export const SettingsPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Contraseña</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight break-words">
                 {security.lastPasswordChange ? 'Actualizada' : 'Sin cambios'}
               </p>
               <p className="text-white/30 text-xs mt-1">
@@ -519,7 +519,7 @@ export const SettingsPage = () => {
                   : 'Nunca se ha cambiado'}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-yellow-500/20">
               <Shield size={24} className="text-yellow-400" />
             </div>
           </div>

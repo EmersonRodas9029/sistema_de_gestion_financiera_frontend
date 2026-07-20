@@ -318,46 +318,46 @@ export const RecurringExpensesPage = () => {
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Mensual</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalMonthly)}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalMonthly)}</p>
               <p className="text-white/30 text-xs mt-1">Gastos fijos mensuales</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><DollarSign size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><DollarSign size={24} className="text-[#F05984]" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Anual</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{formatCurrency(totalAnnual)}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalAnnual)}</p>
               <p className="text-white/30 text-xs mt-1">{activeExpenses.length} gastos activos</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><Calendar size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Calendar size={24} className="text-[#F05984]" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Inactivos</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">{expenses.length - activeExpenses.length}</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight break-words">{expenses.length - activeExpenses.length}</p>
               <p className="text-white/30 text-xs mt-1">de {expenses.length} en total</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20"><Clock size={24} className="text-yellow-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-yellow-500/20"><Clock size={24} className="text-yellow-400" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Promedio diario</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{formatCurrency(averagePerDay)}</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">{formatCurrency(averagePerDay)}</p>
               <p className="text-white/30 text-xs mt-1">Gasto diario promedio</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20"><Activity size={24} className="text-green-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20"><Activity size={24} className="text-green-400" /></div>
           </div>
         </motion.div>
       </motion.div>
@@ -391,7 +391,7 @@ export const RecurringExpensesPage = () => {
             <div className="space-y-4">
               {topCategories.map((cat, index) => (
                 <motion.div key={cat.name} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }} className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
                       <span className="text-white text-sm font-medium">{cat.name}</span>

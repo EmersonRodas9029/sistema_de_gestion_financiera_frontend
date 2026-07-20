@@ -459,8 +459,8 @@ export const ChartsPage = () => {
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
             className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Ingresos Totales</p>
                 <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome)}</p>
                 <div className="flex items-center gap-2 mt-3">
@@ -468,7 +468,7 @@ export const ChartsPage = () => {
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+              <div className="shrink-0 p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
                 <TrendingUp size={24} className="text-[#F05984]" />
               </div>
             </div>
@@ -478,8 +478,8 @@ export const ChartsPage = () => {
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
             className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Gastos Totales</p>
                 <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#BC455F] transition-colors">{formatCurrency(totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
@@ -487,7 +487,7 @@ export const ChartsPage = () => {
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
+              <div className="shrink-0 p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
                 <TrendingDown size={24} className="text-[#BC455F]" />
               </div>
             </div>
@@ -497,8 +497,8 @@ export const ChartsPage = () => {
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
             className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Ahorro Total</p>
                 <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
@@ -506,7 +506,7 @@ export const ChartsPage = () => {
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
+              <div className="shrink-0 p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
                 <Target size={24} className="text-[#F05984]" />
               </div>
             </div>
@@ -560,7 +560,7 @@ export const ChartsPage = () => {
                       transition={{ delay: idx * 0.1 }}
                       className="group cursor-pointer"
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110" style={{ backgroundColor: `${cat.color}20` }}>
                             {cat.icon}

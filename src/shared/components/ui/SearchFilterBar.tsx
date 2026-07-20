@@ -1,6 +1,14 @@
 import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, XCircle } from 'lucide-react';
+import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react';
+import { Search, Filter, XCircle, ChevronDown } from 'lucide-react';
+
+const PERIOD_OPTIONS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'este-mes', label: 'Este mes' },
+  { value: 'este-semana', label: 'Esta semana' },
+  { value: 'este-ano', label: 'Este año' },
+];
 
 interface SearchFilterBarProps {
   searchTerm: string;
@@ -34,17 +42,32 @@ export const SearchFilterBar = ({
       </div>
       <div className="flex flex-wrap gap-2">
         {onPeriodChange && (
-          <select
-            value={selectedPeriod}
-            onChange={(e) => onPeriodChange(e.target.value)}
-            className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-          >
-            <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos</option>
-            <option value="este-mes" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este mes</option>
-            <option value="este-semana" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Esta semana</option>
-            <option value="este-ano" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Este año</option>
-          </select>
+          // ponytail: reemplaza el <select> nativo — su lista de opciones es un popup del
+          // navegador/SO que ignora el viewport emulado en DevTools/dispositivos y se
+          // desbordaba de la pantalla. Listbox renderiza el panel como DOM normal, así que
+          // `anchor` lo mantiene dentro del viewport real.
+          <Listbox value={selectedPeriod} onChange={onPeriodChange}>
+            <div className="relative">
+              <ListboxButton className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm">
+                <span>{PERIOD_OPTIONS.find(o => o.value === selectedPeriod)?.label ?? 'Todos'}</span>
+                <ChevronDown size={14} className="text-white/50" />
+              </ListboxButton>
+              <ListboxOptions
+                anchor="bottom start"
+                className="z-50 mt-1 w-40 rounded-lg bg-[#1a0f14] border border-white/10 shadow-xl focus:outline-none [--anchor-gap:4px]"
+              >
+                {PERIOD_OPTIONS.map(({ value, label }) => (
+                  <ListboxOption
+                    key={value}
+                    value={value}
+                    className="px-3 py-2 text-sm text-white/80 data-[focus]:bg-white/10 data-[focus]:text-white cursor-pointer"
+                  >
+                    {label}
+                  </ListboxOption>
+                ))}
+              </ListboxOptions>
+            </div>
+          </Listbox>
         )}
         <motion.button
           whileHover={{ scale: 1.05 }}

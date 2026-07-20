@@ -450,46 +450,46 @@ export const ReportsPage = () => {
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Reportes</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{totalReports}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{totalReports}</p>
               <p className="text-white/30 text-xs mt-1">{thisMonth} este mes</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10"><FileText size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><FileText size={24} className="text-[#F05984]" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Con Archivo</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{withFile}</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">{withFile}</p>
               <p className="text-white/30 text-xs mt-1">reportes con adjunto</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20"><FileText size={24} className="text-green-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20"><FileText size={24} className="text-green-400" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Clientes</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight">{clientesConReporte}</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight break-words">{clientesConReporte}</p>
               <p className="text-white/30 text-xs mt-1">con reportes generados</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20"><User size={24} className="text-yellow-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-yellow-500/20"><User size={24} className="text-yellow-400" /></div>
           </div>
         </motion.div>
 
         <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Tipos Usados</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight">{tipoDistribution.length}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1 tracking-tight break-words">{tipoDistribution.length}</p>
               <p className="text-white/30 text-xs mt-1">de 6 tipos disponibles</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/20"><BarChart3 size={24} className="text-blue-400" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-blue-500/20"><BarChart3 size={24} className="text-blue-400" /></div>
           </div>
         </motion.div>
       </motion.div>
@@ -534,7 +534,7 @@ export const ReportsPage = () => {
                       transition={{ delay: index * 0.1 }}
                       className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] bg-opacity-20 w-6 h-6 flex items-center justify-center text-white text-xs font-bold">
                             {index + 1}

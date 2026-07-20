@@ -16,14 +16,14 @@ interface SortBarProps {
 }
 
 export const SortBar = ({ sortBy, sortOrder, onSort, fields, totalResults }: SortBarProps) => (
-  <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-    <div className="flex items-center gap-4">
-      <span className="text-white/40 text-sm">Ordenar por:</span>
+  <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between flex-wrap gap-x-2 gap-y-2">
+    <div className="flex items-center flex-wrap gap-x-4 gap-y-2 min-w-0">
+      <span className="text-white/40 text-sm shrink-0">Ordenar por:</span>
       {fields.map(({ key, label, icon }) => (
         <button
           key={key}
           onClick={() => onSort(key)}
-          className={`flex items-center gap-1 text-sm transition-colors ${
+          className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${
             sortBy === key ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
           }`}
         >
@@ -33,6 +33,6 @@ export const SortBar = ({ sortBy, sortOrder, onSort, fields, totalResults }: Sor
         </button>
       ))}
     </div>
-    <span className="text-white/40 text-sm">{totalResults} resultados</span>
+    <span className="text-white/40 text-sm shrink-0 whitespace-nowrap">{totalResults} resultados</span>
   </div>
 );

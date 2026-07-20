@@ -431,13 +431,13 @@ export const CategoriesPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Categorías</p>
-              <p className="text-2xl font-bold text-white mt-1 tracking-tight">{totalCategories}</p>
+              <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{totalCategories}</p>
               <p className="text-white/30 text-xs mt-1">{activeCategories} activas</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
+            <div className="shrink-0 p-3 rounded-xl bg-white/10">
               <FolderTree size={24} className="text-[#F05984]" />
             </div>
           </div>
@@ -448,13 +448,13 @@ export const CategoriesPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Con Presupuesto</p>
-              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight">{categoriesWithBudget}</p>
+              <p className="text-2xl font-bold text-green-400 mt-1 tracking-tight break-words">{categoriesWithBudget}</p>
               <p className="text-white/30 text-xs mt-1">categorías con límite</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20">
               <Target size={24} className="text-green-400" />
             </div>
           </div>
@@ -465,13 +465,13 @@ export const CategoriesPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Más Usada</p>
-              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight truncate max-w-[150px]">{mostUsedCategory?.name || 'N/A'}</p>
+              <p className="text-2xl font-bold text-yellow-400 mt-1 tracking-tight truncate max-w-[150px] break-words">{mostUsedCategory?.name || 'N/A'}</p>
               <p className="text-white/30 text-xs mt-1">{mostUsedCategory?.transactions || 0} transacciones</p>
             </div>
-            <div className="p-3 rounded-xl bg-yellow-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-yellow-500/20">
               <Activity size={24} className="text-yellow-400" />
             </div>
           </div>
@@ -482,12 +482,12 @@ export const CategoriesPage = () => {
           transition={{ type: "spring", stiffness: 300 }}
           className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Gastos</p>
-              <p className="text-2xl font-bold text-rose-400 mt-1 tracking-tight">{formatCurrency(categories.reduce((sum, c) => sum + c.totalAmount, 0))}</p>
+              <p className="text-2xl font-bold text-rose-400 mt-1 tracking-tight break-words">{formatCurrency(categories.reduce((sum, c) => sum + c.totalAmount, 0))}</p>
             </div>
-            <div className="p-3 rounded-xl bg-rose-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-rose-500/20">
               <TrendingDown size={24} className="text-rose-400" />
             </div>
           </div>
@@ -554,7 +554,7 @@ export const CategoriesPage = () => {
                   transition={{ delay: index * 0.1 }}
                   className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all duration-300"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded-lg bg-gradient-to-r ${softBg(cat.color)}`}>
                         {renderCategoryIcon(cat.icon, 16)}
@@ -635,19 +635,19 @@ export const CategoriesPage = () => {
         </SearchFilterBar>
 
         {/* Sort Bar */}
-        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 text-sm">Ordenar por:</span>
+        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between flex-wrap gap-x-2 gap-y-2">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 min-w-0">
+            <span className="text-white/40 text-sm shrink-0">Ordenar por:</span>
             <button
               onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-              className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'name' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
+              className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === 'name' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
               <span>Nombre</span>
               {sortBy === 'name' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
             </button>
             <button
               onClick={() => { setSortBy('transactions'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-              className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'transactions' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
+              className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === 'transactions' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
               <Activity size={14} />
               <span>Transacciones</span>
@@ -655,14 +655,14 @@ export const CategoriesPage = () => {
             </button>
             <button
               onClick={() => { setSortBy('amount'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-              className={`flex items-center gap-1 text-sm transition-colors ${sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
+              className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === 'amount' ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}
             >
               <DollarSign size={14} />
               <span>Monto</span>
               {sortBy === 'amount' && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
             </button>
           </div>
-          <span className="text-white/40 text-sm">{filteredCategories.length} resultados</span>
+          <span className="text-white/40 text-sm shrink-0 whitespace-nowrap">{filteredCategories.length} resultados</span>
         </div>
 
         {/* Estado Vacío */}

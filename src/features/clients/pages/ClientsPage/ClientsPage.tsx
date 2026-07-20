@@ -330,7 +330,7 @@ export const ClientsPage = () => {
                   const pct = Math.round((d.value / totalUsuarios) * 100);
                   return (
                     <div key={d.name}>
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1.5">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
                           <span className="text-white/70 text-sm">{d.name}</span>
@@ -418,18 +418,18 @@ export const ClientsPage = () => {
         </div>
 
         {/* Sort bar */}
-        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 text-sm">Ordenar:</span>
+        <div className="px-4 py-2 bg-white/5 border-t border-white/10 flex items-center justify-between flex-wrap gap-x-2 gap-y-2">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 min-w-0">
+            <span className="text-white/40 text-sm shrink-0">Ordenar:</span>
             {(['username', 'rol'] as const).map(key => (
               <button key={key} onClick={() => toggleSort(key)}
-                className={`flex items-center gap-1 text-sm transition-colors ${sortBy === key ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}>
+                className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === key ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}>
                 {key === 'username' ? 'Username' : 'Rol'}
                 {sortBy === key && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
               </button>
             ))}
           </div>
-          <span className="text-white/40 text-sm">{filtered.length} resultados</span>
+          <span className="text-white/40 text-sm shrink-0 whitespace-nowrap">{filtered.length} resultados</span>
         </div>
 
         {/* Empty state */}

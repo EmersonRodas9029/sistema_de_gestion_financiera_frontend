@@ -14,8 +14,11 @@ export const notifyActionError = (action: string, e: unknown, fallback = 'Error 
   toast.error(`Error al ${action}: ${e instanceof Error ? e.message : fallback}`, { id: `action-error-${action}` });
 };
 
+// Intl.NumberFormat separa el monto del código de moneda con un espacio no separable (U+00A0),
+// lo que impide partir la línea en tarjetas angostas y hace que el texto se desborde sobre
+// elementos vecinos (íconos) en mobile. Se cambia por un espacio normal para permitir el wrap.
 export const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount).replace('\u00A0', ' ');
 
 export const formatDate = (date: string): string => {
   // ponytail: "YYYY-MM-DD" parses as UTC midnight, shifting a day back in behind-UTC timezones — force local time.

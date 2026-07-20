@@ -319,25 +319,33 @@ export const IncomesPage = () => {
       className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">Ingresos</h1>
-            <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
-              {ingresos.length} registros
-            </span>
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+              <TrendingUp size={28} className="text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-white tracking-tight">Ingresos</h1>
+                <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
+                  {ingresos.length} registros
+                </span>
+              </div>
+              <p className="text-white/50 text-sm mt-1">Gestiona y controla todos tus ingresos</p>
+            </div>
           </div>
-          <p className="text-white/60 text-sm mt-1">Gestiona y controla todos tus ingresos</p>
-        </div>
-        <div className="flex gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => { setCreateForm(emptyCreate(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Nuevo Ingreso</span>
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => { setCreateForm(emptyCreate(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline font-medium">Nuevo Ingreso</span>
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
@@ -347,13 +355,13 @@ export const IncomesPage = () => {
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/60 text-sm">Ingresos del Año</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalYearlyIncome)}</p>
+              <p className="text-2xl font-bold text-white mt-1 break-words">{formatCurrency(totalYearlyIncome)}</p>
               <p className="text-white/40 text-xs mt-1">{currentYear}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
+            <div className="shrink-0 p-3 rounded-xl bg-white/10">
               <Calendar size={20} className="text-[#F05984]" />
             </div>
           </div>
@@ -363,10 +371,10 @@ export const IncomesPage = () => {
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/60 text-sm">Este mes</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalMonthlyIncome)}</p>
+              <p className="text-2xl font-bold text-white mt-1 break-words">{formatCurrency(totalMonthlyIncome)}</p>
               <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full transition-all duration-500"
@@ -375,7 +383,7 @@ export const IncomesPage = () => {
               </div>
               <p className="text-white/40 text-xs mt-1">{monthlyProgress.toFixed(0)}% de meta mensual</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-green-500/20">
               <TrendingUp size={20} className="text-green-400" />
             </div>
           </div>
@@ -385,13 +393,13 @@ export const IncomesPage = () => {
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/60 text-sm">Recurrentes</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(totalRecurrentes)}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1 break-words">{formatCurrency(totalRecurrentes)}</p>
               <p className="text-white/40 text-xs mt-1">{recurrentesIngresos.length} ingresos recurrentes</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-blue-500/20">
               <Repeat size={20} className="text-blue-400" />
             </div>
           </div>
@@ -401,13 +409,13 @@ export const IncomesPage = () => {
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
           className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="min-w-0">
               <p className="text-white/60 text-sm">Ticket Promedio</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(averageTicket)}</p>
+              <p className="text-2xl font-bold text-white mt-1 break-words">{formatCurrency(averageTicket)}</p>
               <p className="text-white/40 text-xs mt-1">{ingresos.length} transacciones</p>
             </div>
-            <div className="p-3 rounded-xl bg-purple-500/20">
+            <div className="shrink-0 p-3 rounded-xl bg-purple-500/20">
               <DollarSign size={20} className="text-purple-400" />
             </div>
           </div>
@@ -464,7 +472,7 @@ export const IncomesPage = () => {
                   transition={{ delay: index * 0.05 }}
                   className="bg-white/5 rounded-lg p-2.5 hover:bg-white/10 transition-all"
                 >
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1.5">
                     <div className="flex items-center gap-2">
                       <div className={`p-1 rounded-lg bg-gradient-to-r ${t.color} bg-opacity-20`}>
                         {t.icon}

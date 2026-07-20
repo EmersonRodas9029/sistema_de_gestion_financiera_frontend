@@ -407,7 +407,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Tasa de Ahorro</p>
-              <p className="text-2xl font-bold text-white">{data.savingsRate.toFixed(0)}%</p>
+              <p className="text-2xl font-bold text-white break-words">{data.savingsRate.toFixed(0)}%</p>
             </div>
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -431,7 +431,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Transacciones</p>
-              <p className="text-2xl font-bold text-white">{data.transactionsCount}</p>
+              <p className="text-2xl font-bold text-white break-words">{data.transactionsCount}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Total registradas</p>
@@ -448,7 +448,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Gasto Promedio</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(data.avgExpensePerDay)}</p>
+              <p className="text-2xl font-bold text-white break-words">{formatCurrency(data.avgExpensePerDay)}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Por día</p>
@@ -465,7 +465,7 @@ export const HomePage = () => {
             </div>
             <div className="text-right">
               <p className="text-white/40 text-xs">Diferencia</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(data.monthlyIncome - data.monthlyExpenses)}</p>
+              <p className="text-2xl font-bold text-white break-words">{formatCurrency(data.monthlyIncome - data.monthlyExpenses)}</p>
             </div>
           </div>
           <p className="text-white/40 text-xs mt-3">Este mes</p>
@@ -734,7 +734,7 @@ export const HomePage = () => {
             <div className="space-y-4">
               {data.health.map((metric, idx) => (
                 <div key={idx}>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1">
                     <span className="text-white/50 text-xs font-medium">{metric.name}</span>
                     <span className="text-white text-xs font-bold">{metric.value}%</span>
                   </div>
@@ -769,21 +769,21 @@ export const HomePage = () => {
             </div>
             <div className="space-y-3">
               <div className="bg-white/5 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1">
                   <span className="text-white/50 text-xs">Ingresos Estimados</span>
                   <TrendingUp className="w-3 h-3 text-emerald-400" />
                 </div>
                 <p className="text-emerald-400 font-bold text-lg">{formatCurrency(data.projection.income)}</p>
               </div>
               <div className="bg-white/5 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1">
                   <span className="text-white/50 text-xs">Gastos Estimados</span>
                   <TrendingDown className="w-3 h-3 text-rose-400" />
                 </div>
                 <p className="text-rose-400 font-bold text-lg">{formatCurrency(data.projection.expenses)}</p>
               </div>
               <div className="bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-xl p-3">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1">
                   <span className="text-white/70 text-xs">Balance Proyectado</span>
                   <Wallet className="w-3 h-3 text-white/70" />
                 </div>
