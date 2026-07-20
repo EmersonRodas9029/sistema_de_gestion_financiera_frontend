@@ -355,11 +355,10 @@ export const HomePage = () => {
                   <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
                     <Sparkles className="w-7 h-7 text-white" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-white/90 text-sm font-medium mb-1">Balance Total</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-white">$</span>
-                      <span className="text-5xl font-bold text-white">{formatCurrency(data.balance)}</span>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-white break-all">{formatCurrency(data.balance)}</span>
                     </div>
                   </div>
                 </div>
@@ -373,21 +372,21 @@ export const HomePage = () => {
                 <p className="text-white/70 text-sm mt-4">{currentTime}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 min-w-[140px]">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full md:w-auto">
+                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/30 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <ArrowUpRight className="w-4 h-4 text-emerald-300" />
-                    <span className="text-white/90 text-sm font-medium">Ingresos</span>
+                    <ArrowUpRight className="w-4 h-4 text-emerald-300 shrink-0" />
+                    <span className="text-white/90 text-sm font-medium truncate">Ingresos</span>
                   </div>
-                  <div className="text-2xl font-bold text-white">{formatCurrency(data.monthlyIncome)}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-white break-all">{formatCurrency(data.monthlyIncome)}</div>
                   <p className="text-emerald-300 text-xs mt-1 font-medium">{data.incomeTrend >= 0 ? '+' : ''}{data.incomeTrend.toFixed(0)}% este mes</p>
                 </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/30 min-w-[140px]">
+                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/30 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <ArrowDownRight className="w-4 h-4 text-rose-300" />
-                    <span className="text-white/90 text-sm font-medium">Gastos</span>
+                    <ArrowDownRight className="w-4 h-4 text-rose-300 shrink-0" />
+                    <span className="text-white/90 text-sm font-medium truncate">Gastos</span>
                   </div>
-                  <div className="text-2xl font-bold text-white">{formatCurrency(data.monthlyExpenses)}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-white break-all">{formatCurrency(data.monthlyExpenses)}</div>
                   <p className="text-rose-300 text-xs mt-1 font-medium">{data.expenseTrend >= 0 ? '+' : ''}{data.expenseTrend.toFixed(0)}% vs mes anterior</p>
                 </motion.div>
               </div>
