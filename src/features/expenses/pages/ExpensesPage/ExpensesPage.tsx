@@ -4,6 +4,7 @@ import { gastosService, type ApiGasto } from '../../services';
 import { clientesService as clientesSvc } from '../../../clients/services';
 import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
 import { gastosRecurrentesService, type ApiGastoRecurrente } from '../../../recurring-expenses/services';
+import { presupuestosService, type ApiPresupuestoList } from '../../../budgets/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -123,6 +124,11 @@ export const ExpensesPage = () => {
   const [clientesList, setClientesList] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriasList, setCategoriasList] = useState<ApiCategoria[]>([]);
   const [recurringList, setRecurringList] = useState<ApiGastoRecurrente[]>([]);
+  const [budgets, setBudgets] = useState<ApiPresupuestoList[]>([]);
+
+  useEffect(() => {
+    presupuestosService.getAll().then(setBudgets).catch(() => {});
+  }, []);
 
   const fetchExpenses = useCallback(async () => {
     setIsLoading(true);
@@ -183,10 +189,6 @@ export const ExpensesPage = () => {
     }));
   };
 
-  const categoryBudgets = Object.entries(
-    expenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] ?? 0) + e.amount; return acc; }, {} as Record<string, number>)
-  ).map(([name, actual], idx) => ({ name, budget: 0, actual, percentage: 0, color: CHART_COLORS[idx % CHART_COLORS.length] }));
-
   const monthlyTrends = Object.entries(
     expenses.reduce((acc, e) => { const m = e.date.slice(0, 7); acc[m] = (acc[m] ?? 0) + e.amount; return acc; }, {} as Record<string, number>)
   ).sort().slice(-6).map(([m, amount]) => ({ month: m.slice(5), amount }));
@@ -220,6 +222,23 @@ export const ExpensesPage = () => {
            expDate.getFullYear() === currentYear;
   });
   const totalMonthlyExpense = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+  // Presupuesto vs gasto real del mes en curso, por categoría (solo categorías con presupuesto asignado)
+  const categoryBudgets = Object.entries(
+    monthlyExpenses.reduce((acc, e) => {
+      if (!acc[e.categoryId]) acc[e.categoryId] = { name: e.category, actual: 0 };
+      acc[e.categoryId].actual += e.amount;
+      return acc;
+    }, {} as Record<string, { name: string; actual: number }>)
+  )
+    .map(([categoriaId, { name, actual }], idx) => {
+      const budget = budgets
+        .filter(b => String(b.categoriaId) === categoriaId && b.mes === currentMonth + 1 && b.anio === currentYear
+          && b.activo !== false && (!isClientRole || b.clienteId === Number(ownClienteId)))
+        .reduce((sum, b) => sum + (b.montoPresupuestado ?? 0), 0);
+      return { name, budget, actual, percentage: budget > 0 ? (actual / budget) * 100 : 0, color: CHART_COLORS[idx % CHART_COLORS.length] };
+    })
+    .filter(cat => cat.budget > 0);
 
   // Calcular mes anterior
   const previousMonthExpenses = expenses.filter(exp => {
@@ -559,9 +578,12 @@ export const ExpensesPage = () => {
               <Target size={18} className="text-[#F05984]" />
               Presupuesto vs Gasto Real
             </h3>
-            <span className="text-white/40 text-xs">Últimos 30 días</span>
+            <span className="text-white/40 text-xs">Este mes</span>
           </div>
           <div className="space-y-4">
+            {categoryBudgets.length === 0 && (
+              <p className="text-white/40 text-sm">No hay presupuestos asignados para este mes.</p>
+            )}
             {categoryBudgets.map((cat, idx) => {
               const isOverBudget = cat.percentage > 100;
               return (
