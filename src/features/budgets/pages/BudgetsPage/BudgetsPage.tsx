@@ -23,6 +23,7 @@ import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
@@ -447,9 +448,9 @@ export const BudgetsPage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
             >
-              <Plus size={18} /><span>Crear nuevo presupuesto</span>
+              <Plus size={20} /><span className="font-medium">Crear nuevo presupuesto</span>
             </motion.button>
           </motion.div>
         )}
@@ -606,43 +607,32 @@ export const BudgetsPage = () => {
                   {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
                 </div>
               ) : (
-                <select
+                <Select
                   value={formData.clienteId}
-                  onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                  required
-                >
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                  {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, clienteId: v, categoriaId: '' })}
+                  placeholder="Seleccionar cliente"
+                  options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombreCompleto }))}
+                />
               )}
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>
-              <select
+              <Select
                 value={formData.categoriaId}
-                onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
+                onChange={(v) => setFormData({ ...formData, categoriaId: v })}
                 disabled={!formData.clienteId}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all disabled:opacity-50"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin categoría</option>
-                {formCategorias.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>)}
-              </select>
+                placeholder="Sin categoría"
+                options={formCategorias.map(c => ({ value: String(c.id), label: c.nombre }))}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Mes *</label>
-                <select
+                <Select
                   value={formData.mes}
-                  onChange={(e) => setFormData({ ...formData, mes: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                  required
-                >
-                  {MESES.map((m, i) => <option key={m} value={i + 1} style={{ backgroundColor: '#1a0f14' }}>{m}</option>)}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, mes: v })}
+                  options={MESES.map((m, i) => ({ value: String(i + 1), label: m }))}
+                />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Año *</label>
@@ -689,28 +679,21 @@ export const BudgetsPage = () => {
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>
-              <select
+              <Select
                 value={formData.categoriaId}
-                onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
-                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-              >
-                <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin categoría</option>
-                {formCategorias.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>)}
-              </select>
+                onChange={(v) => setFormData({ ...formData, categoriaId: v })}
+                placeholder="Sin categoría"
+                options={formCategorias.map(c => ({ value: String(c.id), label: c.nombre }))}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Mes *</label>
-                <select
+                <Select
                   value={formData.mes}
-                  onChange={(e) => setFormData({ ...formData, mes: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                  required
-                >
-                  {MESES.map((m, i) => <option key={m} value={i + 1} style={{ backgroundColor: '#1a0f14' }}>{m}</option>)}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, mes: v })}
+                  options={MESES.map((m, i) => ({ value: String(i + 1), label: m }))}
+                />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Año *</label>

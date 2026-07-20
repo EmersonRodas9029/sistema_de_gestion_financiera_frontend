@@ -12,6 +12,8 @@ import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
@@ -303,15 +305,17 @@ export const RecurringExpensesPage = () => {
               <p className="text-white/50 text-sm mt-1">Gestiona tus suscripciones y pagos periódicos</p>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline font-medium">Nuevo Gasto</span>
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline font-medium">Nuevo Gasto</span>
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
@@ -481,9 +485,9 @@ export const RecurringExpensesPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Repeat size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay gastos recurrentes</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron gastos recurrentes con los filtros actuales. Prueba a ajustar los filtros o crea un nuevo gasto recurrente.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus size={18} />
-              <span>Crear nuevo gasto</span>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+              <Plus size={20} />
+              <span className="font-medium">Crear nuevo gasto</span>
             </motion.button>
           </motion.div>
         )}
@@ -619,18 +623,12 @@ export const RecurringExpensesPage = () => {
                     {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
                   </div>
                 ) : (
-                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value, categoriaId: '' })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                  </select>
+                  <Select value={formData.clienteId} onChange={(v) => setFormData({ ...formData, clienteId: v, categoriaId: '' })} placeholder="Seleccionar cliente" options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombreCompleto }))} />
                 )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Categoría</label>
-                <select value={formData.categoriaId} onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })} disabled={!formData.clienteId} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all disabled:opacity-50" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin categoría</option>
-                  {formCategorias.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>)}
-                </select>
+                <Select value={formData.categoriaId} onChange={(v) => setFormData({ ...formData, categoriaId: v })} disabled={!formData.clienteId} placeholder="Sin categoría" options={formCategorias.map(c => ({ value: String(c.id), label: c.nombre }))} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -649,12 +647,12 @@ export const RecurringExpensesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Frecuencia *</label>
-                <select value={formData.frecuencia} onChange={(e) => setFormData({ ...formData, frecuencia: e.target.value as Frecuencia, diaMes: '', diaSemana: '' })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="DIARIO">Diario</option>
-                  <option value="SEMANAL">Semanal</option>
-                  <option value="MENSUAL">Mensual</option>
-                  <option value="ANUAL">Anual</option>
-                </select>
+                <Select value={formData.frecuencia} onChange={(v) => setFormData({ ...formData, frecuencia: v as Frecuencia, diaMes: '', diaSemana: '' })} options={[
+                  { value: 'DIARIO', label: 'Diario' },
+                  { value: 'SEMANAL', label: 'Semanal' },
+                  { value: 'MENSUAL', label: 'Mensual' },
+                  { value: 'ANUAL', label: 'Anual' },
+                ]} />
               </div>
               {formData.frecuencia === 'MENSUAL' && (
                 <div>
@@ -665,26 +663,17 @@ export const RecurringExpensesPage = () => {
               {formData.frecuencia === 'SEMANAL' && (
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Día de la semana *</label>
-                  <select value={formData.diaSemana} onChange={(e) => setFormData({ ...formData, diaSemana: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar día</option>
-                    {Object.entries(DIA_SEMANA_LABEL).map(([num, label]) => <option key={num} value={num} style={{ backgroundColor: '#1a0f14' }}>{label}</option>)}
-                  </select>
+                  <Select value={formData.diaSemana} onChange={(v) => setFormData({ ...formData, diaSemana: v })} placeholder="Seleccionar día" options={Object.entries(DIA_SEMANA_LABEL).map(([num, label]) => ({ value: num, label }))} />
                 </div>
               )}
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha de inicio *</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.fechaInicio} onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                </div>
+                <DatePicker value={formData.fechaInicio} onChange={(v) => setFormData({ ...formData, fechaInicio: v })} />
               </div>
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Fecha de fin (opcional)</label>
-              <div className="relative">
-                <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                <input type="date" value={formData.fechaFin} onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-              </div>
+              <DatePicker value={formData.fechaFin} onChange={(v) => setFormData({ ...formData, fechaFin: v })} />
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
@@ -732,12 +721,12 @@ export const RecurringExpensesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Frecuencia *</label>
-                <select value={formData.frecuencia} onChange={(e) => setFormData({ ...formData, frecuencia: e.target.value as Frecuencia, diaMes: '', diaSemana: '' })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="DIARIO">Diario</option>
-                  <option value="SEMANAL">Semanal</option>
-                  <option value="MENSUAL">Mensual</option>
-                  <option value="ANUAL">Anual</option>
-                </select>
+                <Select value={formData.frecuencia} onChange={(v) => setFormData({ ...formData, frecuencia: v as Frecuencia, diaMes: '', diaSemana: '' })} options={[
+                  { value: 'DIARIO', label: 'Diario' },
+                  { value: 'SEMANAL', label: 'Semanal' },
+                  { value: 'MENSUAL', label: 'Mensual' },
+                  { value: 'ANUAL', label: 'Anual' },
+                ]} />
               </div>
               {formData.frecuencia === 'MENSUAL' && (
                 <div>
@@ -748,15 +737,12 @@ export const RecurringExpensesPage = () => {
               {formData.frecuencia === 'SEMANAL' && (
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Día de la semana *</label>
-                  <select value={formData.diaSemana} onChange={(e) => setFormData({ ...formData, diaSemana: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar día</option>
-                    {Object.entries(DIA_SEMANA_LABEL).map(([num, label]) => <option key={num} value={num} style={{ backgroundColor: '#1a0f14' }}>{label}</option>)}
-                  </select>
+                  <Select value={formData.diaSemana} onChange={(v) => setFormData({ ...formData, diaSemana: v })} placeholder="Seleccionar día" options={Object.entries(DIA_SEMANA_LABEL).map(([num, label]) => ({ value: num, label }))} />
                 </div>
               )}
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha de fin</label>
-                <input type="date" value={formData.fechaFin} onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+                <DatePicker value={formData.fechaFin} onChange={(v) => setFormData({ ...formData, fechaFin: v })} />
               </div>
             </div>
             <label className="flex items-center gap-2">

@@ -345,8 +345,8 @@ export const NotificationsPage = () => {
         </div>
 
         {/* Bulk Actions Bar */}
-        <div className="px-4 py-2.5 bg-white/5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="px-4 py-2.5 bg-white/5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
@@ -362,10 +362,10 @@ export const NotificationsPage = () => {
               <span className="text-[#F05984] text-sm font-medium">{selectedIds.length} seleccionados</span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleMarkAllAsRead}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-all duration-300"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm whitespace-nowrap transition-all duration-300"
             >
               <CheckCheck size={16} />
               <span>Marcar todas</span>
@@ -374,14 +374,14 @@ export const NotificationsPage = () => {
               <>
                 <button
                   onClick={handleBulkArchive}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm transition-all duration-300"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white text-sm whitespace-nowrap transition-all duration-300"
                 >
                   <Archive size={16} />
                   <span>Archivar</span>
                 </button>
                 <button
                   onClick={handleBulkDelete}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300 text-sm transition-all duration-300"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300 text-sm whitespace-nowrap transition-all duration-300"
                 >
                   <Trash2 size={16} />
                   <span>Eliminar</span>

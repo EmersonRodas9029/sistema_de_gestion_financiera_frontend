@@ -28,6 +28,8 @@ import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBa
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { Toggle } from '../../../../shared/components/ui/Toggle';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { tooltipStyle, labelStyle } from '../../../../shared/components/ui/chartConfig';
@@ -88,16 +90,18 @@ const emptyCreate = (clienteId = '') => ({
   metodoRecepcion: 'TRANSFERENCIA', esRecurrente: false, frecuencia: '',
 });
 
+const FRECUENCIA_OPTIONS = [
+  { value: '',        label: '— Sin especificar —' },
+  { value: 'DIARIO',  label: 'Diario' },
+  { value: 'SEMANAL', label: 'Semanal' },
+  { value: 'MENSUAL', label: 'Mensual' },
+  { value: 'ANUAL',   label: 'Anual' },
+];
+
 const FrecuenciaSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
   <div>
     <label className="text-white/60 text-sm mb-1.5 block">Frecuencia</label>
-    <select value={value} onChange={e => onChange(e.target.value)} className={inputCls} style={selectStyle}>
-      <option value=""        style={optStyle}>— Sin especificar —</option>
-      <option value="DIARIO"  style={optStyle}>Diario</option>
-      <option value="SEMANAL" style={optStyle}>Semanal</option>
-      <option value="MENSUAL" style={optStyle}>Mensual</option>
-      <option value="ANUAL"   style={optStyle}>Anual</option>
-    </select>
+    <Select value={value} onChange={onChange} options={FRECUENCIA_OPTIONS} />
   </div>
 );
 
@@ -742,14 +746,10 @@ export const IncomesPage = () => {
                 {isClientRole ? (
                   <div className={inputCls}>{clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}</div>
                 ) : (
-                  <select value={createForm.clienteId}
-                    onChange={e => setCreateForm({...createForm, clienteId: e.target.value})}
-                    className={inputCls} style={selectStyle} required>
-                    <option value="" style={optStyle}>Seleccionar cliente</option>
-                    {clientesActivos.map(c => (
-                      <option key={c.id} value={c.id} style={optStyle}>{c.nombre}</option>
-                    ))}
-                  </select>
+                  <Select value={createForm.clienteId}
+                    onChange={v => setCreateForm({...createForm, clienteId: v})}
+                    placeholder="Seleccionar cliente"
+                    options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombre }))} />
                 )}
               </div>
               <div>
@@ -762,18 +762,17 @@ export const IncomesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
-                <input type="date" value={createForm.fecha}
-                  onChange={e => setCreateForm({...createForm, fecha: e.target.value})}
-                  className={inputCls} required />
+                <DatePicker value={createForm.fecha}
+                  onChange={v => setCreateForm({...createForm, fecha: v})} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Tipo *</label>
-                <select value={createForm.tipo}
-                  onChange={e => setCreateForm({...createForm, tipo: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value="ESTABLE" style={optStyle}>Estable</option>
-                  <option value="VOLATIL" style={optStyle}>Volátil</option>
-                </select>
+                <Select value={createForm.tipo}
+                  onChange={v => setCreateForm({...createForm, tipo: v})}
+                  options={[
+                    { value: 'ESTABLE', label: 'Estable' },
+                    { value: 'VOLATIL', label: 'Volátil' },
+                  ]} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -793,14 +792,14 @@ export const IncomesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Método de recepción</label>
-                <select value={createForm.metodoRecepcion}
-                  onChange={e => setCreateForm({...createForm, metodoRecepcion: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value="TRANSFERENCIA" style={optStyle}>Transferencia</option>
-                  <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
-                  <option value="CHEQUE"        style={optStyle}>Cheque</option>
-                  <option value="OTRO"          style={optStyle}>Otro</option>
-                </select>
+                <Select value={createForm.metodoRecepcion}
+                  onChange={v => setCreateForm({...createForm, metodoRecepcion: v})}
+                  options={[
+                    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+                    { value: 'EFECTIVO', label: 'Efectivo' },
+                    { value: 'CHEQUE', label: 'Cheque' },
+                    { value: 'OTRO', label: 'Otro' },
+                  ]} />
               </div>
               <div className="flex items-end pb-1">
                 <Toggle value={createForm.esRecurrente}
@@ -846,30 +845,30 @@ export const IncomesPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha</label>
-                <input type="date" value={editForm.fecha}
-                  onChange={e => setEditForm({...editForm, fecha: e.target.value})} className={inputCls} />
+                <DatePicker value={editForm.fecha}
+                  onChange={v => setEditForm({...editForm, fecha: v})} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Tipo</label>
-                <select value={editForm.tipo}
-                  onChange={e => setEditForm({...editForm, tipo: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value="ESTABLE" style={optStyle}>Estable</option>
-                  <option value="VOLATIL" style={optStyle}>Volátil</option>
-                </select>
+                <Select value={editForm.tipo}
+                  onChange={v => setEditForm({...editForm, tipo: v})}
+                  options={[
+                    { value: 'ESTABLE', label: 'Estable' },
+                    { value: 'VOLATIL', label: 'Volátil' },
+                  ]} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Método de recepción</label>
-                <select value={editForm.metodoRecepcion}
-                  onChange={e => setEditForm({...editForm, metodoRecepcion: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value="TRANSFERENCIA" style={optStyle}>Transferencia</option>
-                  <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
-                  <option value="CHEQUE"        style={optStyle}>Cheque</option>
-                  <option value="OTRO"          style={optStyle}>Otro</option>
-                </select>
+                <Select value={editForm.metodoRecepcion}
+                  onChange={v => setEditForm({...editForm, metodoRecepcion: v})}
+                  options={[
+                    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+                    { value: 'EFECTIVO', label: 'Efectivo' },
+                    { value: 'CHEQUE', label: 'Cheque' },
+                    { value: 'OTRO', label: 'Otro' },
+                  ]} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

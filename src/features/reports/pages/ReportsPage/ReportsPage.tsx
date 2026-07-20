@@ -15,6 +15,8 @@ import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
 import { reportesService, type ApiReporte, type TipoReporte } from '../../services';
@@ -605,9 +607,9 @@ export const ReportsPage = () => {
             <h3 className="text-white font-semibold text-lg mb-2">No hay reportes</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron reportes con los filtros actuales. Prueba a ajustar los filtros o genera un nuevo reporte.</p>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus size={18} />
-              <span>Generar nuevo reporte</span>
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+              <Plus size={20} />
+              <span className="font-medium">Generar nuevo reporte</span>
             </motion.button>
           </motion.div>
         )}
@@ -748,18 +750,12 @@ export const ReportsPage = () => {
                     {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
                   </div>
                 ) : (
-                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                  </select>
+                  <Select value={formData.clienteId} onChange={(v) => setFormData({ ...formData, clienteId: v })} placeholder="Seleccionar cliente" options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombreCompleto }))} />
                 )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Contador (opcional)</label>
-                <select value={formData.contadorId} onChange={(e) => setFormData({ ...formData, contadorId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin asignar</option>
-                  {contadores.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.username}</option>)}
-                </select>
+                <Select value={formData.contadorId} onChange={(v) => setFormData({ ...formData, contadorId: v })} placeholder="Sin asignar" options={contadores.map(c => ({ value: String(c.id), label: c.username }))} />
               </div>
             </div>
             <div>
@@ -769,9 +765,7 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Tipo de Reporte</label>
-                <select value={formData.tipoReporte} onChange={(e) => setFormData({ ...formData, tipoReporte: e.target.value as TipoReporte })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  {(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
-                </select>
+                <Select value={formData.tipoReporte} onChange={(v) => setFormData({ ...formData, tipoReporte: v as TipoReporte })} options={(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => ({ value: tipo, label: TIPO_LABEL[tipo] }))} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Ruta de archivo (opcional)</label>
@@ -781,17 +775,11 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Período inicio *</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.periodoInicio} onChange={(e) => setFormData({ ...formData, periodoInicio: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                </div>
+                <DatePicker value={formData.periodoInicio} onChange={(v) => setFormData({ ...formData, periodoInicio: v })} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Período fin *</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.periodoFin} onChange={(e) => setFormData({ ...formData, periodoFin: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                </div>
+                <DatePicker value={formData.periodoFin} onChange={(v) => setFormData({ ...formData, periodoFin: v })} />
               </div>
             </div>
             <div>
@@ -826,17 +814,12 @@ export const ReportsPage = () => {
                     {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
                   </div>
                 ) : (
-                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                  </select>
+                  <Select value={formData.clienteId} onChange={(v) => setFormData({ ...formData, clienteId: v })} placeholder="Seleccionar cliente" options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombreCompleto }))} />
                 )}
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Contador (opcional)</label>
-                <select value={formData.contadorId} onChange={(e) => setFormData({ ...formData, contadorId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="" style={{ backgroundColor: '#1a0f14' }}>Sin asignar</option>
-                  {contadores.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.username}</option>)}
-                </select>
+                <Select value={formData.contadorId} onChange={(v) => setFormData({ ...formData, contadorId: v })} placeholder="Sin asignar" options={contadores.map(c => ({ value: String(c.id), label: c.username }))} />
               </div>
             </div>
             <div>
@@ -846,9 +829,7 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Tipo de Reporte</label>
-                <select value={formData.tipoReporte} onChange={(e) => setFormData({ ...formData, tipoReporte: e.target.value as TipoReporte })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  {(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
-                </select>
+                <Select value={formData.tipoReporte} onChange={(v) => setFormData({ ...formData, tipoReporte: v as TipoReporte })} options={(Object.keys(TIPO_LABEL) as TipoReporte[]).map(tipo => ({ value: tipo, label: TIPO_LABEL[tipo] }))} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Ruta de archivo (opcional)</label>
@@ -858,17 +839,11 @@ export const ReportsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Período inicio</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.periodoInicio} onChange={(e) => setFormData({ ...formData, periodoInicio: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                </div>
+                <DatePicker value={formData.periodoInicio} onChange={(v) => setFormData({ ...formData, periodoInicio: v })} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Período fin</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.periodoFin} onChange={(e) => setFormData({ ...formData, periodoFin: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
-                </div>
+                <DatePicker value={formData.periodoFin} onChange={(v) => setFormData({ ...formData, periodoFin: v })} />
               </div>
             </div>
             <div>

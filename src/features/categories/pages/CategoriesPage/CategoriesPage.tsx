@@ -7,6 +7,7 @@ import { gastosService } from '../../../expenses/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { formatCurrency, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
@@ -684,10 +685,10 @@ export const CategoriesPage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCreateModal(true)}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
             >
-              <Plus size={18} />
-              <span>Crear nueva categoría</span>
+              <Plus size={20} />
+              <span className="font-medium">Crear nueva categoría</span>
             </motion.button>
           </motion.div>
         )}
@@ -926,14 +927,9 @@ export const CategoriesPage = () => {
                         {clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}
                       </div>
                     ) : (
-                      <select value={formData.clienteId} onChange={(e) => setFormData({...formData, clienteId: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all"
-                        style={{ backgroundColor: '#1a0f14', color: 'white' }} required>
-                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                        {clientesList.map(c => (
-                          <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
-                        ))}
-                      </select>
+                      <Select value={formData.clienteId} onChange={(v) => setFormData({...formData, clienteId: v})}
+                        placeholder="Seleccionar cliente"
+                        options={clientesList.map(c => ({ value: String(c.id), label: c.nombre }))} />
                     )}
                   </div>
                   <div>
@@ -943,30 +939,30 @@ export const CategoriesPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Icono</label>
-                      <select value={formData.icon} onChange={(e) => setFormData({...formData, icon: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="utensils">Alimentación</option>
-                        <option value="home">Vivienda</option>
-                        <option value="car">Transporte</option>
-                        <option value="heart">Salud</option>
-                        <option value="shopping">Compras</option>
-                        <option value="film">Ocio</option>
-                        <option value="briefcase">Trabajo</option>
-                        <option value="plane">Viajes</option>
-                        <option value="dumbbell">Gimnasio</option>
-                        <option value="book">Educación</option>
-                      </select>
+                      <Select value={formData.icon} onChange={(v) => setFormData({...formData, icon: v})} options={[
+                        { value: 'utensils', label: 'Alimentación' },
+                        { value: 'home', label: 'Vivienda' },
+                        { value: 'car', label: 'Transporte' },
+                        { value: 'heart', label: 'Salud' },
+                        { value: 'shopping', label: 'Compras' },
+                        { value: 'film', label: 'Ocio' },
+                        { value: 'briefcase', label: 'Trabajo' },
+                        { value: 'plane', label: 'Viajes' },
+                        { value: 'dumbbell', label: 'Gimnasio' },
+                        { value: 'book', label: 'Educación' },
+                      ]} />
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Color</label>
-                      <select value={formData.color} onChange={(e) => setFormData({...formData, color: e.target.value})} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                        <option value="#F59E0B">Amarillo</option>
-                        <option value="#3B82F6">Azul</option>
-                        <option value="#10B981">Verde</option>
-                        <option value="#F43F5E">Rojo</option>
-                        <option value="#8B5CF6">Púrpura</option>
-                        <option value="#EC4899">Rosa</option>
-                        <option value="#6366F1">Índigo</option>
-                      </select>
+                      <Select value={formData.color} onChange={(v) => setFormData({...formData, color: v})} options={[
+                        { value: '#F59E0B', label: 'Amarillo' },
+                        { value: '#3B82F6', label: 'Azul' },
+                        { value: '#10B981', label: 'Verde' },
+                        { value: '#F43F5E', label: 'Rojo' },
+                        { value: '#8B5CF6', label: 'Púrpura' },
+                        { value: '#EC4899', label: 'Rosa' },
+                        { value: '#6366F1', label: 'Índigo' },
+                      ]} />
                     </div>
                   </div>
                   <div>

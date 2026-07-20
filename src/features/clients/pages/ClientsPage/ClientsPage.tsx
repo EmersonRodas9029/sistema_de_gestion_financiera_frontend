@@ -12,6 +12,8 @@ import { usuariosService, clientesService, type ApiUsuario } from '../../service
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { useManagedClient, setManagedClient, clearManagedClient } from '../../../../shared/hooks/useManagedClient';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
@@ -273,9 +275,9 @@ export const ClientsPage = () => {
           </div>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/30 transition-all font-medium self-start lg:self-auto">
-            <UserPlus size={18} />
-            <span>Nuevo Usuario</span>
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300 self-start lg:self-auto">
+            <UserPlus size={20} />
+            <span className="hidden sm:inline font-medium">Nuevo Usuario</span>
           </motion.button>
         </div>
       </motion.div>
@@ -440,8 +442,8 @@ export const ClientsPage = () => {
             <p className="text-white/40 text-sm">No se encontraron usuarios con los filtros actuales.</p>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setShowCreateModal(true)}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg">
-              <UserPlus size={18} /><span>Crear usuario</span>
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+              <UserPlus size={20} /><span className="font-medium">Crear usuario</span>
             </motion.button>
           </div>
         )}
@@ -656,12 +658,12 @@ export const ClientsPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Rol *</label>
-                <select value={createForm.rol}
-                  onChange={e => setCreateForm({...createForm, rol: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value="CLIENTE"  style={optStyle}>Cliente</option>
-                  <option value="CONTADOR" style={optStyle}>Contador</option>
-                </select>
+                <Select value={createForm.rol}
+                  onChange={v => setCreateForm({...createForm, rol: v})}
+                  options={[
+                    { value: 'CLIENTE', label: 'Cliente' },
+                    { value: 'CONTADOR', label: 'Contador' },
+                  ]} />
               </div>
             </div>
 
@@ -689,20 +691,19 @@ export const ClientsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div>
                         <label className="text-white/60 text-sm mb-1.5 block">Fecha de nacimiento</label>
-                        <input type="date" value={createForm.fechaNacimiento}
-                          onChange={e => setCreateForm({...createForm, fechaNacimiento: e.target.value})}
-                          className={inputCls} />
+                        <DatePicker value={createForm.fechaNacimiento}
+                          onChange={v => setCreateForm({...createForm, fechaNacimiento: v})} />
                       </div>
                       <div>
                         <label className="text-white/60 text-sm mb-1.5 block">Tipo de documento</label>
-                        <select value={createForm.tipoDocumento}
-                          onChange={e => setCreateForm({...createForm, tipoDocumento: e.target.value})}
-                          className={inputCls} style={selectStyle}>
-                          <option value=""          style={optStyle}>— Sin especificar —</option>
-                          <option value="DNI"       style={optStyle}>DNI</option>
-                          <option value="PASAPORTE" style={optStyle}>Pasaporte</option>
-                          <option value="CEDULA"    style={optStyle}>Cédula</option>
-                        </select>
+                        <Select value={createForm.tipoDocumento}
+                          onChange={v => setCreateForm({...createForm, tipoDocumento: v})}
+                          placeholder="— Sin especificar —"
+                          options={[
+                            { value: 'DNI', label: 'DNI' },
+                            { value: 'PASAPORTE', label: 'Pasaporte' },
+                            { value: 'CEDULA', label: 'Cédula' },
+                          ]} />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -766,21 +767,21 @@ export const ClientsPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha de nacimiento</label>
-                <input type="date" value={editForm.fechaNacimiento}
-                  onChange={e => setEditForm({...editForm, fechaNacimiento: e.target.value})} className={inputCls} />
+                <DatePicker value={editForm.fechaNacimiento}
+                  onChange={v => setEditForm({...editForm, fechaNacimiento: v})} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Tipo de documento</label>
-                <select value={editForm.tipoDocumento}
-                  onChange={e => setEditForm({...editForm, tipoDocumento: e.target.value})}
-                  className={inputCls} style={selectStyle}>
-                  <option value=""         style={optStyle}>— Sin especificar —</option>
-                  <option value="DNI"      style={optStyle}>DNI</option>
-                  <option value="PASAPORTE" style={optStyle}>Pasaporte</option>
-                  <option value="CEDULA"   style={optStyle}>Cédula</option>
-                </select>
+                <Select value={editForm.tipoDocumento}
+                  onChange={v => setEditForm({...editForm, tipoDocumento: v})}
+                  placeholder="— Sin especificar —"
+                  options={[
+                    { value: 'DNI', label: 'DNI' },
+                    { value: 'PASAPORTE', label: 'Pasaporte' },
+                    { value: 'CEDULA', label: 'Cédula' },
+                  ]} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Documento de identidad</label>

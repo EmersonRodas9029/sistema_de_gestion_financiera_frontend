@@ -25,7 +25,6 @@ import {
   Trash2,
   Edit,
   Save,
-  Calendar as CalendarIcon,
   Target,
   AlertTriangle,
   TrendingUp,
@@ -43,6 +42,8 @@ import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBa
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { Toggle } from '../../../../shared/components/ui/Toggle';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { tooltipStyle } from '../../../../shared/components/ui/chartConfig';
@@ -1144,19 +1145,15 @@ export const ExpensesPage = () => {
                   {recurringList.length > 0 && (
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Gasto recurrente</label>
-                      <select
+                      <Select
                         value={formData.recurringId}
-                        onChange={(e) => handleSelectRecurring(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
-                      >
-                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Ninguno, registrar gasto nuevo</option>
-                        {recurringList.map(r => (
-                          <option key={r.id} value={r.id} style={{ backgroundColor: '#1a0f14' }}>
-                            {r.descripcion || 'Sin descripción'} · {formatCurrency(r.monto ?? 0)} · {r.frecuencia}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={handleSelectRecurring}
+                        placeholder="Ninguno, registrar gasto nuevo"
+                        options={recurringList.map(r => ({
+                          value: String(r.id),
+                          label: `${r.descripcion || 'Sin descripción'} · ${formatCurrency(r.monto ?? 0)} · ${r.frecuencia}`,
+                        }))}
+                      />
                       <p className="text-white/40 text-xs mt-1">Selecciona uno para autocompletar y registrar ese pago.</p>
                     </div>
                   )}
@@ -1168,37 +1165,23 @@ export const ExpensesPage = () => {
                           {clientesList.find(c => c.id === Number(ownClienteId))?.nombre || localStorage.getItem('userName') || 'Tu cuenta'}
                         </div>
                       ) : (
-                        <select
+                        <Select
                           value={formData.clienteId}
-                          onChange={(e) => setFormData({...formData, clienteId: e.target.value, categoriaId: ''})}
-                          className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                          style={{ backgroundColor: '#1a0f14', color: 'white' }}
-                          required
-                        >
-                          <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                          {clientesList.map(c => (
-                            <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombre}</option>
-                          ))}
-                        </select>
+                          onChange={(v) => setFormData({...formData, clienteId: v, categoriaId: ''})}
+                          placeholder="Seleccionar cliente"
+                          options={clientesList.map(c => ({ value: String(c.id), label: c.nombre }))}
+                        />
                       )}
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                      <select
+                      <Select
                         value={formData.categoriaId}
-                        onChange={(e) => setFormData({...formData, categoriaId: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
+                        onChange={(v) => setFormData({...formData, categoriaId: v})}
+                        placeholder={formData.clienteId ? 'Seleccionar categoría' : 'Primero selecciona un cliente'}
                         disabled={!formData.clienteId}
-                        required
-                      >
-                        <option value="" style={{ backgroundColor: '#1a0f14' }}>
-                          {formData.clienteId ? 'Seleccionar categoría' : 'Primero selecciona un cliente'}
-                        </option>
-                        {categoriasList.map(cat => (
-                          <option key={cat.id} value={cat.id} style={{ backgroundColor: '#1a0f14' }}>{cat.nombre}</option>
-                        ))}
-                      </select>
+                        options={categoriasList.map(cat => ({ value: String(cat.id), label: cat.nombre }))}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1237,30 +1220,23 @@ export const ExpensesPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
-                      <div className="relative">
-                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="date"
-                          value={formData.date}
-                          onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                          required
-                        />
-                      </div>
+                      <DatePicker
+                        value={formData.date}
+                        onChange={(v) => setFormData({...formData, date: v})}
+                      />
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
-                      <select
+                      <Select
                         value={formData.paymentMethod}
-                        onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                      >
-                        <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                        <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                        <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                        <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                      </select>
+                        onChange={(v) => setFormData({...formData, paymentMethod: v})}
+                        options={[
+                          { value: 'efectivo', label: 'Efectivo' },
+                          { value: 'tarjeta', label: 'Tarjeta' },
+                          { value: 'transferencia', label: 'Transferencia' },
+                          { value: 'cheque', label: 'Cheque' },
+                        ]}
+                      />
                     </div>
                   </div>
 
@@ -1309,18 +1285,12 @@ export const ExpensesPage = () => {
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Categoría *</label>
-                      <select
+                      <Select
                         value={formData.categoriaId}
-                        onChange={(e) => setFormData({...formData, categoriaId: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: '#1a0f14', color: 'white' }}
-                        required
-                      >
-                        <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar categoría</option>
-                        {categoriasList.map(cat => (
-                          <option key={cat.id} value={cat.id} style={{ backgroundColor: '#1a0f14' }}>{cat.nombre}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => setFormData({...formData, categoriaId: v})}
+                        placeholder="Seleccionar categoría"
+                        options={categoriasList.map(cat => ({ value: String(cat.id), label: cat.nombre }))}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1359,30 +1329,23 @@ export const ExpensesPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Fecha *</label>
-                      <div className="relative">
-                        <CalendarIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                        <input
-                          type="date"
-                          value={formData.date}
-                          onChange={(e) => setFormData({...formData, date: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                          required
-                        />
-                      </div>
+                      <DatePicker
+                        value={formData.date}
+                        onChange={(v) => setFormData({...formData, date: v})}
+                      />
                     </div>
                     <div>
                       <label className="text-white/60 text-sm mb-1.5 block">Método de pago</label>
-                      <select
+                      <Select
                         value={formData.paymentMethod}
-                        onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
-                      >
-                        <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                        <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                        <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                        <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
-                      </select>
+                        onChange={(v) => setFormData({...formData, paymentMethod: v})}
+                        options={[
+                          { value: 'efectivo', label: 'Efectivo' },
+                          { value: 'tarjeta', label: 'Tarjeta' },
+                          { value: 'transferencia', label: 'Transferencia' },
+                          { value: 'cheque', label: 'Cheque' },
+                        ]}
+                      />
                     </div>
                   </div>
 

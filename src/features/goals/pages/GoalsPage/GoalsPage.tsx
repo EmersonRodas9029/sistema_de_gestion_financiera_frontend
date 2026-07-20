@@ -14,6 +14,8 @@ import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SortBar } from '../../../../shared/components/ui/SortBar';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
+import { Select } from '../../../../shared/components/ui/Select';
+import { DatePicker } from '../../../../shared/components/ui/DatePicker';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
@@ -261,15 +263,17 @@ export const GoalsPage = () => {
               <p className="text-white/50 text-sm mt-1">Define y da seguimiento a tus objetivos financieros</p>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline font-medium">Nueva Meta</span>
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline font-medium">Nueva Meta</span>
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
@@ -421,9 +425,9 @@ export const GoalsPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Target size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay metas financieras</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron metas con los filtros actuales. Prueba a ajustar los filtros o crea una nueva meta.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity">
-              <Plus size={18} />
-              <span>Crear nueva meta</span>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+              <Plus size={20} />
+              <span className="font-medium">Crear nueva meta</span>
             </motion.button>
           </motion.div>
         )}
@@ -578,10 +582,7 @@ export const GoalsPage = () => {
                     {clientes.find(c => Number(c.id) === Number(ownClienteId))?.nombreCompleto || localStorage.getItem('userName') || 'Tu cuenta'}
                   </div>
                 ) : (
-                  <select value={formData.clienteId} onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }} required>
-                    <option value="" style={{ backgroundColor: '#1a0f14' }}>Seleccionar cliente</option>
-                    {clientesActivos.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14' }}>{c.nombreCompleto}</option>)}
-                  </select>
+                  <Select value={formData.clienteId} onChange={(v) => setFormData({ ...formData, clienteId: v })} placeholder="Seleccionar cliente" options={clientesActivos.map(c => ({ value: String(c.id), label: c.nombreCompleto }))} />
                 )}
               </div>
               <div>
@@ -608,18 +609,15 @@ export const GoalsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha límite</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.fechaLimite} onChange={(e) => setFormData({ ...formData, fechaLimite: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-                </div>
+                <DatePicker value={formData.fechaLimite} onChange={(v) => setFormData({ ...formData, fechaLimite: v })} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Prioridad</label>
-                <select value={formData.prioridad} onChange={(e) => setFormData({ ...formData, prioridad: e.target.value as Prioridad })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="BAJA">Baja</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="ALTA">Alta</option>
-                </select>
+                <Select value={formData.prioridad} onChange={(v) => setFormData({ ...formData, prioridad: v as Prioridad })} options={[
+                  { value: 'BAJA', label: 'Baja' },
+                  { value: 'MEDIA', label: 'Media' },
+                  { value: 'ALTA', label: 'Alta' },
+                ]} />
               </div>
             </div>
             <div>
@@ -673,18 +671,15 @@ export const GoalsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Fecha límite</label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="date" value={formData.fechaLimite} onChange={(e) => setFormData({ ...formData, fechaLimite: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
-                </div>
+                <DatePicker value={formData.fechaLimite} onChange={(v) => setFormData({ ...formData, fechaLimite: v })} />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Prioridad</label>
-                <select value={formData.prioridad} onChange={(e) => setFormData({ ...formData, prioridad: e.target.value as Prioridad })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                  <option value="BAJA">Baja</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="ALTA">Alta</option>
-                </select>
+                <Select value={formData.prioridad} onChange={(v) => setFormData({ ...formData, prioridad: v as Prioridad })} options={[
+                  { value: 'BAJA', label: 'Baja' },
+                  { value: 'MEDIA', label: 'Media' },
+                  { value: 'ALTA', label: 'Alta' },
+                ]} />
               </div>
             </div>
             <div>
