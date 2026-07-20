@@ -8,7 +8,7 @@ import { LeftBar } from './LeftBar/LeftBar';
 import {
   Home, TrendingUp, TrendingDown, Repeat, Wallet, Target,
   FolderTree, BarChart3, FileText, Users, Settings,
-  Bell, LogOut, User, ChevronDown, Menu, UserCog
+  Bell, LogOut, ChevronDown, Menu, UserCog
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -138,10 +138,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
                         <p className="text-white/40 text-xs capitalize">{userRole}</p>
                       </div>
                       <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg text-sm">
-                        <User size={14} /><span>Perfil</span>
-                      </button>
-                      <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-white/70 hover:bg-white/10 rounded-lg text-sm">
-                        <Settings size={14} /><span>Config</span>
+                        <Settings size={14} /><span>Config. de perfil</span>
                       </button>
                       <div className="border-t border-white/10 my-1"></div>
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg text-sm">
