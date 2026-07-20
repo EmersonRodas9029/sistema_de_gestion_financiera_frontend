@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
-import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants, notifyConnectionError } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 import { gastosService } from '../../../expenses/services';
@@ -326,6 +326,7 @@ export const ChartsPage = () => {
         .sort((a, b) => b.value - a.value));
     } catch (e) {
       console.error('Error cargando datos de gráficos:', e);
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }

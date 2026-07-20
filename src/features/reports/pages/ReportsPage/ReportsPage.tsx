@@ -7,7 +7,7 @@ import {
   AlertCircle, User, Clock, Download, Eye, Loader2, TrendingUp,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { formatDate, containerVariants, itemVariants, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -234,8 +234,8 @@ export const ReportsPage = () => {
         ? await reportesService.getByCliente(Number(ownClienteId))
         : await reportesService.getAll();
       setReports(list);
-    } catch (e) {
-      toast.error(`Error al cargar reportes: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } catch {
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -291,7 +291,7 @@ export const ReportsPage = () => {
       setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchReports();
     } catch (e) {
-      toast.error(`Error al generar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('generar', e);
     }
   };
 
@@ -322,7 +322,7 @@ export const ReportsPage = () => {
       setSelectedReport(null);
       fetchReports();
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -338,7 +338,7 @@ export const ReportsPage = () => {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error(`Error al descargar PDF: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('descargar PDF', e);
     } finally {
       setDownloadingId(null);
     }
@@ -361,7 +361,7 @@ export const ReportsPage = () => {
       setShowDeleteModal(false);
       setSelectedReport(null);
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 

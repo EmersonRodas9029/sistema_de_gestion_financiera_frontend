@@ -1,4 +1,18 @@
 import { CheckCircle, Clock, Calendar, XCircle, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+// ponytail: un único texto para "no hay conexión con el back" en toda la app, en vez de que cada
+// página redacte el suyo. El `id` fijo hace que react-hot-toast reemplace el toast existente en
+// lugar de apilar uno nuevo (evita duplicados por StrictMode o reintentos rápidos).
+export const CONNECTION_ERROR_MESSAGE = 'No se pudo conectar con el servidor.';
+export const notifyConnectionError = (): void => {
+  toast.error(CONNECTION_ERROR_MESSAGE, { id: 'connection-error' });
+};
+
+// Un único formato para "Error al <acción>: <detalle>" en toda la app.
+export const notifyActionError = (action: string, e: unknown, fallback = 'Error desconocido'): void => {
+  toast.error(`Error al ${action}: ${e instanceof Error ? e.message : fallback}`, { id: `action-error-${action}` });
+};
 
 export const formatCurrency = (amount: number): string =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);

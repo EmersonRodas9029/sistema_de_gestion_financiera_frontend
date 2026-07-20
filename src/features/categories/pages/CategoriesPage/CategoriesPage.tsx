@@ -5,7 +5,7 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { clientesService } from '../../../clients/services';
 import { gastosService } from '../../../expenses/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
-import { formatCurrency } from '../../../../shared/utils';
+import { formatCurrency, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { SearchFilterBar } from '../../../../shared/components/ui/SearchFilterBar';
@@ -225,6 +225,7 @@ export const CategoriesPage = () => {
       }));
     } catch (e) {
       console.error('Error cargando categorías:', e);
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -306,7 +307,7 @@ export const CategoriesPage = () => {
       setFormData({ clienteId: isClientRole ? ownClienteId : '', name: '', icon: 'utensils', color: '#F59E0B', description: '', budget: '', isActive: true });
       toast.success('Categoría creada');
     } catch (e) {
-      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('crear', e);
     }
   };
 
@@ -335,7 +336,7 @@ export const CategoriesPage = () => {
       setSelectedCategory(null);
       toast.success('Categoría actualizada');
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -346,7 +347,7 @@ export const CategoriesPage = () => {
       await fetchCategories(activeClienteId);
       toast.success('Categoría eliminada');
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 

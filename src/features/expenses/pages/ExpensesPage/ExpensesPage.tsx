@@ -33,7 +33,7 @@ import {
   FileText
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
@@ -139,7 +139,7 @@ export const ExpensesPage = () => {
       setExpenses(scoped.map(g => toExpense(g, categoriaNombres.get(g.categoriaId ?? -1))));
     } catch (e) {
       console.error('Error cargando gastos:', e);
-      toast.error('No se pudo conectar con el servidor.');
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -331,7 +331,7 @@ export const ExpensesPage = () => {
       });
       toast.success('Gasto creado');
     } catch (e) {
-      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('crear', e);
     }
   };
 
@@ -342,7 +342,7 @@ export const ExpensesPage = () => {
       await fetchExpenses();
       toast.success('Gasto eliminado');
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 
@@ -380,7 +380,7 @@ export const ExpensesPage = () => {
       setSelectedExpense(null);
       toast.success('Gasto actualizado');
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 

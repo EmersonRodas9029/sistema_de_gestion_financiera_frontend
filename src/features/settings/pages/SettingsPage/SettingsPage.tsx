@@ -26,7 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
-import { containerVariants, itemVariants, logout, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE } from '../../../../shared/utils';
+import { containerVariants, itemVariants, logout, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE, notifyActionError } from '../../../../shared/utils';
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 
 interface SettingsSection {
@@ -289,7 +289,7 @@ export const SettingsPage = () => {
         try {
           await clientesService.update(clienteId, { telefono: profile.phone });
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : 'Error al guardar el teléfono');
+          notifyActionError('guardar el teléfono', e);
         }
 
         const valor = JSON.stringify(notifications.enabledTypes);
@@ -301,7 +301,7 @@ export const SettingsPage = () => {
             setNotifConfigId(created.id ?? null);
           }
         } catch (e) {
-          toast.error(e instanceof Error ? e.message : 'Error al guardar las preferencias de notificaciones');
+          notifyActionError('guardar las preferencias de notificaciones', e);
         }
       }
       setShowSuccess(true);
@@ -335,7 +335,7 @@ export const SettingsPage = () => {
       setPasswordData({ current: '', new: '', confirm: '' });
       setSecurity({ ...security, lastPasswordChange: new Date().toISOString() });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al cambiar la contraseña');
+      notifyActionError('cambiar la contraseña', e);
     } finally {
       setIsChangingPassword(false);
     }
@@ -367,7 +367,7 @@ export const SettingsPage = () => {
       toast.success('Cuenta eliminada');
       navigate('/login');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al eliminar la cuenta');
+      notifyActionError('eliminar la cuenta', e);
     } finally {
       setIsDeletingAccount(false);
     }

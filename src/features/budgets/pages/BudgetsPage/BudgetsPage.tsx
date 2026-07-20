@@ -16,7 +16,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, containerVariants, itemVariants } from '../../../../shared/utils';
+import { formatCurrency, containerVariants, itemVariants, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -97,8 +97,8 @@ export const BudgetsPage = () => {
         clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
       );
       setCategoriasByClient(Object.fromEntries(entries));
-    } catch (e) {
-      toast.error(`Error al cargar presupuestos: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } catch {
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -107,13 +107,10 @@ export const BudgetsPage = () => {
   useEffect(() => { fetchBudgets(); }, [fetchBudgets]);
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedEstado]);
   useEffect(() => {
-    clientesService.getAll().then(setClientes)
-      .catch(() => toast.error('No se pudieron cargar los clientes.'));
+    clientesService.getAll().then(setClientes).catch(notifyConnectionError);
   }, []);
   useEffect(() => {
-    gastosService.getAll()
-      .then(setGastos)
-      .catch(() => toast.error('No se pudieron cargar los gastos para calcular el presupuesto usado.'));
+    gastosService.getAll().then(setGastos).catch(notifyConnectionError);
   }, []);
 
   // Gastado real por presupuesto: gastos del mismo cliente/mes/año, filtrando por categoría si el presupuesto la tiene
@@ -152,7 +149,7 @@ export const BudgetsPage = () => {
       setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchBudgets();
     } catch (e) {
-      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Ya existe un presupuesto para ese cliente/categoría/mes/año'}`);
+      notifyActionError('crear', e, 'Ya existe un presupuesto para ese cliente/categoría/mes/año');
     }
   };
 
@@ -184,7 +181,7 @@ export const BudgetsPage = () => {
       setSelectedBudget(null);
       fetchBudgets();
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -196,7 +193,7 @@ export const BudgetsPage = () => {
       toast.success('Presupuesto eliminado');
       setBudgets(prev => prev.filter(b => b.id !== id));
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 

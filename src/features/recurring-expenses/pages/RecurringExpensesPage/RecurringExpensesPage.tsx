@@ -6,7 +6,7 @@ import {
   Clock, CheckCircle, XCircle, Activity, Tag, PieChart, User,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -99,8 +99,8 @@ export const RecurringExpensesPage = () => {
         clienteIds.map(async id => [id, await categoriasService.getByCliente(id).catch(() => [])] as const)
       );
       setCategoriasByClient(Object.fromEntries(entries));
-    } catch (e) {
-      toast.error(`Error al cargar gastos recurrentes: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } catch {
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +114,7 @@ export const RecurringExpensesPage = () => {
         const scoped = isClientRole ? list.filter(c => Number(c.id) === Number(ownClienteId)) : list;
         return fetchExpenses(scoped);
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => { notifyConnectionError(); setIsLoading(false); });
   }, [fetchExpenses, isClientRole, ownClienteId]);
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedCliente, selectedCategoria, selectedFrecuencia, selectedEstado]);
@@ -163,7 +163,7 @@ export const RecurringExpensesPage = () => {
       setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchExpenses(clientes);
     } catch (e) {
-      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('crear', e);
     }
   };
 
@@ -210,7 +210,7 @@ export const RecurringExpensesPage = () => {
       setSelectedExpense(null);
       fetchExpenses(clientes);
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -222,7 +222,7 @@ export const RecurringExpensesPage = () => {
       toast.success('Gasto recurrente eliminado');
       setExpenses(prev => prev.filter(e => e.id !== id));
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 

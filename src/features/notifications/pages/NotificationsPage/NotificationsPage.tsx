@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, type ReactElement } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
@@ -68,8 +68,8 @@ export const NotificationsPage = () => {
       const clienteId = Number(getCurrentClientSession().ownClienteId || 0);
       const list = await notificacionesService.getAll();
       setNotifications(clienteId ? list.filter(n => n.clienteId === clienteId) : list);
-    } catch (e) {
-      toast.error(`Error al cargar notificaciones: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } catch {
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +127,7 @@ export const NotificationsPage = () => {
       await fetchNotifications();
       toast.success('Todas las notificaciones marcadas como leídas');
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -158,7 +158,7 @@ export const NotificationsPage = () => {
       setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
       toast.success(ids.length > 1 ? `${ids.length} notificaciones eliminadas` : 'Notificación eliminada');
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 

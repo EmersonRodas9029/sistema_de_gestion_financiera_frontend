@@ -16,7 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { ingresosService, type ApiIngreso } from '../../services';
 import { clientesService } from '../../../clients/services';
@@ -106,7 +106,6 @@ export const IncomesPage = () => {
   const { confirm, ConfirmDialogElement } = useConfirm();
   const [ingresos, setIngresos]   = useState<Ingreso[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]         = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm]         = useState('');
   const debouncedSearchTerm = useDebouncedValue(searchTerm);
@@ -134,7 +133,6 @@ export const IncomesPage = () => {
 
   const fetchIngresos = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const list = await ingresosService.getAll();
       // El endpoint /ingresos no filtra por cliente en el backend: un usuario con rol cliente
@@ -142,7 +140,7 @@ export const IncomesPage = () => {
       const scoped = isClientRole ? list.filter(i => Number(i.clienteId) === Number(ownClienteId)) : list;
       setIngresos(scoped.map(toIngreso));
     } catch {
-      setError('No se pudo conectar con el servidor.');
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -261,8 +259,8 @@ export const IncomesPage = () => {
       await fetchIngresos();
       setShowCreateModal(false);
       setCreateForm(emptyCreate(isClientRole ? ownClienteId : ''));
-    } catch {
-      setError('Error al crear el ingreso.');
+    } catch (e) {
+      notifyActionError('crear', e, 'No se pudo crear el ingreso.');
     }
   };
 
@@ -298,28 +296,22 @@ export const IncomesPage = () => {
       });
       setShowEditModal(false);
       await fetchIngresos();
-    } catch {
-      setError('Error al actualizar el ingreso.');
+    } catch (e) {
+      notifyActionError('actualizar', e, 'No se pudo actualizar el ingreso.');
     }
   };
 
   const handleDelete = async (ingreso: Ingreso) => {
-    if (!(await confirm('¿Eliminar este ingreso?'))) return;
+    if (!(await confirm('¿Estás seguro de que deseas eliminar este ingreso?'))) return;
     try {
       await ingresosService.remove(ingreso.id);
       await fetchIngresos();
-    } catch {
-      setError('Error al eliminar el ingreso.');
+    } catch (e) {
+      notifyActionError('eliminar', e, 'No se pudo eliminar el ingreso.');
     }
   };
 
   if (isLoading) return <PageSkeleton />;
-  if (error) return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <p className="text-red-400">{error}</p>
-      <button onClick={fetchIngresos} className="px-4 py-2 bg-[#F05984] text-white rounded-lg">Reintentar</button>
-    </div>
-  );
 
   return (
     <motion.div

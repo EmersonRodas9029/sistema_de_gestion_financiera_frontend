@@ -6,7 +6,7 @@ import {
   Shield, User, MailIcon, RotateCcw, UserCog, UserX,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip } from 'recharts';
-import { containerVariants, itemVariants, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE } from '../../../../shared/utils';
+import { containerVariants, itemVariants, isStrongPassword, PASSWORD_REQUIREMENT_MESSAGE, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { usuariosService, clientesService, type ApiUsuario } from '../../services';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
@@ -86,7 +86,6 @@ export const ClientsPage = () => {
   const [sortBy, setSortBy]               = useState<'username' | 'rol'>('username');
   const [sortOrder, setSortOrder]         = useState<'asc' | 'desc'>('asc');
   const [usuarios, setUsuarios]           = useState<Usuario[]>([]);
-  const [error, setError]                 = useState<string | null>(null);
   const { confirm, ConfirmDialogElement } = useConfirm();
 
   const [createForm, setCreateForm] = useState({
@@ -104,12 +103,11 @@ export const ClientsPage = () => {
 
   const fetchUsuarios = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const data = await usuariosService.getAll();
       setUsuarios(data.map(toUsuario));
     } catch {
-      setError('No se pudo conectar con el servidor. Verifica que el backend esté activo.');
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -168,8 +166,8 @@ export const ClientsPage = () => {
       setShowCreateModal(false);
       setCreateErrors({});
       setCreateForm({ username: '', password: '', email: '', rol: 'CLIENTE', nombreCompleto: '', telefono: '', fechaNacimiento: '', direccion: '', documentoIdentidad: '', tipoDocumento: '' });
-    } catch {
-      setError('Error al crear el usuario.');
+    } catch (e) {
+      notifyActionError('crear', e, 'No se pudo crear el usuario.');
     }
   };
 
@@ -201,8 +199,8 @@ export const ClientsPage = () => {
       });
       setShowEditModal(false);
       await fetchUsuarios();
-    } catch {
-      setError('Error al actualizar el cliente.');
+    } catch (e) {
+      notifyActionError('actualizar', e, 'No se pudo actualizar el cliente.');
     }
   };
 
@@ -213,8 +211,8 @@ export const ClientsPage = () => {
       // clientesService.remove solo desactiva el cliente, sin bloquear el login del usuario.
       await usuariosService.remove(u.id);
       await fetchUsuarios();
-    } catch {
-      setError('Error al desactivar el usuario.');
+    } catch (e) {
+      notifyActionError('desactivar', e, 'No se pudo desactivar el usuario.');
     }
   };
 
@@ -223,8 +221,8 @@ export const ClientsPage = () => {
     try {
       await usuariosService.activar(u.id);
       await fetchUsuarios();
-    } catch {
-      setError('Error al activar el usuario.');
+    } catch (e) {
+      notifyActionError('activar', e, 'No se pudo activar el usuario.');
     }
   };
 
@@ -234,7 +232,7 @@ export const ClientsPage = () => {
       await usuariosService.removePermanente(u.id);
       await fetchUsuarios();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar el usuario definitivamente.');
+      notifyActionError('eliminar', e, 'No se pudo eliminar el usuario definitivamente.');
     }
   };
 
@@ -253,12 +251,6 @@ export const ClientsPage = () => {
   };
 
   if (isLoading) return <PageSkeleton />;
-  if (error) return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <p className="text-red-400">{error}</p>
-      <button onClick={fetchUsuarios} className="px-4 py-2 bg-[#F05984] text-white rounded-lg">Reintentar</button>
-    </div>
-  );
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible"

@@ -31,7 +31,7 @@ import {
   Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '../../../../shared/utils';
+import { containerVariants, itemVariants, notifyConnectionError } from '../../../../shared/utils';
 import { gastosService } from '../../../expenses/services';
 import { ingresosService } from '../../../incomes/services';
 import { categoriasService } from '../../../categories/services';
@@ -250,6 +250,7 @@ export const HomePage = () => {
       });
     } catch (e) {
       console.error('Error cargando el dashboard:', e);
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }

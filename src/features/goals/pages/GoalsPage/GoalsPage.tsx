@@ -7,7 +7,7 @@ import {
   User,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -75,8 +75,8 @@ export const GoalsPage = () => {
         ? await metasService.getByCliente(Number(ownClienteId))
         : await metasService.getAll();
       setGoals(list);
-    } catch (e) {
-      toast.error(`Error al cargar metas: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+    } catch {
+      notifyConnectionError();
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +126,7 @@ export const GoalsPage = () => {
       setFormData(emptyForm(isClientRole ? ownClienteId : ''));
       fetchGoals();
     } catch (e) {
-      toast.error(`Error al crear: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('crear', e);
     }
   };
 
@@ -170,7 +170,7 @@ export const GoalsPage = () => {
       setSelectedGoal(null);
       fetchGoals();
     } catch (e) {
-      toast.error(`Error al actualizar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('actualizar', e);
     }
   };
 
@@ -182,7 +182,7 @@ export const GoalsPage = () => {
       toast.success('Meta eliminada');
       setGoals(prev => prev.filter(g => g.id !== id));
     } catch (e) {
-      toast.error(`Error al eliminar: ${e instanceof Error ? e.message : 'Error desconocido'}`);
+      notifyActionError('eliminar', e);
     }
   };
 
