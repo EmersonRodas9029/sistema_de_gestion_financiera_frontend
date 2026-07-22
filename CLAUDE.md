@@ -25,22 +25,28 @@ Uses `HashRouter` (not `BrowserRouter`) — relevant for links, redirects, and t
 
 ### Auth
 
-Not a real auth system — stored entirely in `localStorage`:
+Backed by a real JWT login against the backend (`POST /auth/login` via `authService`, see `src/features/auth/services/index.ts`), but session state is then cached entirely in `localStorage` — there is no refresh flow or client-side token expiry handling:
 - `isAuthenticated` (`"true"/"false"`)
-- `userRole` (`"admin" | "client"`)
-- `userName` (string)
+- `userRole` (`"admin" | "client"` — mapped from backend `rol`: `CONTADOR` → `admin`, `CLIENTE` → `client`)
+- `userName`, `userEmail`, `userId`
+- `authToken` — JWT, sent as `Authorization: Bearer <token>` on every request via `apiFetch` (`src/lib/api.ts`)
+- `clienteId` — only for the `client` role; resolved once at login by matching session email against `clientesService.getAll()`
 
-`ProtectedRoutes` in `App.tsx` reads these directly and redirects to `/login` when unauthenticated.
+`ProtectedRoutes` in `App.tsx` reads these directly and redirects to `/login` when unauthenticated. Role-gating in the UI (`AdminOnly`, `LeftBar` nav filtering) is UX-only, but it is backed by real server-side enforcement: the backend (separate Spring Boot repo, see below) requires a valid JWT on every endpoint except `/api/auth/**`, and applies IDOR/ownership + role (`ROLE_CONTADOR`) checks per-service.
 
 ### Feature structure
 
 `src/features/<feature>/` with subdirs: `components/`, `pages/`, `services/`, `hooks/`, `store/` (not all features use every subdir). Pages follow the pattern `pages/FooPage/FooPage.tsx` + `pages/FooPage/index.tsx` (re-export).
 
-Most feature data is **hardcoded mock data** inside the page component — no real API calls yet. `src/features/*/services/index.ts` files exist but are mostly stubs.
+All features are wired to the real backend — every `src/features/*/services/index.ts` calls the live REST API via `apiJson`/`apiFetch`, and every page imports its feature's service (no hardcoded mock arrays remain in page components).
 
 ### API
 
-`src/lib/config.ts` exports `config.apiUrl` (env `VITE_API_URL`, default `http://localhost:3000/api`). `QueryClientProvider` wraps the app in `main.tsx`; React Query is set up but barely used — most pages fetch nothing.
+`src/lib/config.ts` exports `config.apiUrl` (env `VITE_API_URL`; the code's hardcoded fallback is `http://localhost:3000/api`, but the actual local `.env` sets it to `http://localhost:8080/api` to match the backend's real port — the `3000` fallback is stale and never hit in practice). `QueryClientProvider` wraps the app in `src/app/main.tsx`; React Query is set up but not actually used for data fetching — pages call services directly (`useState`/`useEffect`) rather than `useQuery`/`useMutation`.
+
+### Backend
+
+The backend is a separate repository at `../Sistema_De_Gestion_Finaciera` (sibling directory, not part of this repo): Spring Boot 3 / Java 17, layered `Controller → Service interface → ServiceImpl → Repository (JPA) → MySQL`, Flyway migrations, MapStruct DTO mapping, JWT via `jjwt`, rate limiting, default-deny security with per-request JWT auth plus ownership/role authorization in the service layer. REST resources: `/api/usuarios`, `/api/clientes`, `/api/categorias`, `/api/gastos`, `/api/gastos-recurrentes`, `/api/ingresos`, `/api/presupuestos`, `/api/metas`, `/api/notificaciones`, `/api/reportes`, `/api/cuentas` (bank accounts — not yet consumed by this frontend), `/api/configuraciones`. Full contract in that repo's `API.md`.
 
 ### Shared
 
@@ -65,4 +71,4 @@ Tailwind CSS with a custom dark theme. Key conventions:
 
 ## Admin vs Client
 
-`/admin`, `/admin/clients`, and `/admin/reports` are admin-only routes. Role is read from `localStorage.userRole` at render time — no server-side enforcement.
+`/admin`, `/admin/clients`, and `/admin/reports` are admin-only routes. Role is read from `localStorage.userRole` at render time; this only hides navigation/UI. The backend independently enforces role- and ownership-based authorization server-side (see Backend section above), so a client can't actually reach another client's data even if they bypass the frontend gate.
