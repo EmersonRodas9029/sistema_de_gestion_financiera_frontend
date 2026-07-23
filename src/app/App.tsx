@@ -16,6 +16,8 @@ import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { RecurringExpensesPage } from '../features/recurring-expenses/pages/RecurringExpensesPage';
 import { BudgetsPage } from '../features/budgets/pages/BudgetsPage';
 import { ReportsPage } from '../features/reports/pages/ReportsPage';
+import { MetricsPage } from '../features/sudo/pages/MetricsPage';
+import { ContadoresPage } from '../features/sudo/pages/ContadoresPage';
 
 // =====================================================
 // CONFIGURACIÓN DE AUTENTICACIÓN
@@ -23,13 +25,19 @@ import { ReportsPage } from '../features/reports/pages/ReportsPage';
 const REQUIRE_AUTH = true;
 // =====================================================
 
-const AdminOnly = ({ userRole, children }: { userRole: 'admin' | 'client'; children: ReactNode }) =>
-  userRole === 'admin' ? <>{children}</> : <Navigate to="/" replace />;
+type UserRole = 'admin' | 'client' | 'sudo';
+
+// El sudo tiene permisos absolutos: hereda todo lo que ve un admin (contador).
+const AdminOnly = ({ userRole, children }: { userRole: UserRole; children: ReactNode }) =>
+  userRole === 'admin' || userRole === 'sudo' ? <>{children}</> : <Navigate to="/" replace />;
+
+const SudoOnly = ({ userRole, children }: { userRole: UserRole; children: ReactNode }) =>
+  userRole === 'sudo' ? <>{children}</> : <Navigate to="/" replace />;
 
 // Componente para rutas protegidas
 const ProtectedRoutes = () => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const userRole = localStorage.getItem('userRole') as 'admin' | 'client' || 'client';
+  const userRole = localStorage.getItem('userRole') as UserRole || 'client';
   const userName = localStorage.getItem('userName') || 'Usuario';
 
   if (REQUIRE_AUTH && !isAuthenticated) {
@@ -44,6 +52,8 @@ const ProtectedRoutes = () => {
         <Route path="/admin" element={<Navigate to="/admin/clients" replace />} />
         <Route path="/admin/clients" element={<AdminOnly userRole={userRole}><ClientsPage /></AdminOnly>} />
         <Route path="/admin/reports" element={<AdminOnly userRole={userRole}><ReportsPage /></AdminOnly>} />
+        <Route path="/sudo/metrics" element={<SudoOnly userRole={userRole}><MetricsPage /></SudoOnly>} />
+        <Route path="/sudo/contadores" element={<SudoOnly userRole={userRole}><ContadoresPage /></SudoOnly>} />
         <Route path="/incomes" element={<IncomesPage />} />
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/recurring-expenses" element={<RecurringExpensesPage />} />

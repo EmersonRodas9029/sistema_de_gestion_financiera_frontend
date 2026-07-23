@@ -17,9 +17,11 @@ export interface ApiUsuario {
   username: string;
   password?: string;
   email?: string;
-  rol: 'CLIENTE' | 'CONTADOR';
+  rol: 'CLIENTE' | 'CONTADOR' | 'SUDO';
   activo?: boolean;
   cliente?: ApiCliente;
+  contadorId?: number | string;
+  limiteUsuarios?: number;
 }
 
 export const clientesService = {
@@ -38,6 +40,8 @@ export const usuariosService = {
     direccion?: string; documentoIdentidad?: string; tipoDocumento?: string;
   }): Promise<ApiUsuario> =>
     apiJson('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string | number, data: { username: string; password?: string; email?: string; rol: string; activo?: boolean }): Promise<ApiUsuario> =>
+    apiJson(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string | number): Promise<void> =>
     apiJson(`/usuarios/${id}`, { method: 'DELETE' }),
   activar: (id: string | number): Promise<void> =>
@@ -46,4 +50,6 @@ export const usuariosService = {
     apiJson(`/usuarios/${id}/permanente`, { method: 'DELETE' }),
   changePassword: (id: string | number, data: { passwordActual: string; passwordNueva: string }): Promise<void> =>
     apiJson(`/usuarios/${id}/password`, { method: 'PUT', body: JSON.stringify(data) }),
+  actualizarLimite: (id: string | number, limite: number): Promise<void> =>
+    apiJson(`/usuarios/${id}/limite`, { method: 'PUT', body: JSON.stringify({ limite }) }),
 };

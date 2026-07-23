@@ -8,12 +8,12 @@ import { LeftBar } from './LeftBar/LeftBar';
 import {
   Home, TrendingUp, TrendingDown, Repeat, Wallet, Target,
   FolderTree, BarChart3, FileText, Users, Settings,
-  Bell, LogOut, ChevronDown, Menu, UserCog
+  Bell, LogOut, ChevronDown, Menu, UserCog, ShieldCheck
 } from 'lucide-react';
 
 interface MainLayoutProps {
   children: ReactNode;
-  userRole: 'admin' | 'client';
+  userRole: 'admin' | 'client' | 'sudo';
   userName?: string;
 }
 
@@ -34,6 +34,8 @@ const getPageTitle = (path: string): string => {
     '/admin/clients': 'Clientes',
     '/admin/reports': 'Reportes',
     '/wallet': 'Billetera',
+    '/sudo/metrics': 'Métricas',
+    '/sudo/contadores': 'Contadores',
   };
   if (path.startsWith('/admin/clients')) return 'Clientes';
   if (path.startsWith('/admin/reports')) return 'Reportes';
@@ -56,6 +58,8 @@ const getPageIcon = (path: string) => {
     '/admin': <Users size={18} className="text-blue-400" />,
     '/admin/clients': <Users size={18} className="text-amber-400" />,
     '/admin/reports': <FileText size={18} className="text-gray-400" />,
+    '/sudo/metrics': <BarChart3 size={18} className="text-purple-400" />,
+    '/sudo/contadores': <ShieldCheck size={18} className="text-purple-400" />,
   };
   if (path.startsWith('/admin/clients')) return <Users size={18} className="text-amber-400" />;
   if (path.startsWith('/admin')) return <Users size={18} className="text-blue-400" />;
@@ -153,7 +157,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
         </div>
 
         {/* Aviso de modo "gestionar cliente": el contador está viendo datos acotados a un solo cliente */}
-        {userRole === 'admin' && managedClient && (
+        {(userRole === 'admin' || userRole === 'sudo') && managedClient && (
           <button
             onClick={() => navigate('/admin/clients')}
             className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#F05984]/15 border-b border-[#F05984]/30 text-[#F05984] text-xs sm:text-sm font-medium hover:bg-[#F05984]/25 transition-colors"

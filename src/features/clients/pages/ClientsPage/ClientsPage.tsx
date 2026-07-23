@@ -18,12 +18,16 @@ import { useManagedClient, setManagedClient, clearManagedClient } from '../../..
 import { useConfirm } from '../../../../shared/hooks/useConfirm';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 
+const DEFAULT_LIMITE_USUARIOS = 5;
+
 interface Usuario {
   id: string;
   username: string;
   email: string;
-  rol: 'CLIENTE' | 'CONTADOR';
+  rol: 'CLIENTE' | 'CONTADOR' | 'SUDO';
   activo: boolean;
+  contadorId?: string;
+  limiteUsuarios?: number;
   cliente?: {
     id: string;
     nombreCompleto: string;
@@ -42,6 +46,8 @@ const toUsuario = (a: ApiUsuario): Usuario => ({
   email: a.email ?? '',
   rol: a.rol ?? 'CLIENTE',
   activo: a.activo !== false,
+  contadorId: a.contadorId !== undefined ? String(a.contadorId) : undefined,
+  limiteUsuarios: a.limiteUsuarios,
   cliente: a.cliente ? {
     id: String(a.cliente.id ?? ''),
     nombreCompleto: a.cliente.nombreCompleto ?? '',
@@ -117,14 +123,24 @@ export const ClientsPage = () => {
 
   useEffect(() => { fetchUsuarios(); }, []);
 
+  const currentUserId = localStorage.getItem('userId') ?? '';
+  const isSudo = localStorage.getItem('userRole') === 'sudo';
+  const usuariosCreados = usuarios.filter(u => u.contadorId === currentUserId).length;
+  // El límite es por-contador (ajustable por sudo desde /sudo/contadores), no una constante global.
+  const limiteUsuarios = usuarios.find(u => u.id === currentUserId)?.limiteUsuarios ?? DEFAULT_LIMITE_USUARIOS;
+  // El sudo tiene permisos absolutos: no está sujeto al límite de usuarios del contador.
+  const limiteAlcanzado = !isSudo && usuariosCreados >= limiteUsuarios;
+
   const totalUsuarios   = usuarios.length;
   const totalClientes   = usuarios.filter(u => u.rol === 'CLIENTE').length;
   const totalContadores = usuarios.filter(u => u.rol === 'CONTADOR').length;
+  const totalSudos      = usuarios.filter(u => u.rol === 'SUDO').length;
   const totalInactivos  = usuarios.filter(u => !u.activo).length;
 
   const rolData = [
     { name: 'Clientes',   value: totalClientes,   color: '#F05984' },
     { name: 'Contadores', value: totalContadores, color: '#6E4068' },
+    { name: 'Sudo',       value: totalSudos,       color: '#FBBF24' },
   ].filter(d => d.value > 0);
 
   const filtered = usuarios.filter(u => {
@@ -270,12 +286,21 @@ export const ClientsPage = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">Usuarios</h1>
-              <p className="text-white/50 text-sm mt-1">Gestiona los usuarios del sistema</p>
+              <p className="text-white/50 text-sm mt-1">
+                Gestiona los usuarios del sistema
+                {isSudo ? ' · Sin límite de creación' : ` · Has creado ${usuariosCreados}/${limiteUsuarios}`}
+              </p>
             </div>
           </div>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300 self-start lg:self-auto">
+          <motion.button whileHover={{ scale: limiteAlcanzado ? 1 : 1.05 }} whileTap={{ scale: limiteAlcanzado ? 1 : 0.95 }}
+            onClick={() => !limiteAlcanzado && setShowCreateModal(true)}
+            disabled={limiteAlcanzado}
+            title={limiteAlcanzado ? `Alcanzaste el máximo de ${limiteUsuarios} usuarios creados` : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 self-start lg:self-auto ${
+              limiteAlcanzado
+                ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                : 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white hover:shadow-lg hover:shadow-[#F05984]/25'
+            }`}>
             <UserPlus size={20} />
             <span className="hidden sm:inline font-medium">Nuevo Usuario</span>
           </motion.button>
@@ -440,11 +465,13 @@ export const ClientsPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Users size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay usuarios</h3>
             <p className="text-white/40 text-sm">No se encontraron usuarios con los filtros actuales.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
-              <UserPlus size={20} /><span className="font-medium">Crear usuario</span>
-            </motion.button>
+            {!limiteAlcanzado && (
+              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCreateModal(true)}
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+                <UserPlus size={20} /><span className="font-medium">Crear usuario</span>
+              </motion.button>
+            )}
           </div>
         )}
 
@@ -658,12 +685,18 @@ export const ClientsPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Rol *</label>
-                <Select value={createForm.rol}
-                  onChange={v => setCreateForm({...createForm, rol: v})}
-                  options={[
-                    { value: 'CLIENTE', label: 'Cliente' },
-                    { value: 'CONTADOR', label: 'Contador' },
-                  ]} />
+                {isSudo ? (
+                  <Select value={createForm.rol}
+                    onChange={v => setCreateForm({...createForm, rol: v})}
+                    options={[
+                      { value: 'CLIENTE', label: 'Cliente' },
+                      { value: 'CONTADOR', label: 'Contador' },
+                      { value: 'SUDO', label: 'Sudo' },
+                    ]} />
+                ) : (
+                  // Un contador normal solo puede crear clientes — crear otro contador es exclusivo de sudo.
+                  <div className={`${inputCls} text-white/60`}>Cliente</div>
+                )}
               </div>
             </div>
 

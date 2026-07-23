@@ -1,0 +1,1 @@
+export { ContadoresPage } from './ContadoresPage';

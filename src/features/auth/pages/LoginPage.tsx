@@ -25,7 +25,7 @@ export const LoginPage = () => {
     try {
       const { token, userId, username: name, email, rol } = await authService.login(username, password);
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', rol === 'CLIENTE' ? 'client' : 'admin');
+      localStorage.setItem('userRole', rol === 'CLIENTE' ? 'client' : rol === 'SUDO' ? 'sudo' : 'admin');
       localStorage.setItem('userName', name);
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userId', String(userId));

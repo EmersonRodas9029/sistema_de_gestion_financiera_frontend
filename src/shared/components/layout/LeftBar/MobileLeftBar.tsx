@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { LeftBar } from './LeftBar';
 
 interface MobileLeftBarProps {
-  userRole: 'admin' | 'client';
+  userRole: 'admin' | 'client' | 'sudo';
   userName?: string;
   isOpen: boolean;
   onClose: () => void;

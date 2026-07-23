@@ -1,22 +1,24 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Users, Wallet, TrendingUp, TrendingDown, Target, Settings,
-  LogOut, FolderTree, FileText, Bell, Home, BarChart3, Repeat
+  LogOut, FolderTree, FileText, Bell, Home, BarChart3, Repeat, ShieldCheck
 } from 'lucide-react';
 import { useUnreadNotificationsCount } from '../../../hooks/useUnreadNotificationsCount';
 import { Logo } from '../../ui/Logo';
 import { logout } from '../../../utils';
 
+type Role = 'admin' | 'client' | 'sudo';
+
 interface MenuItem {
   path: string;
   name: string;
   icon: React.ReactNode;
-  roles: ('admin' | 'client')[];
-  section?: 'main' | 'finances' | 'goals' | 'management' | 'reports' | 'settings';
+  roles: Role[];
+  section?: 'main' | 'finances' | 'goals' | 'management' | 'reports' | 'settings' | 'sudo';
 }
 
 interface LeftBarProps {
-  userRole: 'admin' | 'client';
+  userRole: Role;
   userName?: string;
   userAvatar?: string;
   onNavigate?: () => void;
@@ -35,12 +37,15 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
     { path: '/budgets', name: 'Presupuestos', icon: <Wallet size={20} />, roles: ['admin', 'client'], section: 'finances' },
     { path: '/goals', name: 'Metas de Ahorro', icon: <Target size={20} />, roles: ['admin', 'client'], section: 'goals' },
     { path: '/categories', name: 'Categorías', icon: <FolderTree size={20} />, roles: ['admin', 'client'], section: 'management' },
-    { path: '/admin/clients', name: 'Clientes', icon: <Users size={20} />, roles: ['admin'], section: 'management' },
+    { path: '/admin/clients', name: 'Clientes', icon: <Users size={20} />, roles: ['admin', 'sudo'], section: 'management' },
     { path: '/analytics', name: 'Gráficos', icon: <BarChart3 size={20} />, roles: ['admin', 'client'], section: 'reports' },
     { path: '/admin/reports', name: 'Reportes', icon: <FileText size={20} />, roles: ['admin'], section: 'reports' },
-    { path: '/settings', name: 'Configuración', icon: <Settings size={20} />, roles: ['admin', 'client'], section: 'settings' }
+    { path: '/sudo/metrics', name: 'Métricas', icon: <BarChart3 size={20} />, roles: ['sudo'], section: 'sudo' },
+    { path: '/sudo/contadores', name: 'Contadores', icon: <ShieldCheck size={20} />, roles: ['sudo'], section: 'sudo' },
+    { path: '/settings', name: 'Configuración', icon: <Settings size={20} />, roles: ['admin', 'client', 'sudo'], section: 'settings' }
   ];
 
+  // El sudo solo ve Clientes, Métricas, Contadores y Configuración (más Notificaciones/Cerrar sesión, fijos abajo).
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(userRole));
 
   const mainItems = filteredMenuItems.filter(item => item.section === 'main');
@@ -48,6 +53,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
   const goalsItems = filteredMenuItems.filter(item => item.section === 'goals');
   const managementItems = filteredMenuItems.filter(item => item.section === 'management');
   const reportsItems = filteredMenuItems.filter(item => item.section === 'reports');
+  const sudoItems = filteredMenuItems.filter(item => item.section === 'sudo');
   const settingsItems = filteredMenuItems.filter(item => item.section === 'settings');
 
   const renderMenuSection = (items: MenuItem[], title: string) => {
@@ -123,6 +129,7 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
         {renderMenuSection(goalsItems, 'Metas')}
         {renderMenuSection(managementItems, 'Gestión')}
         {renderMenuSection(reportsItems, 'Reportes')}
+        {renderMenuSection(sudoItems, 'Sudo')}
         {renderMenuSection(settingsItems, 'Configuración')}
       </nav>
 
