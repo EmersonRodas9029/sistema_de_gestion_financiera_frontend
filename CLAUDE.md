@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sistema de Gestión Financiera is a React + TypeScript financial management app with a dark theme. Users track income, expenses, budgets, goals, savings, and analytics. UI text is in Spanish; currency uses `es-ES` locale with USD.
+BudgEase (Sistema de Gestión Financiera) is a React + TypeScript financial management app with a dark theme. Users track income, expenses, budgets, goals, savings, and analytics. UI text is in Spanish; currency uses `es-ES` locale with USD.
 
 ## Commands
 
@@ -46,7 +46,7 @@ All features are wired to the real backend — every `src/features/*/services/in
 
 ### Backend
 
-The backend is a separate repository at `../Sistema_De_Gestion_Finaciera` (sibling directory, not part of this repo): Spring Boot 3 / Java 17, layered `Controller → Service interface → ServiceImpl → Repository (JPA) → MySQL`, Flyway migrations, MapStruct DTO mapping, JWT via `jjwt`, rate limiting, default-deny security with per-request JWT auth plus ownership/role authorization in the service layer. REST resources: `/api/usuarios`, `/api/clientes`, `/api/categorias`, `/api/gastos`, `/api/gastos-recurrentes`, `/api/ingresos`, `/api/presupuestos`, `/api/metas`, `/api/notificaciones`, `/api/reportes`, `/api/cuentas` (bank accounts — not yet consumed by this frontend), `/api/configuraciones`. Full contract in that repo's `API.md`.
+The backend is a separate repository at `../BudgEase-Backend` (sibling directory, not part of this repo): Spring Boot 3 / Java 17, layered `Controller → Service interface → ServiceImpl → Repository (JPA) → MySQL`, Flyway migrations, MapStruct DTO mapping, JWT via `jjwt`, rate limiting, default-deny security with per-request JWT auth plus ownership/role authorization in the service layer. REST resources: `/api/usuarios`, `/api/clientes`, `/api/categorias`, `/api/gastos`, `/api/gastos-recurrentes`, `/api/ingresos`, `/api/presupuestos`, `/api/metas`, `/api/notificaciones`, `/api/reportes`, `/api/cuentas` (bank accounts — not yet consumed by this frontend), `/api/configuraciones`. Full contract in that repo's `API.md`.
 
 ### Shared
 
