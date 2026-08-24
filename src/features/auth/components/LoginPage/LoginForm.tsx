@@ -58,7 +58,7 @@ export const LoginForm = ({ onBack }: LoginFormProps) => {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8A5CF6] focus:border-transparent transition-all"
               placeholder="ejemplo@correo.com"
               required
             />
@@ -76,7 +76,7 @@ export const LoginForm = ({ onBack }: LoginFormProps) => {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F05984] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8A5CF6] focus:border-transparent transition-all"
               placeholder="••••••••"
               required
             />
@@ -97,13 +97,13 @@ export const LoginForm = ({ onBack }: LoginFormProps) => {
               type="checkbox"
               checked={formData.rememberMe}
               onChange={(e) => setFormData({...formData, rememberMe: e.target.checked})}
-              className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984]"
+              className="w-4 h-4 rounded border-gray-300 text-[#8A5CF6] focus:ring-[#8A5CF6]"
             />
             <span className="text-sm text-gray-600">Recordarme</span>
           </label>
           <button 
             type="button"
-            className="text-sm text-[#F05984] hover:text-[#d14d75] font-medium"
+            className="text-sm text-[#8A5CF6] hover:text-[#d14d75] font-medium"
           >
             ¿Olvidaste tu contraseña?
           </button>
@@ -113,7 +113,7 @@ export const LoginForm = ({ onBack }: LoginFormProps) => {
         <button
           type="submit"
           className="w-full py-3 px-4 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02]"
-          style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #8A5CF6 0%, #F26D5B 100%)' }}
         >
           <LogIn size={20} />
           <span>Iniciar Sesión</span>

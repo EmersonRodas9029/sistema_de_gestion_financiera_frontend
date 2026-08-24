@@ -24,7 +24,7 @@ export const SortBar = ({ sortBy, sortOrder, onSort, fields, totalResults }: Sor
           key={key}
           onClick={() => onSort(key)}
           className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${
-            sortBy === key ? 'text-[#F05984]' : 'text-white/60 hover:text-white'
+            sortBy === key ? 'text-[#8A5CF6]' : 'text-white/60 hover:text-white'
           }`}
         >
           {icon}

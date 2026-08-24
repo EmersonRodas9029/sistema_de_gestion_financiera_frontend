@@ -220,25 +220,25 @@ export const NotificationsPage = () => {
       initial="hidden"
       animate="visible"
       className="space-y-6 min-h-screen p-6"
-      style={{ backgroundColor: '#1a0f14' }}
+      style={{ backgroundColor: '#08080B' }}
     >
       {/* Header */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl"
+        className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#F26D5B]/10 rounded-full blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <Bell size={28} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold text-white tracking-tight">Notificaciones</h1>
                 {unreadCount > 0 && (
-                  <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full font-medium">
+                  <span className="bg-[#8A5CF6]/20 text-[#8A5CF6] text-xs px-2 py-1 rounded-full font-medium">
                     {unreadCount} no leídas
                   </span>
                 )}
@@ -251,16 +251,16 @@ export const NotificationsPage = () => {
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-[20px] p-4 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Total</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{notifications.length}</p>
             </div>
-            <div className="p-2 rounded-xl bg-white/10"><Bell size={20} className="text-[#F05984]" /></div>
+            <div className="p-2 rounded-xl bg-white/10"><Bell size={20} className="text-[#8A5CF6]" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-[20px] p-4 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">No leídas</p>
@@ -269,7 +269,7 @@ export const NotificationsPage = () => {
             <div className="p-2 rounded-xl bg-amber-500/20"><Bell size={20} className="text-amber-400" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-[20px] p-4 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Leídas</p>
@@ -278,7 +278,7 @@ export const NotificationsPage = () => {
             <div className="p-2 rounded-xl bg-blue-500/20"><CheckCheck size={20} className="text-blue-400" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-[20px] p-4 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/50 text-sm font-medium">Archivadas</p>
@@ -290,7 +290,7 @@ export const NotificationsPage = () => {
       </motion.div>
 
       {/* Main Content */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
         {/* Filters Bar */}
         <div className="p-4 border-b border-white/10">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -300,7 +300,7 @@ export const NotificationsPage = () => {
                 placeholder="Buscar notificaciones..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-all duration-300"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-[#8A5CF6] transition-all duration-300"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -311,7 +311,7 @@ export const NotificationsPage = () => {
                     onClick={() => setSelectedType(type.value)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-300 ${
                       selectedType === type.value
-                        ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg'
                         : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                     }`}
                   >
@@ -324,7 +324,7 @@ export const NotificationsPage = () => {
                 onClick={() => setShowArchived(!showArchived)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-300 ${
                   showArchived
-                    ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg'
                     : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                 }`}
               >
@@ -352,14 +352,14 @@ export const NotificationsPage = () => {
                 type="checkbox"
                 checked={selectedIds.length === sortedNotifications.length && sortedNotifications.length > 0}
                 onChange={handleSelectAll}
-                className="w-4 h-4 rounded border-white/30 text-[#F05984] focus:ring-[#F05984] bg-white/5 cursor-pointer"
+                className="w-4 h-4 rounded border-white/30 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5 cursor-pointer"
               />
               <span className="text-white/60 text-sm group-hover:text-white/80 transition-colors">
                 Seleccionar todo{totalPages > 1 ? ` (${sortedNotifications.length})` : ''}
               </span>
             </label>
             {selectedIds.length > 0 && (
-              <span className="text-[#F05984] text-sm font-medium">{selectedIds.length} seleccionados</span>
+              <span className="text-[#8A5CF6] text-sm font-medium">{selectedIds.length} seleccionados</span>
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -415,7 +415,7 @@ export const NotificationsPage = () => {
                       type="checkbox"
                       checked={selectedIds.includes(n.id)}
                       onChange={() => handleSelectNotification(n.id)}
-                      className="mt-1 w-4 h-4 rounded border-white/30 text-[#F05984] focus:ring-[#F05984] bg-white/5 cursor-pointer"
+                      className="mt-1 w-4 h-4 rounded border-white/30 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5 cursor-pointer"
                     />
                     <div className={`flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br ${TYPE_COLOR[n.tipo]} flex items-center justify-center border`}>
                       {TYPE_ICON[n.tipo]}
@@ -425,7 +425,7 @@ export const NotificationsPage = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className={`text-white ${!n.leida ? 'font-semibold' : 'font-medium'}`}>{n.titulo}</h3>
-                            {!n.leida && <span className="w-2 h-2 bg-[#F05984] rounded-full animate-pulse" />}
+                            {!n.leida && <span className="w-2 h-2 bg-[#8A5CF6] rounded-full animate-pulse" />}
                           </div>
                           <p className="text-white/60 text-sm mt-1">{n.mensaje}</p>
                           <div className="flex items-center gap-3 mt-2">
@@ -438,7 +438,7 @@ export const NotificationsPage = () => {
                             <motion.button
                               whileHover={{ x: 4 }}
                               onClick={() => navigate(actionUrl)}
-                              className="mt-2 text-[#F05984] hover:text-[#d14d75] text-sm transition-colors font-medium"
+                              className="mt-2 text-[#8A5CF6] hover:text-[#d14d75] text-sm transition-colors font-medium"
                             >
                               Ver detalles →
                             </motion.button>
@@ -525,7 +525,7 @@ export const NotificationsPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-[#2a1a22] border border-white/10 rounded-2xl p-6 shadow-2xl"
+              className="w-full max-w-sm bg-[#101015] border border-white/10 rounded-2xl p-6 shadow-2xl"
             >
               <h3 className="text-white font-semibold text-lg">
                 {confirmDeleteIds.length > 1 ? `¿Eliminar ${confirmDeleteIds.length} notificaciones?` : '¿Eliminar esta notificación?'}

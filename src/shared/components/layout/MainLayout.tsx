@@ -45,7 +45,7 @@ const getPageTitle = (path: string): string => {
 
 const getPageIcon = (path: string) => {
   const icons: Record<string, React.ReactNode> = {
-    '/': <Home size={18} className="text-[#F05984]" />,
+    '/': <Home size={18} className="text-[#8A5CF6]" />,
     '/incomes': <TrendingUp size={18} className="text-green-400" />,
     '/expenses': <TrendingDown size={18} className="text-red-400" />,
     '/recurring-expenses': <Repeat size={18} className="text-orange-400" />,
@@ -63,7 +63,7 @@ const getPageIcon = (path: string) => {
   };
   if (path.startsWith('/admin/clients')) return <Users size={18} className="text-amber-400" />;
   if (path.startsWith('/admin')) return <Users size={18} className="text-blue-400" />;
-  return icons[path] || <Home size={18} className="text-[#F05984]" />;
+  return icons[path] || <Home size={18} className="text-[#8A5CF6]" />;
 };
 
 export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) => {
@@ -93,7 +93,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
       {/* Botón menú móvil - solo visible en móvil */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-[#321D28]/90 backdrop-blur rounded-xl text-white shadow-lg border border-white/10"
+        className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-[#101015]/90 backdrop-blur rounded-xl text-white shadow-lg border border-white/10"
       >
         <Menu size={22} />
       </button>
@@ -118,7 +118,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
                   {pageIcon}
                 </div>
                 <div>
-                  <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  <h1 className="text-base sm:text-xl font-extrabold bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] bg-clip-text text-transparent">
                     {pageTitle}
                   </h1>
                 </div>
@@ -129,13 +129,13 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
                 {/* Usuario dropdown - simplificado para móvil */}
                 <div className="relative group">
                   <button className="flex items-center gap-1 sm:gap-2 bg-white/10 rounded-lg px-2 py-1.5 hover:bg-white/20 transition-all">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-[#F05984] to-[#BC455F] flex items-center justify-center text-white font-bold shadow-lg text-xs">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] flex items-center justify-center text-white font-bold shadow-lg text-xs">
                       {userName?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <ChevronDown size={12} className="text-white/60 hidden xs:block" />
                   </button>
                   
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1a0f14] rounded-xl border border-white/10 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-[#08080B] rounded-xl border border-white/10 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                     <div className="p-2">
                       <div className="px-3 py-2 border-b border-white/10">
                         <p className="text-white text-sm font-medium">{userName || 'Usuario'}</p>
@@ -160,7 +160,7 @@ export const MainLayout = ({ children, userRole, userName }: MainLayoutProps) =>
         {(userRole === 'admin' || userRole === 'sudo') && managedClient && (
           <button
             onClick={() => navigate('/admin/clients')}
-            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#F05984]/15 border-b border-[#F05984]/30 text-[#F05984] text-xs sm:text-sm font-medium hover:bg-[#F05984]/25 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#8A5CF6]/15 border-b border-[#8A5CF6]/30 text-[#8A5CF6] text-xs sm:text-sm font-medium hover:bg-[#8A5CF6]/25 transition-colors"
           >
             <UserCog size={14} />
             Gestionando a {managedClient.nombre} — datos acotados a este cliente. Click para cambiar.

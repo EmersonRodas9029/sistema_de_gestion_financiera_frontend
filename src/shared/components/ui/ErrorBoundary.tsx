@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 text-center" style={{ backgroundColor: '#1a0f14' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 text-center" style={{ backgroundColor: '#08080B' }}>
         <Logo size={56} />
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Algo salió mal</h1>
@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <button
           onClick={() => window.location.reload()}
           className="px-5 py-2.5 rounded-xl text-white font-medium transition-opacity hover:opacity-90"
-          style={{ backgroundColor: '#F05984' }}
+          style={{ backgroundColor: '#8A5CF6' }}
         >
           Recargar
         </button>

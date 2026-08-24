@@ -39,7 +39,7 @@ export const DatePicker = ({ value, onChange, placeholder = 'Seleccionar fecha',
       <PopoverButton
         type="button"
         disabled={disabled}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left ${className}`}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left ${className}`}
       >
         <Calendar size={16} className="text-white/50 shrink-0" />
         <span className={hasSelected ? '' : 'text-white/40'}>
@@ -48,7 +48,7 @@ export const DatePicker = ({ value, onChange, placeholder = 'Seleccionar fecha',
       </PopoverButton>
       <PopoverPanel
         anchor="bottom start"
-        className="z-50 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-[#1a0f14] border border-white/10 shadow-xl p-3 [--anchor-gap:4px]"
+        className="z-50 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-[#08080B] border border-white/10 shadow-xl p-3 [--anchor-gap:4px]"
       >
         {({ close }) => (
           <>
@@ -76,7 +76,7 @@ export const DatePicker = ({ value, onChange, placeholder = 'Seleccionar fecha',
                     disabled={isDisabled}
                     onClick={() => { onChange(format(day, 'yyyy-MM-dd')); close(); }}
                     className={`text-xs py-1.5 rounded-lg transition-colors ${
-                      isSelected ? 'bg-[#F05984] text-white'
+                      isSelected ? 'bg-[#8A5CF6] text-white'
                         : isOutside ? 'text-white/20 hover:bg-white/5'
                         : 'text-white/80 hover:bg-white/10'
                     } ${isDisabled ? 'opacity-30 cursor-not-allowed hover:bg-transparent' : ''}`}

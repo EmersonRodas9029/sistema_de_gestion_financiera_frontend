@@ -39,7 +39,7 @@ export const Pagination = ({ currentPage, totalPages, totalItems, itemsPerPage, 
             onClick={() => onPageChange(pageNum)}
             className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
               currentPage === pageNum
-                ? 'bg-[#F05984] text-white shadow-md'
+                ? 'bg-[#8A5CF6] text-white shadow-md'
                 : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
             }`}
           >

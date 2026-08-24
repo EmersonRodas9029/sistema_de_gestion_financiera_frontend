@@ -478,20 +478,20 @@ export const ExpensesPage = () => {
       initial="hidden"
       animate="visible"
       className="space-y-6 min-h-screen p-6"
-      style={{ backgroundColor: '#1a0f14' }}
+      style={{ backgroundColor: '#08080B' }}
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <TrendingDown size={28} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold text-white tracking-tight">Gastos</h1>
-                <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
+                <span className="bg-[#8A5CF6]/20 text-[#8A5CF6] text-xs px-2 py-1 rounded-full">
                   {expenses.length} registros
                 </span>
               </div>
@@ -510,7 +510,7 @@ export const ExpensesPage = () => {
                 });
                 setShowCreateModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nuevo Gasto</span>
@@ -524,7 +524,7 @@ export const ExpensesPage = () => {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -533,7 +533,7 @@ export const ExpensesPage = () => {
               <p className="text-white/40 text-xs mt-1">{currentYear}</p>
             </div>
             <div className="shrink-0 p-3 rounded-xl bg-white/10">
-              <Calendar size={20} className="text-[#F05984]" />
+              <Calendar size={20} className="text-[#8A5CF6]" />
             </div>
           </div>
         </motion.div>
@@ -541,7 +541,7 @@ export const ExpensesPage = () => {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -561,7 +561,7 @@ export const ExpensesPage = () => {
         <motion.div
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -579,10 +579,10 @@ export const ExpensesPage = () => {
       {/* Dashboard de Presupuesto y Tendencia */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Presupuesto vs Gasto Real */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-semibold flex items-center gap-2">
-              <Target size={18} className="text-[#F05984]" />
+              <Target size={18} className="text-[#8A5CF6]" />
               Presupuesto vs Gasto Real
             </h3>
             <span className="text-white/40 text-xs">Este mes</span>
@@ -614,7 +614,7 @@ export const ExpensesPage = () => {
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(cat.percentage, 100)}%` }}
                       transition={{ duration: 0.8, delay: idx * 0.1 }}
-                      className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'}`}
+                      className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]'}`}
                     />
                   </div>
                   {isOverBudget && (
@@ -630,10 +630,10 @@ export const ExpensesPage = () => {
         </div>
 
         {/* Tendencia de Gastos */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <TrendingUp size={18} className="text-[#F05984]" />
+              <TrendingUp size={18} className="text-[#8A5CF6]" />
               <h3 className="text-white font-semibold">Tendencia de Gastos</h3>
             </div>
             <div className="flex gap-2">
@@ -643,7 +643,7 @@ export const ExpensesPage = () => {
                 onClick={() => setTrendView('semanal')}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
                   trendView === 'semanal' 
-                    ? 'bg-[#F05984] text-white' 
+                    ? 'bg-[#8A5CF6] text-white' 
                     : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                 }`}
               >
@@ -655,7 +655,7 @@ export const ExpensesPage = () => {
                 onClick={() => setTrendView('mensual')}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
                   trendView === 'mensual' 
-                    ? 'bg-[#F05984] text-white' 
+                    ? 'bg-[#8A5CF6] text-white' 
                     : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
                 }`}
               >
@@ -700,10 +700,10 @@ export const ExpensesPage = () => {
                 <Line 
                   type="monotone" 
                   dataKey="amount" 
-                  stroke="#F05984" 
+                  stroke="#8A5CF6" 
                   strokeWidth={2} 
-                  dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#BC455F' }}
+                  dot={{ fill: '#8A5CF6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#F26D5B' }}
                   isAnimationActive={true}
                   animationDuration={800}
                 />
@@ -744,10 +744,10 @@ export const ExpensesPage = () => {
                 <Line 
                   type="monotone" 
                   dataKey="amount" 
-                  stroke="#F05984" 
+                  stroke="#8A5CF6" 
                   strokeWidth={2} 
-                  dot={{ fill: '#F05984', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#BC455F' }}
+                  dot={{ fill: '#8A5CF6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#F26D5B' }}
                   isAnimationActive={true}
                   animationDuration={800}
                 />
@@ -760,9 +760,9 @@ export const ExpensesPage = () => {
       {/* Gráfico de Dona de Categorías y Top 5 */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico de Dona Interactivo */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <PieChart size={18} className="text-[#F05984]" />
+            <PieChart size={18} className="text-[#8A5CF6]" />
             Distribución por Categoría
           </h3>
           <div className="h-[260px]">
@@ -799,9 +799,9 @@ export const ExpensesPage = () => {
         </div>
 
         {/* Top 5 Categorías con Barras Horizontales */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-[#F05984]" />
+            <TrendingUp size={18} className="text-[#8A5CF6]" />
             Top 5 Categorías
           </h3>
           <div className="space-y-4">
@@ -841,7 +841,7 @@ export const ExpensesPage = () => {
 
 
       {/* Filters and Search */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-xl border border-white/10 shadow-lg">
         <div className="flex items-center px-4 pt-4 pb-3 border-b border-white/10">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
@@ -863,12 +863,12 @@ export const ExpensesPage = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                 >
-                  <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+                  <option value="todas" style={{ backgroundColor: '#08080B', color: 'white' }}>Todas las categorías</option>
                   {categories.map(cat => (
-                    <option key={cat.name} value={cat.name} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{cat.name}</option>
+                    <option key={cat.name} value={cat.name} style={{ backgroundColor: '#08080B', color: 'white' }}>{cat.name}</option>
                   ))}
                 </select>
               </div>
@@ -877,12 +877,12 @@ export const ExpensesPage = () => {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                 >
-                  <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                  <option value="completado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completado</option>
-                  <option value="cancelado" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cancelado</option>
+                  <option value="todos" style={{ backgroundColor: '#08080B', color: 'white' }}>Todos los estados</option>
+                  <option value="completado" style={{ backgroundColor: '#08080B', color: 'white' }}>Completado</option>
+                  <option value="cancelado" style={{ backgroundColor: '#08080B', color: 'white' }}>Cancelado</option>
                 </select>
               </div>
               <div>
@@ -890,14 +890,14 @@ export const ExpensesPage = () => {
                 <select
                   value={selectedPaymentMethod}
                   onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                   style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
                 >
-                  <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los métodos</option>
-                  <option value="efectivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Efectivo</option>
-                  <option value="tarjeta" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Tarjeta</option>
-                  <option value="transferencia" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Transferencia</option>
-                  <option value="cheque" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Cheque</option>
+                  <option value="todos" style={{ backgroundColor: '#08080B', color: 'white' }}>Todos los métodos</option>
+                  <option value="efectivo" style={{ backgroundColor: '#08080B', color: 'white' }}>Efectivo</option>
+                  <option value="tarjeta" style={{ backgroundColor: '#08080B', color: 'white' }}>Tarjeta</option>
+                  <option value="transferencia" style={{ backgroundColor: '#08080B', color: 'white' }}>Transferencia</option>
+                  <option value="cheque" style={{ backgroundColor: '#08080B', color: 'white' }}>Cheque</option>
                 </select>
               </div>
             </div>
@@ -1053,7 +1053,7 @@ export const ExpensesPage = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
+                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#8A5CF6]/50 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -1193,7 +1193,7 @@ export const ExpensesPage = () => {
                           type="text"
                           value={formData.description}
                           onChange={(e) => setFormData({...formData, description: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors"
                           placeholder="Ej: Supermercado"
                           required
                         />
@@ -1209,7 +1209,7 @@ export const ExpensesPage = () => {
                           min="0.01"
                           value={formData.amount}
                           onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors"
                           placeholder="0.00"
                           required
                         />
@@ -1254,7 +1254,7 @@ export const ExpensesPage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
                     >
                       <Save size={18} />
                       <span>Guardar Gasto</span>
@@ -1302,7 +1302,7 @@ export const ExpensesPage = () => {
                           type="text"
                           value={formData.description}
                           onChange={(e) => setFormData({...formData, description: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors"
                           placeholder="Ej: Supermercado"
                           required
                         />
@@ -1318,7 +1318,7 @@ export const ExpensesPage = () => {
                           min="0.01"
                           value={formData.amount}
                           onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors"
+                          className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors"
                           placeholder="0.00"
                           required
                         />
@@ -1370,7 +1370,7 @@ export const ExpensesPage = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
                     >
                       <Save size={18} />
                       <span>Guardar Cambios</span>

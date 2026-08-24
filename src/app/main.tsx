@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-      <Toaster position="top-right" toastOptions={{ style: { background: '#321D28', color: '#fff' } }} />
+      <Toaster position="top-right" toastOptions={{ style: { background: '#101015', color: '#fff'} }} />
     </QueryClientProvider>
   </React.StrictMode>,
 )

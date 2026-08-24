@@ -1,5 +1,5 @@
 export const PageSkeleton = () => (
-  <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+  <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
     <div className="animate-pulse space-y-6">
       <div className="flex justify-between">
         <div className="h-8 w-48 bg-white/10 rounded-lg" />

@@ -13,7 +13,7 @@ export const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
       whileTap={{ scale: 0.95 }}
       onClick={() => onToggle('table')}
       className={`p-2 rounded-lg transition-colors ${
-        viewMode === 'table' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+        viewMode === 'table' ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
       }`}
     >
       <FileText size={20} />
@@ -23,7 +23,7 @@ export const ViewModeToggle = ({ viewMode, onToggle }: ViewModeToggleProps) => (
       whileTap={{ scale: 0.95 }}
       onClick={() => onToggle('grid')}
       className={`p-2 rounded-lg transition-colors ${
-        viewMode === 'grid' ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+        viewMode === 'grid' ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
       }`}
     >
       <BarChart3 size={20} />

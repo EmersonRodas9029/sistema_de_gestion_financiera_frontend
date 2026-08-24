@@ -6,11 +6,8 @@ import {
   TrendingDown,
   Wallet,
   Target,
-  Sparkles,
   Repeat,
   PiggyBank,
-  ArrowUpRight,
-  ArrowDownRight,
   Activity,
   DollarSign,
   Zap,
@@ -98,6 +95,7 @@ interface DashboardData {
   health: HealthMetric[];
   financialScore: number;
   projection: { income: number; expenses: number; balance: number };
+  savingsRateTrend: number;
 }
 
 const emptyDashboard: DashboardData = {
@@ -106,12 +104,15 @@ const emptyDashboard: DashboardData = {
   transactionsCount: 0, avgExpensePerDay: 0, incomeTrend: 0, expenseTrend: 0,
   recurringCount: 0, budgetUsagePct: null, goalsPending: 0,
   health: [], financialScore: 0, projection: { income: 0, expenses: 0, balance: 0 },
+  savingsRateTrend: 0,
 };
+
+const greetingForHour = (hour: number) => hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
 
 const sumBy = (values: number[]) => values.reduce((total, n) => total + n, 0);
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
-const INCOME_PALETTE = ['#F05984', '#BC455F', '#6E4068', '#2DD4BF', '#8b5cf6', '#f59e0b'];
+const INCOME_PALETTE = ['#8A5CF6', '#F26D5B', '#46C7E0', '#2DD4BF', '#8b5cf6', '#f59e0b'];
 
 // Etiqueta relativa para transacciones recientes ("Hoy" / "Ayer" / "23 jul")
 const relativeDayLabel = (fecha: string) => {
@@ -131,6 +132,7 @@ export const HomePage = () => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState('');
   const [userRole] = useState<'admin' | 'client'>(localStorage.getItem('userRole') as 'admin' | 'client' || 'client');
+  const [userName] = useState(() => (localStorage.getItem('userName') || 'Usuario').split(' ')[0]);
   const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState<ChartPeriod>('week');
   const [activePieChart, setActivePieChart] = useState<'expenses' | 'income'>('expenses');
@@ -185,6 +187,10 @@ export const HomePage = () => {
       };
       const incomeTrend = monthTrend('ingresos');
       const expenseTrend = monthTrend('gastos');
+
+      const prevMonth = monthly[monthly.length - 2];
+      const prevSavingsRate = prevMonth && prevMonth.ingresos > 0 ? ((prevMonth.ingresos - prevMonth.gastos) / prevMonth.ingresos) * 100 : 0;
+      const savingsRateTrend = savingsRate - prevSavingsRate;
 
       const expenseTotals = new Map<number, number>();
       gastos.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
@@ -241,12 +247,13 @@ export const HomePage = () => {
         transactionsCount, avgExpensePerDay, incomeTrend, expenseTrend,
         recurringCount, budgetUsagePct, goalsPending,
         health: [
-          { name: 'Control de Gastos', value: Math.round(controlGastos), color: '#F05984' },
-          { name: 'Capacidad de Ahorro', value: Math.round(capacidadAhorro), color: '#BC455F' },
-          { name: 'Estabilidad', value: Math.round(estabilidad), color: '#6E4068' },
+          { name: 'Control de Gastos', value: Math.round(controlGastos), color: '#8A5CF6' },
+          { name: 'Capacidad de Ahorro', value: Math.round(capacidadAhorro), color: '#F26D5B' },
+          { name: 'Estabilidad', value: Math.round(estabilidad), color: '#46C7E0' },
         ],
         financialScore,
         projection: { income: projectedIncome, expenses: projectedExpenses, balance: projectedIncome - projectedExpenses },
+        savingsRateTrend,
       });
     } catch (e) {
       console.error('Error cargando el dashboard:', e);
@@ -311,7 +318,7 @@ export const HomePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#1a0f14' }}>
+      <div className="min-h-screen p-6 space-y-6" style={{ backgroundColor: '#08080B' }}>
         <div className="animate-pulse space-y-6">
           <div className="h-32 bg-white/10 rounded-3xl" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -339,90 +346,70 @@ export const HomePage = () => {
       initial="hidden"
       animate="visible"
       className="min-h-screen p-4 md:p-6 space-y-8"
-      style={{ backgroundColor: '#1a0f14' }}
+      style={{ backgroundColor: '#08080B' }}
     >
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#321D28] via-[#6E4068] to-[#BC455F] p-6 shadow-2xl"
-      >
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0YzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wIDEwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
-            
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                    <Sparkles className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-white/90 text-sm font-medium mb-1">Balance Total</p>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-white break-all">{formatCurrency(data.balance)}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-xl px-4 py-2 border border-white/30">
-                    {data.incomeTrend >= 0 ? <TrendingUp className="w-4 h-4 text-white" /> : <TrendingDown className="w-4 h-4 text-white" />}
-                    <span className="text-white font-semibold">{data.incomeTrend >= 0 ? '+' : ''}{data.incomeTrend.toFixed(1)}%</span>
-                    <span className="text-white/80 text-sm">vs mes anterior</span>
-                  </div>
-                </div>
-                <p className="text-white/70 text-sm mt-4">{currentTime}</p>
-              </div>
+      {/* Header */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            {greetingForHour(new Date().getHours())}, <span className="bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] bg-clip-text text-transparent">{userName}</span>
+          </h1>
+          <p className="text-[13.5px] text-white/40 mt-1.5">Resumen financiero · {currentTime}</p>
+        </div>
+      </motion.div>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full md:w-auto">
-                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/30 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowUpRight className="w-4 h-4 text-emerald-300 shrink-0" />
-                    <span className="text-white/90 text-sm font-medium truncate">Ingresos</span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-bold text-white break-all">{formatCurrency(data.monthlyIncome)}</div>
-                  <p className="text-emerald-300 text-xs mt-1 font-medium">{data.incomeTrend >= 0 ? '+' : ''}{data.incomeTrend.toFixed(0)}% este mes</p>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/30 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowDownRight className="w-4 h-4 text-rose-300 shrink-0" />
-                    <span className="text-white/90 text-sm font-medium truncate">Gastos</span>
-                  </div>
-                  <div className="text-xl sm:text-2xl font-bold text-white break-all">{formatCurrency(data.monthlyExpenses)}</div>
-                  <p className="text-rose-300 text-xs mt-1 font-medium">{data.expenseTrend >= 0 ? '+' : ''}{data.expenseTrend.toFixed(0)}% vs mes anterior</p>
-                </motion.div>
-              </div>
+      {/* Stat Cards */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div whileHover={{ y: -2 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07]">
+          <div className="flex items-center justify-between mb-3.5">
+            <span className="text-[12.5px] text-white/45">Balance neto</span>
+            <div className="w-[30px] h-[30px] rounded-[11px] bg-[#8A5CF6]/15 text-[#8A5CF6] flex items-center justify-center">
+              <Wallet size={15} />
             </div>
+          </div>
+          <p className="font-display text-[25px] font-extrabold text-white break-all">{formatCurrency(data.balance)}</p>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -2 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07]">
+          <div className="flex items-center justify-between mb-3.5">
+            <span className="text-[12.5px] text-white/45">Ingresos del mes</span>
+            <div className="w-[30px] h-[30px] rounded-[11px] bg-[#46C7E0]/15 text-[#46C7E0] flex items-center justify-center">
+              <TrendingUp size={15} />
+            </div>
+          </div>
+          <p className="font-display text-[25px] font-extrabold text-white break-all mb-1">{formatCurrency(data.monthlyIncome)}</p>
+          <span className="text-xs font-bold text-[#46C7E0]">{data.incomeTrend >= 0 ? '▲' : '▼'} {Math.abs(data.incomeTrend).toFixed(1)}% vs. mes anterior</span>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -2 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07]">
+          <div className="flex items-center justify-between mb-3.5">
+            <span className="text-[12.5px] text-white/45">Gastos del mes</span>
+            <div className="w-[30px] h-[30px] rounded-[11px] bg-[#F26D5B]/15 text-[#F26D5B] flex items-center justify-center">
+              <TrendingDown size={15} />
+            </div>
+          </div>
+          <p className="font-display text-[25px] font-extrabold text-white break-all mb-1">{formatCurrency(data.monthlyExpenses)}</p>
+          <span className="text-xs font-bold text-[#F26D5B]">{data.expenseTrend >= 0 ? '▲' : '▼'} {Math.abs(data.expenseTrend).toFixed(1)}% vs. mes anterior</span>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -2 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07]">
+          <div className="flex items-center justify-between mb-3.5">
+            <span className="text-[12.5px] text-white/45">Tasa de ahorro</span>
+            <div className="w-[30px] h-[30px] rounded-[11px] bg-[#F2C94C]/15 text-[#F2C94C] flex items-center justify-center">
+              <PiggyBank size={15} />
+            </div>
+          </div>
+          <p className="font-display text-[25px] font-extrabold text-white break-all mb-1">{data.savingsRate.toFixed(1)}%</p>
+          <span className="text-xs font-bold text-[#46C7E0]">{data.savingsRateTrend >= 0 ? '▲' : '▼'} {Math.abs(data.savingsRateTrend).toFixed(1)} pp vs. mes anterior</span>
+        </motion.div>
       </motion.div>
 
       {/* Quick Stats Row */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <motion.div
           whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
           whileTap={{ scale: 0.98 }}
-          className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <PiggyBank className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div className="text-right">
-              <p className="text-white/40 text-xs">Tasa de Ahorro</p>
-              <p className="text-2xl font-bold text-white break-words">{data.savingsRate.toFixed(0)}%</p>
-            </div>
-          </div>
-          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${clamp(data.savingsRate, 0, 100)}%` }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" 
-            />
-          </div>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-          whileTap={{ scale: 0.98 }}
-          className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+          className="bg-[#101015] rounded-2xl p-5 border border-white/10"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
@@ -439,7 +426,7 @@ export const HomePage = () => {
         <motion.div
           whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
           whileTap={{ scale: 0.98 }}
-          className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+          className="bg-[#101015] rounded-2xl p-5 border border-white/10"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
@@ -456,7 +443,7 @@ export const HomePage = () => {
         <motion.div
           whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
           whileTap={{ scale: 0.98 }}
-          className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+          className="bg-[#101015] rounded-2xl p-5 border border-white/10"
         >
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
@@ -509,7 +496,7 @@ export const HomePage = () => {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-            className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+            className="bg-[#101015] rounded-2xl p-5 border border-white/10"
           >
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -520,7 +507,7 @@ export const HomePage = () => {
                 <button
                   onClick={() => setPeriod('week')}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px] ${
-                    period === 'week' ? 'bg-[#F05984] text-white shadow-md' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    period === 'week' ? 'bg-[#8A5CF6] text-white shadow-md' : 'bg-white/5 text-white/60 hover:bg-white/10'
                   }`}
                 >
                   7 días
@@ -528,7 +515,7 @@ export const HomePage = () => {
                 <button
                   onClick={() => setPeriod('month')}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px] ${
-                    period === 'month' ? 'bg-[#F05984] text-white shadow-md' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    period === 'month' ? 'bg-[#8A5CF6] text-white shadow-md' : 'bg-white/5 text-white/60 hover:bg-white/10'
                   }`}
                 >
                   6 meses
@@ -539,12 +526,12 @@ export const HomePage = () => {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F05984" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#F05984" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#8A5CF6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8A5CF6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#BC455F" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#BC455F" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#F26D5B" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#F26D5B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.2} />
@@ -552,16 +539,16 @@ export const HomePage = () => {
                 <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#1a0f14',
-                    border: '1px solid #BC455F',
+                    backgroundColor: '#08080B',
+                    border: '1px solid #F26D5B',
                     borderRadius: '12px',
                   }}
                   formatter={(value: number) => [`$${value}`, '']}
                   labelStyle={{ color: 'white' }}
                 />
                 <Legend />
-                <Area type="monotone" dataKey="ingresos" stroke="#F05984" strokeWidth={2} fill="url(#colorIngresos)" />
-                <Area type="monotone" dataKey="gastos" stroke="#BC455F" strokeWidth={2} fill="url(#colorGastos)" />
+                <Area type="monotone" dataKey="ingresos" stroke="#8A5CF6" strokeWidth={2} fill="url(#colorIngresos)" />
+                <Area type="monotone" dataKey="gastos" stroke="#F26D5B" strokeWidth={2} fill="url(#colorGastos)" />
               </AreaChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/10">
@@ -575,7 +562,7 @@ export const HomePage = () => {
               </div>
               <div className="text-center">
                 <p className="text-white/40 text-xs">Diferencia</p>
-                <p className={`font-bold text-sm ${diferencia >= 0 ? 'text-[#F05984]' : 'text-rose-400'}`}>
+                <p className={`font-bold text-sm ${diferencia >= 0 ? 'text-[#8A5CF6]' : 'text-rose-400'}`}>
                   {formatCurrency(diferencia)}
                 </p>
               </div>
@@ -590,7 +577,7 @@ export const HomePage = () => {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-            className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+            className="bg-[#101015] rounded-2xl p-5 border border-white/10"
           >
             <h3 className="text-lg font-bold text-white mb-4">Actividad Reciente</h3>
             <div className="space-y-2">
@@ -633,7 +620,7 @@ export const HomePage = () => {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-            className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+            className="bg-[#101015] rounded-2xl p-5 border border-white/10"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">
@@ -643,7 +630,7 @@ export const HomePage = () => {
                 <button
                   onClick={() => setActivePieChart('expenses')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[36px] ${
-                    activePieChart === 'expenses' ? 'bg-[#F05984] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    activePieChart === 'expenses' ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
                   }`}
                 >
                   Gastos
@@ -651,7 +638,7 @@ export const HomePage = () => {
                 <button
                   onClick={() => setActivePieChart('income')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[36px] ${
-                    activePieChart === 'income' ? 'bg-[#F05984] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    activePieChart === 'income' ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
                   }`}
                 >
                   Ingresos
@@ -677,8 +664,8 @@ export const HomePage = () => {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#1a0f14',
-                    border: '1px solid #BC455F',
+                    backgroundColor: '#08080B',
+                    border: '1px solid #F26D5B',
                     borderRadius: '8px',
                   }}
                   formatter={(value: number) => [`${value}%`]}
@@ -711,12 +698,12 @@ export const HomePage = () => {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-            className="bg-gradient-to-br from-[#321D28]/50 to-[#6E4068]/50 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+            className="bg-gradient-to-br from-[#8A5CF6]/50 to-[#46C7E0]/50 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F05984]/20 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-[#F05984]" />
+                <div className="w-10 h-10 rounded-xl bg-[#8A5CF6]/20 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-[#8A5CF6]" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white">Salud Financiera</h3>
@@ -724,7 +711,7 @@ export const HomePage = () => {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-[#F05984]">{data.financialScore}</div>
+                <div className="text-3xl font-bold text-[#8A5CF6]">{data.financialScore}</div>
                 <p className="text-white/40 text-xs">
                   {data.financialScore >= 70 ? 'Bueno' : data.financialScore >= 40 ? 'Regular' : 'Bajo'}
                 </p>
@@ -755,10 +742,10 @@ export const HomePage = () => {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-            className="bg-gradient-to-br from-[#BC455F]/20 to-[#F05984]/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+            className="bg-gradient-to-br from-[#F26D5B]/20 to-[#8A5CF6]/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#F05984] text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#8A5CF6] text-white flex items-center justify-center">
                 <Zap className="w-5 h-5" />
               </div>
               <div>
@@ -781,7 +768,7 @@ export const HomePage = () => {
                 </div>
                 <p className="text-rose-400 font-bold text-lg">{formatCurrency(data.projection.expenses)}</p>
               </div>
-              <div className="bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-xl p-3">
+              <div className="bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-xl p-3">
                 <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 mb-1">
                   <span className="text-white/70 text-xs">Balance Proyectado</span>
                   <Wallet className="w-3 h-3 text-white/70" />
@@ -796,10 +783,10 @@ export const HomePage = () => {
             <motion.div
               variants={itemVariants}
               whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-              className="bg-gradient-to-r from-[#321D28]/50 to-[#6E4068]/50 rounded-2xl p-4 border border-white/10"
+              className="bg-gradient-to-r from-[#8A5CF6]/50 to-[#46C7E0]/50 rounded-2xl p-4 border border-white/10"
             >
               <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
-                <Users size={16} className="text-[#F05984]" />
+                <Users size={16} className="text-[#8A5CF6]" />
                 Panel de Administración
               </h3>
               <p className="text-white/50 text-sm">Gestiona clientes y reportes avanzados</p>
@@ -810,10 +797,10 @@ export const HomePage = () => {
             <motion.div
               variants={itemVariants}
               whileHover={{ y: -2, boxShadow: "0 8px 25px rgba(0,0,0,0.2)" }}
-              className="bg-gradient-to-r from-[#321D28]/50 to-[#6E4068]/50 rounded-2xl p-4 border border-white/10"
+              className="bg-gradient-to-r from-[#8A5CF6]/50 to-[#46C7E0]/50 rounded-2xl p-4 border border-white/10"
             >
               <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
-                <UserCircle size={16} className="text-[#F05984]" />
+                <UserCircle size={16} className="text-[#8A5CF6]" />
                 Tu Panel Personal
               </h3>
               <p className="text-white/50 text-sm">Gestiona tus finanzas personales</p>

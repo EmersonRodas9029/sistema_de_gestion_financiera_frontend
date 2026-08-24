@@ -66,7 +66,7 @@ const sumBy = (values: number[]) => values.reduce((total, n) => total + n, 0);
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Colores para fuentes de ingreso (no tienen categoría/color propio en la API)
-const INCOME_PALETTE = ['#F05984', '#BC455F', '#6E4068', '#8b5cf6', '#06b6d4', '#f59e0b', '#6366f1', '#6b7280'];
+const INCOME_PALETTE = ['#8A5CF6', '#F26D5B', '#46C7E0', '#8b5cf6', '#06b6d4', '#f59e0b', '#6366f1', '#6b7280'];
 
 // Mapa reducido de iconos por nombre codificado en categoria.icono ("expense:utensils")
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -119,7 +119,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div 
-        className="bg-gradient-to-br from-[#1a0f14] to-[#2d1a25] backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/20"
+        className="bg-gradient-to-br from-[#08080B] to-[#2d1a25] backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/20"
         role="tooltip"
         aria-label={`Información del gráfico para ${label}`}
       >
@@ -170,11 +170,11 @@ const CustomPieChart = ({ data, title, total }: CustomPieChartProps) => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10 hover:border-[#F05984]/40 transition-all shadow-lg hover:shadow-xl"
+      className="bg-[#101015] rounded-2xl p-6 border border-white/[0.07] hover:border-[#8A5CF6]/40 transition-all shadow-lg hover:shadow-xl"
     >
       <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-        <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-          <PieChartIcon size={18} className="text-[#F05984]" aria-hidden="true" />
+        <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+          <PieChartIcon size={18} className="text-[#8A5CF6]" aria-hidden="true" />
         </div>
         {title}
       </h3>
@@ -383,7 +383,7 @@ export const ChartsPage = () => {
       initial="hidden"
       animate="visible"
       className="min-h-screen p-4 md:p-6"
-      style={{ backgroundColor: '#1a0f14' }}
+      style={{ backgroundColor: '#08080B' }}
     >
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -400,7 +400,7 @@ export const ChartsPage = () => {
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ duration: 0.3, type: "spring", damping: 25 }}
-            className="fixed top-0 left-0 z-40 w-80 h-full bg-gradient-to-b from-[#1a0f14] to-[#0d0710] border-r border-white/10 p-6 overflow-y-auto shadow-2xl"
+            className="fixed top-0 left-0 z-40 w-80 h-full bg-gradient-to-b from-[#08080B] to-[#0d0710] border-r border-white/10 p-6 overflow-y-auto shadow-2xl"
           >
             <div className="mt-12">
               <h3 className="text-white font-semibold mb-6 text-lg">Filtros Rápidos</h3>
@@ -411,7 +411,7 @@ export const ChartsPage = () => {
                     type="date"
                     value={dateRange.start}
                     onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#8A5CF6] focus:ring-1 focus:ring-[#8A5CF6] transition-all"
                   />
                 </div>
                 <div>
@@ -420,12 +420,12 @@ export const ChartsPage = () => {
                     type="date"
                     value={dateRange.end}
                     onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] transition-all"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#8A5CF6] transition-all"
                   />
                 </div>
                 <button
                   onClick={() => setSelectedPeriod('custom')}
-                  className="w-full px-4 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:opacity-90 transition-all font-medium shadow-lg"
+                  className="w-full px-4 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:opacity-90 transition-all font-medium shadow-lg"
                 >
                   Aplicar filtros
                 </button>
@@ -438,12 +438,12 @@ export const ChartsPage = () => {
       <div className="max-w-7xl mx-auto">
         <motion.div 
           variants={itemVariants}
-          className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl mb-6"
+          className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6 mb-6"
         >
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05984]/15 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#BC455F]/15 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#8A5CF6]/15 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#F26D5B]/15 rounded-full blur-3xl animate-pulse" />
           <div className="relative flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <BarChart3 size={28} className="text-white" aria-hidden="true" />
             </div>
             <div>
@@ -457,57 +457,57 @@ export const ChartsPage = () => {
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <motion.div 
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-[#101015] rounded-[20px] p-6 border border-white/[0.07] shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Ingresos Totales</p>
-                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome)}</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#8A5CF6] transition-colors">{formatCurrency(totalIncome)}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <TrendBadge value={incomeTrend} />
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="shrink-0 p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
-                <TrendingUp size={24} className="text-[#F05984]" />
+              <div className="shrink-0 p-3 rounded-xl bg-[#8A5CF6]/20 group-hover:bg-[#8A5CF6]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingUp size={24} className="text-[#8A5CF6]" />
               </div>
             </div>
           </motion.div>
           
           <motion.div 
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-[#101015] rounded-[20px] p-6 border border-white/[0.07] shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Gastos Totales</p>
-                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#BC455F] transition-colors">{formatCurrency(totalExpense)}</p>
+                <p className="text-3xl font-bold text-white tracking-tight group-hover:text-[#F26D5B] transition-colors">{formatCurrency(totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <TrendBadge value={expenseTrend} />
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="shrink-0 p-3 rounded-xl bg-[#BC455F]/20 group-hover:bg-[#BC455F]/30 transition-all duration-300 group-hover:scale-110">
-                <TrendingDown size={24} className="text-[#BC455F]" />
+              <div className="shrink-0 p-3 rounded-xl bg-[#F26D5B]/20 group-hover:bg-[#F26D5B]/30 transition-all duration-300 group-hover:scale-110">
+                <TrendingDown size={24} className="text-[#F26D5B]" />
               </div>
             </div>
           </motion.div>
           
           <motion.div 
             whileHover={{ y: -6, scale: 1.02, transition: { type: "spring", stiffness: 300 } }}
-            className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-[#101015] rounded-[20px] p-6 border border-white/[0.07] shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
           >
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div className="min-w-0">
                 <p className="text-white/50 text-sm font-medium mb-2">Ahorro Total</p>
-                <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#F05984] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
+                <p className="text-3xl font-bold text-green-400 tracking-tight group-hover:text-[#8A5CF6] transition-colors">{formatCurrency(totalIncome - totalExpense)}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <TrendBadge value={savingsTrend} />
                   <span className="text-white/30 text-xs">vs mes anterior</span>
                 </div>
               </div>
-              <div className="shrink-0 p-3 rounded-xl bg-[#F05984]/20 group-hover:bg-[#F05984]/30 transition-all duration-300 group-hover:scale-110">
-                <Target size={24} className="text-[#F05984]" />
+              <div className="shrink-0 p-3 rounded-xl bg-[#8A5CF6]/20 group-hover:bg-[#8A5CF6]/30 transition-all duration-300 group-hover:scale-110">
+                <Target size={24} className="text-[#8A5CF6]" />
               </div>
             </div>
             <div className="mt-4">
@@ -520,7 +520,7 @@ export const ChartsPage = () => {
                   initial={{ width: 0 }}
                   animate={{ width: `${savingsRate}%` }}
                   transition={{ duration: 1 }}
-                  className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full group-hover:opacity-80 transition-opacity"
+                  className="h-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-full group-hover:opacity-80 transition-opacity"
                 />
               </div>
             </div>
@@ -541,11 +541,11 @@ export const ChartsPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10 hover:border-[#F05984]/40 transition-all shadow-lg hover:shadow-xl"
+              className="bg-[#101015] rounded-2xl p-6 border border-white/[0.07] hover:border-[#8A5CF6]/40 transition-all shadow-lg hover:shadow-xl"
             >
               <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                  <TrendingDown size={18} className="text-[#F05984]" />
+                <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                  <TrendingDown size={18} className="text-[#8A5CF6]" />
                 </div>
                 Top 5 Categorías de Gastos
               </h3>
@@ -565,7 +565,7 @@ export const ChartsPage = () => {
                           <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110" style={{ backgroundColor: `${cat.color}20` }}>
                             {cat.icon}
                           </div>
-                          <span className="text-white font-medium group-hover:text-[#F05984] transition-colors">{cat.name}</span>
+                          <span className="text-white font-medium group-hover:text-[#8A5CF6] transition-colors">{cat.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-white/50 text-sm">{percentage.toFixed(1)}%</span>
@@ -589,7 +589,7 @@ export const ChartsPage = () => {
           </LazyChart>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl overflow-hidden">
+        <motion.div variants={itemVariants} className="bg-[#101015] rounded-2xl border border-white/10 shadow-xl overflow-hidden">
           <div className="flex border-b border-white/10 bg-white/5">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -597,7 +597,7 @@ export const ChartsPage = () => {
               onClick={() => setActiveTab('comparison')}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
                 activeTab === 'comparison'
-                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  ? 'text-[#8A5CF6] border-b-2 border-[#8A5CF6] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -612,7 +612,7 @@ export const ChartsPage = () => {
               onClick={() => setActiveTab('income')}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
                 activeTab === 'income'
-                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  ? 'text-[#8A5CF6] border-b-2 border-[#8A5CF6] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -627,7 +627,7 @@ export const ChartsPage = () => {
               onClick={() => setActiveTab('expense')}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
                 activeTab === 'expense'
-                  ? 'text-[#F05984] border-b-2 border-[#F05984] bg-white/5'
+                  ? 'text-[#8A5CF6] border-b-2 border-[#8A5CF6] bg-white/5'
                   : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -646,7 +646,7 @@ export const ChartsPage = () => {
                     <select
                       value={selectedPeriod}
                       onChange={(e) => setSelectedPeriod(e.target.value)}
-                      className="px-3 py-2 bg-white/10 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#F05984] text-sm cursor-pointer font-medium"
+                      className="px-3 py-2 bg-white/10 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#8A5CF6] text-sm cursor-pointer font-medium"
                     >
                       <option value="1m">Último mes</option>
                       <option value="3m">Últimos 3 meses</option>
@@ -666,7 +666,7 @@ export const ChartsPage = () => {
                           onClick={() => setChartType('bar')}
                           className={`p-2 rounded-xl transition-all ${
                             chartType === 'bar'
-                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg'
                               : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
                           }`}
                           title="Gráfico de barras"
@@ -679,7 +679,7 @@ export const ChartsPage = () => {
                           onClick={() => setChartType('line')}
                           className={`p-2 rounded-xl transition-all ${
                             chartType === 'line'
-                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg'
                               : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
                           }`}
                           title="Gráfico de líneas"
@@ -692,7 +692,7 @@ export const ChartsPage = () => {
                           onClick={() => setChartType('area')}
                           className={`p-2 rounded-xl transition-all ${
                             chartType === 'area'
-                              ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg'
+                              ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg'
                               : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'
                           }`}
                           title="Gráfico de área"
@@ -709,10 +709,10 @@ export const ChartsPage = () => {
             <LazyChart>
               {activeTab === 'comparison' && (
                 <div className="space-y-8">
-                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                  <div className="bg-[#101015] rounded-2xl p-6 border border-white/10">
                     <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                        <BarChart3 size={18} className="text-[#F05984]" />
+                      <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                        <BarChart3 size={18} className="text-[#8A5CF6]" />
                       </div>
                       Evolución Ingresos vs Gastos
                     </h3>
@@ -721,8 +721,8 @@ export const ChartsPage = () => {
                         <BarChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
-                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
+                              <stop offset="0%" stopColor="#8A5CF6" stopOpacity={0.9}/>
+                              <stop offset="100%" stopColor="#F26D5B" stopOpacity={0.6}/>
                             </linearGradient>
                             <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9}/>
@@ -744,8 +744,8 @@ export const ChartsPage = () => {
                         <LineChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#F05984" stopOpacity={1}/>
-                              <stop offset="100%" stopColor="#BC455F" stopOpacity={1}/>
+                              <stop offset="0%" stopColor="#8A5CF6" stopOpacity={1}/>
+                              <stop offset="100%" stopColor="#F26D5B" stopOpacity={1}/>
                             </linearGradient>
                             <linearGradient id="expenseLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
@@ -757,7 +757,7 @@ export const ChartsPage = () => {
                           <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
-                          <Line type="monotone" dataKey="income" name="Ingresos" stroke="url(#incomeLineGradient)" strokeWidth={3} dot={{ fill: '#F05984', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#BC455F' }} />
+                          <Line type="monotone" dataKey="income" name="Ingresos" stroke="url(#incomeLineGradient)" strokeWidth={3} dot={{ fill: '#8A5CF6', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#F26D5B' }} />
                           <Line type="monotone" dataKey="expense" name="Gastos" stroke="url(#expenseLineGradient)" strokeWidth={3} dot={{ fill: '#ef4444', r: 5, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7, fill: '#f87171' }} />
                         </LineChart>
                       </ResponsiveContainer>
@@ -767,8 +767,8 @@ export const ChartsPage = () => {
                         <AreaChart data={filteredData}>
                           <defs>
                             <linearGradient id="incomeAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#F05984" stopOpacity={0.4}/>
-                              <stop offset="100%" stopColor="#BC455F" stopOpacity={0.05}/>
+                              <stop offset="0%" stopColor="#8A5CF6" stopOpacity={0.4}/>
+                              <stop offset="100%" stopColor="#F26D5B" stopOpacity={0.05}/>
                             </linearGradient>
                             <linearGradient id="expenseAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                               <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4}/>
@@ -780,7 +780,7 @@ export const ChartsPage = () => {
                           <YAxis stroke="#ffffff60" tick={{ fill: '#ffffff80', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ color: '#ffffff80', paddingTop: '20px' }} iconType="circle" />
-                          <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#F05984" strokeWidth={2} fill="url(#incomeAreaGradient)" />
+                          <Area type="monotone" dataKey="income" name="Ingresos" stackId="1" stroke="#8A5CF6" strokeWidth={2} fill="url(#incomeAreaGradient)" />
                           <Area type="monotone" dataKey="expense" name="Gastos" stackId="2" stroke="#ef4444" strokeWidth={2} fill="url(#expenseAreaGradient)" />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -789,8 +789,8 @@ export const ChartsPage = () => {
 
                   <div>
                     <h3 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                        <Calendar size={18} className="text-[#F05984]" />
+                      <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                        <Calendar size={18} className="text-[#8A5CF6]" />
                       </div>
                       Resumen Trimestral
                     </h3>
@@ -802,12 +802,12 @@ export const ChartsPage = () => {
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: idx * 0.1 }}
                           whileHover={{ y: -6, scale: 1.02 }}
-                          className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/40 transition-all cursor-pointer group"
+                          className="bg-[#101015] rounded-xl p-5 border border-white/[0.07] hover:border-[#8A5CF6]/40 transition-all cursor-pointer group"
                         >
                           <p className="text-white/40 text-xs font-medium mb-3">{quarter.quarter}</p>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-green-400 text-sm group-hover:text-[#F05984] transition-colors">Ingresos:</span>
+                              <span className="text-green-400 text-sm group-hover:text-[#8A5CF6] transition-colors">Ingresos:</span>
                               <span className="text-white font-semibold">{formatCurrency(quarter.income)}</span>
                             </div>
                             <div className="flex items-center justify-between">
@@ -829,10 +829,10 @@ export const ChartsPage = () => {
 
               {activeTab === 'income' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                  <div className="bg-[#101015] rounded-2xl p-6 border border-white/10">
                     <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                        <TrendingUp size={18} className="text-[#F05984]" />
+                      <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                        <TrendingUp size={18} className="text-[#8A5CF6]" />
                       </div>
                       Evolución de Ingresos
                     </h3>
@@ -840,8 +840,8 @@ export const ChartsPage = () => {
                       <BarChart data={filteredData}>
                         <defs>
                           <linearGradient id="incomeOnlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#F05984" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#BC455F" stopOpacity={0.6}/>
+                            <stop offset="0%" stopColor="#8A5CF6" stopOpacity={0.9}/>
+                            <stop offset="100%" stopColor="#F26D5B" stopOpacity={0.6}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
@@ -863,10 +863,10 @@ export const ChartsPage = () => {
 
               {activeTab === 'expense' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-6 border border-white/10">
+                  <div className="bg-[#101015] rounded-2xl p-6 border border-white/10">
                     <h3 className="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
-                      <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                        <TrendingDown size={18} className="text-[#F05984]" />
+                      <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                        <TrendingDown size={18} className="text-[#8A5CF6]" />
                       </div>
                       Evolución de Gastos
                     </h3>
@@ -898,27 +898,27 @@ export const ChartsPage = () => {
           </div>
 
           {/* Insights rediseñados como tarjetas más elaboradas */}
-          <div className="p-6 border-t border-white/10 bg-gradient-to-r from-[#321D28]/40 to-[#6E4068]/40">
+          <div className="p-6 border-t border-white/10 bg-gradient-to-r from-[#8A5CF6]/40 to-[#46C7E0]/40">
             <h4 className="text-white font-semibold mb-5 flex items-center gap-2 text-lg">
-              <div className="p-1.5 rounded-lg bg-[#F05984]/20">
-                <Activity size={18} className="text-[#F05984]" />
+              <div className="p-1.5 rounded-lg bg-[#8A5CF6]/20">
+                <Activity size={18} className="text-[#8A5CF6]" />
               </div>
               Insights y Recomendaciones
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <motion.div 
                 whileHover={{ y: -4, scale: 1.02 }}
-                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+                className="group relative overflow-hidden bg-[#101015] rounded-xl p-5 border border-white/[0.07] hover:border-[#8A5CF6]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#8A5CF6]/5 rounded-full blur-2xl group-hover:bg-[#8A5CF6]/10 transition-all" />
                 <div className="flex items-start gap-4 relative z-10">
-                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp size={22} className="text-[#F05984]" />
+                  <div className="p-3 bg-gradient-to-br from-[#8A5CF6]/20 to-[#F26D5B]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp size={22} className="text-[#8A5CF6]" />
                   </div>
                   <div>
                     <p className="text-white font-semibold mb-2 text-base">{incomeTrend >= 0 ? 'Crecimiento de ingresos' : 'Caída de ingresos'}</p>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Tus ingresos {incomeTrend >= 0 ? 'aumentaron' : 'disminuyeron'} un <span className="text-[#F05984] font-bold text-base">{Math.abs(incomeTrend).toFixed(1)}%</span> respecto al mes anterior
+                      Tus ingresos {incomeTrend >= 0 ? 'aumentaron' : 'disminuyeron'} un <span className="text-[#8A5CF6] font-bold text-base">{Math.abs(incomeTrend).toFixed(1)}%</span> respecto al mes anterior
                     </p>
                   </div>
                 </div>
@@ -926,18 +926,18 @@ export const ChartsPage = () => {
               
               <motion.div 
                 whileHover={{ y: -4, scale: 1.02 }}
-                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+                className="group relative overflow-hidden bg-[#101015] rounded-xl p-5 border border-white/[0.07] hover:border-[#8A5CF6]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-[#BC455F]/5 rounded-full blur-2xl group-hover:bg-[#BC455F]/10 transition-all" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F26D5B]/5 rounded-full blur-2xl group-hover:bg-[#F26D5B]/10 transition-all" />
                 <div className="flex items-start gap-4 relative z-10">
-                  <div className="p-3 bg-gradient-to-br from-[#BC455F]/20 to-[#6E4068]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <TrendingDown size={22} className="text-[#BC455F]" />
+                  <div className="p-3 bg-gradient-to-br from-[#F26D5B]/20 to-[#46C7E0]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <TrendingDown size={22} className="text-[#F26D5B]" />
                   </div>
                   <div>
                     <p className="text-white font-semibold mb-2 text-base">Área de oportunidad</p>
                     <p className="text-white/60 text-sm leading-relaxed">
                       {topExpenseCategory
-                        ? <>Tus gastos en {topExpenseCategory.name} representan el <span className="text-[#BC455F] font-bold text-base">{topExpensePercentage.toFixed(0)}%</span> del total</>
+                        ? <>Tus gastos en {topExpenseCategory.name} representan el <span className="text-[#F26D5B] font-bold text-base">{topExpensePercentage.toFixed(0)}%</span> del total</>
                         : 'Aún no hay gastos registrados para analizar'}
                     </p>
                   </div>
@@ -946,17 +946,17 @@ export const ChartsPage = () => {
               
               <motion.div 
                 whileHover={{ y: -4, scale: 1.02 }}
-                className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 rounded-xl p-5 border border-white/10 hover:border-[#F05984]/50 transition-all duration-300 cursor-pointer"
+                className="group relative overflow-hidden bg-[#101015] rounded-xl p-5 border border-white/[0.07] hover:border-[#8A5CF6]/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-[#F05984]/5 rounded-full blur-2xl group-hover:bg-[#F05984]/10 transition-all" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#8A5CF6]/5 rounded-full blur-2xl group-hover:bg-[#8A5CF6]/10 transition-all" />
                 <div className="flex items-start gap-4 relative z-10">
-                  <div className="p-3 bg-gradient-to-br from-[#F05984]/20 to-[#BC455F]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <Target size={22} className="text-[#F05984]" />
+                  <div className="p-3 bg-gradient-to-br from-[#8A5CF6]/20 to-[#F26D5B]/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <Target size={22} className="text-[#8A5CF6]" />
                   </div>
                   <div>
                     <p className="text-white font-semibold mb-2 text-base">Tasa de ahorro</p>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Tu tasa de ahorro actual es del <span className="text-[#F05984] font-bold text-base">{savingsRate.toFixed(0)}%</span> de tus ingresos totales
+                      Tu tasa de ahorro actual es del <span className="text-[#8A5CF6] font-bold text-base">{savingsRate.toFixed(0)}%</span> de tus ingresos totales
                     </p>
                   </div>
                 </div>

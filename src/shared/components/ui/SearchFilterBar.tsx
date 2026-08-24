@@ -37,7 +37,7 @@ export const SearchFilterBar = ({
           placeholder={placeholder}
           value={searchTerm}
           onChange={(e) => onSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] focus:ring-1 focus:ring-[#F05984] transition-all"
+          className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#8A5CF6] focus:ring-1 focus:ring-[#8A5CF6] transition-all"
         />
       </div>
       <div className="flex flex-wrap gap-2">
@@ -48,13 +48,13 @@ export const SearchFilterBar = ({
           // `anchor` lo mantiene dentro del viewport real.
           <Listbox value={selectedPeriod} onChange={onPeriodChange}>
             <div className="relative">
-              <ListboxButton className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm">
+              <ListboxButton className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm">
                 <span>{PERIOD_OPTIONS.find(o => o.value === selectedPeriod)?.label ?? 'Todos'}</span>
                 <ChevronDown size={14} className="text-white/50" />
               </ListboxButton>
               <ListboxOptions
                 anchor="bottom start"
-                className="z-50 mt-1 w-40 rounded-lg bg-[#1a0f14] border border-white/10 shadow-xl focus:outline-none [--anchor-gap:4px]"
+                className="z-50 mt-1 w-40 rounded-lg bg-[#08080B] border border-white/10 shadow-xl focus:outline-none [--anchor-gap:4px]"
               >
                 {PERIOD_OPTIONS.map(({ value, label }) => (
                   <ListboxOption
@@ -74,7 +74,7 @@ export const SearchFilterBar = ({
           whileTap={{ scale: 0.95 }}
           onClick={onToggleFilters}
           className={`p-2 rounded-lg transition-colors ${
-            showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+            showFilters ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
           }`}
         >
           <Filter size={18} />
