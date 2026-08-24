@@ -27,11 +27,11 @@ export const ModalOverlay = ({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className={`bg-[#1a0f14] rounded-xl border border-white/10 w-full ${maxWidth} max-h-[90vh] overflow-y-auto shadow-2xl`}
+        className={`bg-[#08080B] rounded-xl border border-white/10 w-full ${maxWidth} max-h-[90vh] overflow-y-auto shadow-2xl`}
       >
-        <div className="sticky top-0 bg-[#1a0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-[#08080B] border-b border-white/10 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-lg">
+            <div className="p-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-lg">
               {icon}
             </div>
             <div>

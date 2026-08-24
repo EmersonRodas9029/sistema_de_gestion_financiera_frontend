@@ -109,7 +109,7 @@ const CustomSwitch = ({ enabled, onChange, label, description }: { enabled: bool
     <Switch
       checked={enabled}
       onChange={onChange}
-      className={`${enabled ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F]' : 'bg-white/20'} relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 shadow-lg`}
+      className={`${enabled ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]' : 'bg-white/20'} relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 shadow-lg`}
     >
       <span className={`${enabled ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-all duration-300 shadow-md`} />
     </Switch>
@@ -385,7 +385,7 @@ export const SettingsPage = () => {
   // Skeleton Loader
   if (isLoading) {
     return (
-      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+      <div className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
         <div className="animate-pulse space-y-6">
           <div className="flex justify-between">
             <div className="h-8 w-48 bg-white/10 rounded-lg" />
@@ -411,23 +411,23 @@ export const SettingsPage = () => {
       initial="hidden"
       animate="visible"
       className="space-y-6 min-h-screen p-6"
-      style={{ backgroundColor: '#1a0f14' }}
+      style={{ backgroundColor: '#08080B' }}
     >
       {/* Header Mejorado */}
       <motion.div 
         variants={itemVariants}
-        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl"
+        className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#F26D5B]/10 rounded-full blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <Settings size={28} className="text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">Configuración</h1>
-              <p className="text-white/50 text-sm mt-1">Personaliza tu experiencia en FinanSys</p>
+              <p className="text-white/50 text-sm mt-1">Personaliza tu experiencia en BudgEase</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -449,7 +449,7 @@ export const SettingsPage = () => {
               whileTap={{ scale: 0.95 }}
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300 disabled:opacity-50 font-medium"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300 disabled:opacity-50 font-medium"
             >
               {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />}
               <span>{isSaving ? 'Guardando...' : 'Guardar cambios'}</span>
@@ -463,7 +463,7 @@ export const SettingsPage = () => {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -472,7 +472,7 @@ export const SettingsPage = () => {
               <p className="text-white/30 text-xs mt-1">Completado: {completionPercentage.toFixed(0)}%</p>
             </div>
             <div className="shrink-0 p-3 rounded-xl bg-white/10">
-              <Settings size={24} className="text-[#F05984]" />
+              <Settings size={24} className="text-[#8A5CF6]" />
             </div>
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
@@ -480,7 +480,7 @@ export const SettingsPage = () => {
               initial={{ width: 0 }}
               animate={{ width: `${completionPercentage}%` }}
               transition={{ duration: 1 }}
-              className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full"
+              className="h-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-full"
             />
           </div>
         </motion.div>
@@ -488,7 +488,7 @@ export const SettingsPage = () => {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -505,7 +505,7 @@ export const SettingsPage = () => {
         <motion.div 
           whileHover={{ y: -4, scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -542,7 +542,7 @@ export const SettingsPage = () => {
                 onClick={() => setActiveSection(section.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                   activeSection === section.id 
-                    ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg shadow-[#F05984]/20' 
+                    ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg shadow-[#8A5CF6]/20' 
                     : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }`}
               >
@@ -570,13 +570,13 @@ export const SettingsPage = () => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
-          className="flex-1 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-xl"
+          className="flex-1 bg-[#101015] rounded-2xl border border-white/10 p-6 shadow-xl"
         >
           {activeSection === 'profile' && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <User size={18} className="text-[#F05984]" />
+                  <User size={18} className="text-[#8A5CF6]" />
                   Información Personal
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -594,7 +594,7 @@ export const SettingsPage = () => {
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Teléfono</label>
-                    <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                    <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors" />
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition-all">
                     <label className="text-white/60 text-sm mb-1 block">Cargo</label>
@@ -609,7 +609,7 @@ export const SettingsPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Target size={18} className="text-[#F05984]" />
+                  <Target size={18} className="text-[#8A5CF6]" />
                   Tipos de notificaciones
                 </h3>
                 <div className="space-y-3">
@@ -636,14 +636,14 @@ export const SettingsPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Lock size={18} className="text-[#F05984]" />
+                  <Lock size={18} className="text-[#8A5CF6]" />
                   Contraseña
                 </h3>
                 <div className="space-y-4">
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Contraseña actual</label>
                     <div className="relative">
-                      <input type={showPassword ? 'text' : 'password'} value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                      <input type={showPassword ? 'text' : 'password'} value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors" />
                       <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white">
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -652,7 +652,7 @@ export const SettingsPage = () => {
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Nueva contraseña</label>
                     <div className="relative">
-                      <input type={showConfirmPassword ? 'text' : 'password'} value={passwordData.new} onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                      <input type={showConfirmPassword ? 'text' : 'password'} value={passwordData.new} onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors" />
                       <button onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white">
                         {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -660,14 +660,14 @@ export const SettingsPage = () => {
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Confirmar nueva contraseña</label>
-                    <input type="password" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-colors" />
+                    <input type="password" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-colors" />
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleChangePassword}
                     disabled={isChangingPassword}
-                    className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-opacity font-medium disabled:opacity-50"
+                    className="px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-opacity font-medium disabled:opacity-50"
                   >
                     {isChangingPassword ? 'Cambiando...' : 'Cambiar contraseña'}
                   </motion.button>
@@ -683,20 +683,20 @@ export const SettingsPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <Palette size={18} className="text-[#F05984]" />
+                  <Palette size={18} className="text-[#8A5CF6]" />
                   Apariencia
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tema</label>
-                    <select value={preferences.theme} onChange={(e) => setPreferences({...preferences, theme: e.target.value as PreferenceSettings['theme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.theme} onChange={(e) => setPreferences({...preferences, theme: e.target.value as PreferenceSettings['theme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="dark">Oscuro</option>
                       <option value="light">Claro</option>
                     </select>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Esquema de colores</label>
-                    <select value={preferences.colorScheme} onChange={(e) => setPreferences({...preferences, colorScheme: e.target.value as PreferenceSettings['colorScheme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.colorScheme} onChange={(e) => setPreferences({...preferences, colorScheme: e.target.value as PreferenceSettings['colorScheme']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="default">Predeterminado</option>
                       <option value="blue">Azul</option>
                       <option value="green">Verde</option>
@@ -706,7 +706,7 @@ export const SettingsPage = () => {
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Tamaño de fuente</label>
-                    <select value={preferences.fontSize} onChange={(e) => setPreferences({...preferences, fontSize: e.target.value as PreferenceSettings['fontSize']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.fontSize} onChange={(e) => setPreferences({...preferences, fontSize: e.target.value as PreferenceSettings['fontSize']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="small">Pequeño</option>
                       <option value="medium">Mediano</option>
                       <option value="large">Grande</option>
@@ -716,20 +716,20 @@ export const SettingsPage = () => {
               </div>
               <div>
                 <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                  <BarChart3 size={18} className="text-[#F05984]" />
+                  <BarChart3 size={18} className="text-[#8A5CF6]" />
                   Vistas predeterminadas
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Vista por defecto</label>
-                    <select value={preferences.defaultView} onChange={(e) => setPreferences({...preferences, defaultView: e.target.value as PreferenceSettings['defaultView']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.defaultView} onChange={(e) => setPreferences({...preferences, defaultView: e.target.value as PreferenceSettings['defaultView']})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="grid">Cuadrícula</option>
                       <option value="list">Lista</option>
                     </select>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4">
                     <label className="text-white/60 text-sm mb-1 block">Elementos por página</label>
-                    <select value={preferences.itemsPerPage} onChange={(e) => setPreferences({...preferences, itemsPerPage: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                    <select value={preferences.itemsPerPage} onChange={(e) => setPreferences({...preferences, itemsPerPage: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
                       <option value="10">10</option>
                       <option value="20">20</option>
                       <option value="50">50</option>
@@ -788,7 +788,7 @@ export const SettingsPage = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#1a0f14] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
+              className="bg-[#08080B] rounded-xl border border-white/10 max-w-md w-full shadow-2xl"
             >
               <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
                 <div className="p-2 bg-red-500/20 rounded-lg">

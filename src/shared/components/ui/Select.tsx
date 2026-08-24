@@ -27,14 +27,14 @@ export const Select = ({ value, onChange, options, placeholder = 'Seleccionar...
       <div className="relative">
         <ListboxButton
           type="button"
-          className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left ${className}`}
+          className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left ${className}`}
         >
           <span className={`truncate ${selected ? '' : 'text-white/40'}`}>{selected?.label ?? placeholder}</span>
           <ChevronDown size={16} className="text-white/50 shrink-0" />
         </ListboxButton>
         <ListboxOptions
           anchor="bottom start"
-          className="z-50 mt-1 w-[var(--button-width)] max-h-64 overflow-y-auto rounded-lg bg-[#1a0f14] border border-white/10 shadow-xl focus:outline-none [--anchor-gap:4px]"
+          className="z-50 mt-1 w-[var(--button-width)] max-h-64 overflow-y-auto rounded-lg bg-[#08080B] border border-white/10 shadow-xl focus:outline-none [--anchor-gap:4px]"
         >
           {options.map(opt => (
             <ListboxOption

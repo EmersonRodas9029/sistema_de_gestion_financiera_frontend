@@ -60,15 +60,15 @@ const toUsuario = (a: ApiUsuario): Usuario => ({
   } : undefined,
 });
 
-const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all";
+const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all";
 const selectStyle = { backgroundColor: 'rgba(255,255,255,0.05)', color: 'white' };
-const optStyle   = { backgroundColor: '#1a0f14', color: 'white' };
+const optStyle   = { backgroundColor: '#08080B', color: 'white' };
 
 const RolTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; value: number; color: string } }> }) => {
   if (!active || !payload?.length) return null;
   const { name, value, color } = payload[0].payload;
   return (
-    <div className="bg-[#2a1520] border border-white/20 rounded-xl px-3 py-2.5 shadow-2xl pointer-events-none">
+    <div className="bg-[#0C0C10] border border-white/20 rounded-xl px-3 py-2.5 shadow-2xl pointer-events-none">
       <div className="flex items-center gap-2 mb-1">
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
         <span className="text-white font-semibold text-sm">{name}</span>
@@ -138,8 +138,8 @@ export const ClientsPage = () => {
   const totalInactivos  = usuarios.filter(u => !u.activo).length;
 
   const rolData = [
-    { name: 'Clientes',   value: totalClientes,   color: '#F05984' },
-    { name: 'Contadores', value: totalContadores, color: '#6E4068' },
+    { name: 'Clientes',   value: totalClientes,   color: '#8A5CF6' },
+    { name: 'Contadores', value: totalContadores, color: '#46C7E0' },
     { name: 'Sudo',       value: totalSudos,       color: '#FBBF24' },
   ].filter(d => d.value > 0);
 
@@ -272,16 +272,16 @@ export const ClientsPage = () => {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible"
-      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
 
       {/* Header */}
       <motion.div variants={itemVariants}
-        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
+        className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#F26D5B]/10 rounded-full blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <Users size={28} className="text-white" />
             </div>
             <div>
@@ -299,7 +299,7 @@ export const ClientsPage = () => {
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 self-start lg:self-auto ${
               limiteAlcanzado
                 ? 'bg-white/10 text-white/40 cursor-not-allowed'
-                : 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white hover:shadow-lg hover:shadow-[#F05984]/25'
+                : 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white hover:shadow-lg hover:shadow-[#8A5CF6]/25'
             }`}>
             <UserPlus size={20} />
             <span className="hidden sm:inline font-medium">Nuevo Usuario</span>
@@ -310,13 +310,13 @@ export const ClientsPage = () => {
       {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Usuarios', value: totalUsuarios,   color: 'text-white',        bg: 'from-[#321D28] to-[#6E4068]',   iconBg: 'bg-white/10',        icon: <Users size={24} className="text-[#F05984]" /> },
-          { label: 'Clientes',       value: totalClientes,   color: 'text-[#F05984]',    bg: 'from-[#321D28] to-[#4a2040]',   iconBg: 'bg-[#F05984]/20',    icon: <User  size={24} className="text-[#F05984]" /> },
-          { label: 'Contadores',     value: totalContadores, color: 'text-purple-400',   bg: 'from-[#1e1b2e] to-[#2d2a3d]',   iconBg: 'bg-purple-500/20',   icon: <Shield size={24} className="text-purple-400" /> },
-          { label: 'Inactivos',      value: totalInactivos,  color: 'text-gray-400',     bg: 'from-[#1e293b] to-[#334155]',   iconBg: 'bg-gray-500/20',     icon: <XCircle size={24} className="text-gray-400" /> },
+          { label: 'Total Usuarios', value: totalUsuarios,   color: 'text-white',        iconBg: 'bg-[#8A5CF6]/15',    icon: <Users size={24} className="text-[#8A5CF6]" /> },
+          { label: 'Clientes',       value: totalClientes,   color: 'text-[#8A5CF6]',    iconBg: 'bg-[#8A5CF6]/15',    icon: <User  size={24} className="text-[#8A5CF6]" /> },
+          { label: 'Contadores',     value: totalContadores, color: 'text-[#46C7E0]',    iconBg: 'bg-[#46C7E0]/15',    icon: <Shield size={24} className="text-[#46C7E0]" /> },
+          { label: 'Inactivos',      value: totalInactivos,  color: 'text-gray-400',     iconBg: 'bg-gray-500/15',     icon: <XCircle size={24} className="text-gray-400" /> },
         ].map(s => (
           <motion.div key={s.label} whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
-            className={`bg-gradient-to-br ${s.bg} rounded-xl p-5 border border-white/10 shadow-lg`}>
+            className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/50 text-sm font-medium">{s.label}</p>
@@ -331,7 +331,7 @@ export const ClientsPage = () => {
       {/* Pie chart */}
       {rolData.length > 0 && (
         <motion.div variants={itemVariants}
-          className="bg-gradient-to-br from-[#321D28] to-[#1a0f14] rounded-xl p-5 border border-white/10 shadow-lg">
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex flex-col sm:flex-row items-center gap-6">
 
             {/* Donut + total centrado */}
@@ -385,15 +385,15 @@ export const ClientsPage = () => {
       )}
 
       {/* Search + list */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-xl border border-white/10 shadow-lg">
         <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/10">
           <div className="flex gap-1.5">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
+              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
               <BarChart3 size={18} />
             </motion.button>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white'}`}>
               <Users size={18} />
             </motion.button>
           </div>
@@ -404,11 +404,11 @@ export const ClientsPage = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={20} />
               <input type="text" placeholder="Buscar por username o email..." value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors" />
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#8A5CF6] transition-colors" />
             </div>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#F05984] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70'}`}>
+              className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-[#8A5CF6] text-white' : 'bg-white/5 hover:bg-white/10 text-white/70'}`}>
               <Filter size={20} />
             </motion.button>
           </div>
@@ -421,7 +421,7 @@ export const ClientsPage = () => {
                   <div className="w-48">
                     <label className="text-white/60 text-xs mb-1 block">Rol</label>
                     <select value={selectedRol} onChange={e => setSelectedRol(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                       style={selectStyle}>
                       <option value="todos"    style={optStyle}>Todos</option>
                       <option value="CLIENTE"  style={optStyle}>Cliente</option>
@@ -431,7 +431,7 @@ export const ClientsPage = () => {
                   <div className="w-48">
                     <label className="text-white/60 text-xs mb-1 block">Estado</label>
                     <select value={selectedActivo} onChange={e => setSelectedActivo(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                       style={selectStyle}>
                       <option value="todos"    style={optStyle}>Todos</option>
                       <option value="activo"   style={optStyle}>Activos</option>
@@ -450,7 +450,7 @@ export const ClientsPage = () => {
             <span className="text-white/40 text-sm shrink-0">Ordenar:</span>
             {(['username', 'rol'] as const).map(key => (
               <button key={key} onClick={() => toggleSort(key)}
-                className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === key ? 'text-[#F05984]' : 'text-white/60 hover:text-white'}`}>
+                className={`flex items-center gap-1 text-sm transition-colors shrink-0 whitespace-nowrap ${sortBy === key ? 'text-[#8A5CF6]' : 'text-white/60 hover:text-white'}`}>
                 {key === 'username' ? 'Username' : 'Rol'}
                 {sortBy === key && (sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
               </button>
@@ -468,7 +468,7 @@ export const ClientsPage = () => {
             {!limiteAlcanzado && (
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCreateModal(true)}
-                className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300">
                 <UserPlus size={20} /><span className="font-medium">Crear usuario</span>
               </motion.button>
             )}
@@ -485,12 +485,12 @@ export const ClientsPage = () => {
                   exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4, scale: 1.02 }}
                   className={`bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all hover:shadow-xl ${
                     managedClient?.id === u.cliente?.id && u.cliente
-                      ? 'border-[#F05984] shadow-lg shadow-[#F05984]/20'
-                      : 'border-white/10 hover:border-[#F05984]/50'
+                      ? 'border-[#8A5CF6] shadow-lg shadow-[#8A5CF6]/20'
+                      : 'border-white/10 hover:border-[#8A5CF6]/50'
                   }`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r flex items-center justify-center text-white font-bold text-lg shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r flex items-center justify-center text-white font-bold text-lg shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#8A5CF6] to-[#F26D5B]' : 'from-[#46C7E0] to-[#4a2d5a]'}`}>
                         {u.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -501,7 +501,7 @@ export const ClientsPage = () => {
                       </div>
                     </div>
                     {managedClient?.id === u.cliente?.id && u.cliente && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F05984]/20 text-[#F05984] flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#8A5CF6]/20 text-[#8A5CF6] flex items-center gap-1">
                         <UserCog size={10} /> Gestionando
                       </span>
                     )}
@@ -513,9 +513,9 @@ export const ClientsPage = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       {u.rol === 'CLIENTE'
-                        ? <User size={14} className="text-[#F05984]" />
+                        ? <User size={14} className="text-[#8A5CF6]" />
                         : <Shield size={14} className="text-purple-400" />}
-                      <span className={`text-xs font-medium ${u.rol === 'CLIENTE' ? 'text-[#F05984]' : 'text-purple-400'}`}>{u.rol}</span>
+                      <span className={`text-xs font-medium ${u.rol === 'CLIENTE' ? 'text-[#8A5CF6]' : 'text-purple-400'}`}>{u.rol}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-white/10">
@@ -527,7 +527,7 @@ export const ClientsPage = () => {
                       {u.rol === 'CLIENTE' && u.cliente && u.activo && (
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => handleToggleGestionar(u)}
-                          className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#F05984]/20 text-[#F05984]' : 'hover:bg-[#F05984]/20 text-white/50 hover:text-[#F05984]'}`}
+                          className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#8A5CF6]/20 text-[#8A5CF6]' : 'hover:bg-[#8A5CF6]/20 text-white/50 hover:text-[#8A5CF6]'}`}
                           title={managedClient?.id === u.cliente.id ? 'Dejar de Gestionar' : 'Gestionar Cliente'}>
                           {managedClient?.id === u.cliente.id ? <UserX size={14} /> : <UserCog size={14} />}
                         </motion.button>
@@ -576,11 +576,11 @@ export const ClientsPage = () => {
                   exit={{ opacity: 0, x: 20 }} transition={{ delay: i * 0.03 }} whileHover={{ scale: 1.01 }}
                   className={`bg-gradient-to-r from-white/5 to-white/0 rounded-lg p-3 border transition-all hover:shadow-lg ${
                     managedClient?.id === u.cliente?.id && u.cliente
-                      ? 'border-[#F05984] shadow-lg shadow-[#F05984]/10'
-                      : 'border-white/10 hover:border-[#F05984]/30'
+                      ? 'border-[#8A5CF6] shadow-lg shadow-[#8A5CF6]/10'
+                      : 'border-white/10 hover:border-[#8A5CF6]/30'
                   }`}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-r flex items-center justify-center text-white font-bold shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#F05984] to-[#BC455F]' : 'from-[#6E4068] to-[#4a2d5a]'}`}>
+                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-r flex items-center justify-center text-white font-bold shadow-lg ${u.rol === 'CLIENTE' ? 'from-[#8A5CF6] to-[#F26D5B]' : 'from-[#46C7E0] to-[#4a2d5a]'}`}>
                       {u.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
@@ -589,11 +589,11 @@ export const ClientsPage = () => {
                         {u.cliente?.nombreCompleto && u.cliente.nombreCompleto !== u.username && (
                           <span className="text-white/40 text-xs">({u.cliente.nombreCompleto})</span>
                         )}
-                        <span className={`px-2 py-0.5 rounded-full text-xs ${u.rol === 'CLIENTE' ? 'bg-[#F05984]/20 text-[#F05984]' : 'bg-purple-500/20 text-purple-400'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${u.rol === 'CLIENTE' ? 'bg-[#8A5CF6]/20 text-[#8A5CF6]' : 'bg-purple-500/20 text-purple-400'}`}>
                           {u.rol}
                         </span>
                         {managedClient?.id === u.cliente?.id && u.cliente && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F05984]/20 text-[#F05984] flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#8A5CF6]/20 text-[#8A5CF6] flex items-center gap-1">
                             <UserCog size={10} /> Gestionando
                           </span>
                         )}
@@ -608,7 +608,7 @@ export const ClientsPage = () => {
                         {u.rol === 'CLIENTE' && u.cliente && u.activo && (
                           <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                             onClick={() => handleToggleGestionar(u)}
-                            className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#F05984]/20 text-[#F05984]' : 'hover:bg-[#F05984]/20 text-white/50 hover:text-[#F05984]'}`}
+                            className={`p-1.5 rounded-lg ${managedClient?.id === u.cliente.id ? 'bg-[#8A5CF6]/20 text-[#8A5CF6]' : 'hover:bg-[#8A5CF6]/20 text-white/50 hover:text-[#8A5CF6]'}`}
                             title={managedClient?.id === u.cliente.id ? 'Dejar de Gestionar' : 'Gestionar Cliente'}>
                             {managedClient?.id === u.cliente.id ? <UserX size={16} /> : <UserCog size={16} />}
                           </motion.button>
@@ -765,7 +765,7 @@ export const ClientsPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 <Save size={18} /><span>Crear Usuario</span>
               </motion.button>
             </div>
@@ -836,7 +836,7 @@ export const ClientsPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 <Save size={18} /><span>Guardar Cambios</span>
               </motion.button>
             </div>

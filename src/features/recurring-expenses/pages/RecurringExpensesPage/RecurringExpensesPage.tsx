@@ -24,7 +24,7 @@ import { clientesService, type ApiCliente } from '../../../clients/services';
 import { categoriasService, isCategoriaGasto, type ApiCategoria } from '../../../categories/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
 
-const CHART_COLORS = ['#F05984', '#BC455F', '#6E4068', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1', '#EF4444'];
+const CHART_COLORS = ['#8A5CF6', '#F26D5B', '#46C7E0', '#2DD4BF', '#F59E0B', '#10B981', '#6366F1', '#EF4444'];
 const FREQ_LABEL: Record<Frecuencia, string> = { DIARIO: 'Diario', SEMANAL: 'Semanal', MENSUAL: 'Mensual', ANUAL: 'Anual' };
 const FREQ_ORDER: Record<Frecuencia, number> = { DIARIO: 1, SEMANAL: 2, MENSUAL: 3, ANUAL: 4 };
 const DIA_SEMANA_LABEL: Record<number, string> = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo' };
@@ -290,14 +290,14 @@ export const RecurringExpensesPage = () => {
   if (isLoading) return <PageSkeleton />;
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
       {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#BC455F]/10 rounded-full blur-3xl" />
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#F26D5B]/10 rounded-full blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <Repeat size={28} className="text-white" />
             </div>
             <div>
@@ -310,7 +310,7 @@ export const RecurringExpensesPage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nuevo Gasto</span>
@@ -321,29 +321,29 @@ export const RecurringExpensesPage = () => {
 
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Mensual</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalMonthly)}</p>
               <p className="text-white/30 text-xs mt-1">Gastos fijos mensuales</p>
             </div>
-            <div className="shrink-0 p-3 rounded-xl bg-white/10"><DollarSign size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><DollarSign size={24} className="text-[#8A5CF6]" /></div>
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Anual</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalAnnual)}</p>
               <p className="text-white/30 text-xs mt-1">{activeExpenses.length} gastos activos</p>
             </div>
-            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Calendar size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Calendar size={24} className="text-[#8A5CF6]" /></div>
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Inactivos</p>
@@ -354,7 +354,7 @@ export const RecurringExpensesPage = () => {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Promedio diario</p>
@@ -369,9 +369,9 @@ export const RecurringExpensesPage = () => {
       {/* Distribución por Categoría */}
       {pieChartData.length > 0 && (
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
             <div className="flex items-center gap-2 mb-4">
-              <PieChart size={20} className="text-[#F05984]" />
+              <PieChart size={20} className="text-[#8A5CF6]" />
               <h3 className="text-white font-semibold">Distribución por Categoría</h3>
             </div>
             <div className="h-[280px]">
@@ -387,9 +387,9 @@ export const RecurringExpensesPage = () => {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Tag size={18} className="text-[#F05984]" />
+              <Tag size={18} className="text-[#8A5CF6]" />
               Top 3 Categorías
             </h3>
             <div className="space-y-4">
@@ -417,7 +417,7 @@ export const RecurringExpensesPage = () => {
       )}
 
       {/* Filters and list */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-xl border border-white/10 shadow-lg">
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
@@ -433,36 +433,36 @@ export const RecurringExpensesPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-white/60 text-xs mb-1 block">Cliente</label>
-              <select value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los clientes</option>
-                {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombreCompleto}</option>)}
+              <select value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#08080B', color: 'white' }}>Todos los clientes</option>
+                {clientes.map(c => <option key={c.id} value={c.id} style={{ backgroundColor: '#08080B', color: 'white' }}>{c.nombreCompleto}</option>)}
               </select>
             </div>
             <div>
               <label className="text-white/60 text-xs mb-1 block">Categoría</label>
-              <select value={selectedCategoria} onChange={(e) => setSelectedCategoria(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las categorías</option>
+              <select value={selectedCategoria} onChange={(e) => setSelectedCategoria(e.target.value)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#08080B', color: 'white' }}>Todas las categorías</option>
                 {[...new Map(allCategorias.map(c => [c.id, c])).values()].map(c => (
-                  <option key={c.id} value={c.id} style={{ backgroundColor: '#1a0f14', color: 'white' }}>{c.nombre}</option>
+                  <option key={c.id} value={c.id} style={{ backgroundColor: '#08080B', color: 'white' }}>{c.nombre}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="text-white/60 text-xs mb-1 block">Frecuencia</label>
-              <select value={selectedFrecuencia} onChange={(e) => setSelectedFrecuencia(e.target.value as 'todos' | Frecuencia)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las frecuencias</option>
-                <option value="DIARIO" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Diario</option>
-                <option value="SEMANAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Semanal</option>
-                <option value="MENSUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Mensual</option>
-                <option value="ANUAL" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Anual</option>
+              <select value={selectedFrecuencia} onChange={(e) => setSelectedFrecuencia(e.target.value as 'todos' | Frecuencia)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#08080B', color: 'white' }}>Todas las frecuencias</option>
+                <option value="DIARIO" style={{ backgroundColor: '#08080B', color: 'white' }}>Diario</option>
+                <option value="SEMANAL" style={{ backgroundColor: '#08080B', color: 'white' }}>Semanal</option>
+                <option value="MENSUAL" style={{ backgroundColor: '#08080B', color: 'white' }}>Mensual</option>
+                <option value="ANUAL" style={{ backgroundColor: '#08080B', color: 'white' }}>Anual</option>
               </select>
             </div>
             <div>
               <label className="text-white/60 text-xs mb-1 block">Estado</label>
-              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todos" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                <option value="activo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activos</option>
-                <option value="inactivo" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivos</option>
+              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todos" style={{ backgroundColor: '#08080B', color: 'white' }}>Todos los estados</option>
+                <option value="activo" style={{ backgroundColor: '#08080B', color: 'white' }}>Activos</option>
+                <option value="inactivo" style={{ backgroundColor: '#08080B', color: 'white' }}>Inactivos</option>
               </select>
             </div>
           </div>
@@ -485,7 +485,7 @@ export const RecurringExpensesPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Repeat size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay gastos recurrentes</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron gastos recurrentes con los filtros actuales. Prueba a ajustar los filtros o crea un nuevo gasto recurrente.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300">
               <Plus size={20} />
               <span className="font-medium">Crear nuevo gasto</span>
             </motion.button>
@@ -514,7 +514,7 @@ export const RecurringExpensesPage = () => {
                     <motion.tr key={expense.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: index * 0.03 }} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <Repeat size={14} className="text-[#F05984]" />
+                          <Repeat size={14} className="text-[#8A5CF6]" />
                           <span className="text-white font-medium">{expense.descripcion || `Gasto #${expense.id}`}</span>
                         </div>
                       </td>
@@ -554,12 +554,12 @@ export const RecurringExpensesPage = () => {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -4, scale: 1.02 }}
-                  className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 hover:shadow-xl ${expense.activo ? 'border-white/10 hover:border-[#F05984]/50' : 'border-white/5 opacity-70'}`}
+                  className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 hover:shadow-xl ${expense.activo ? 'border-white/10 hover:border-[#8A5CF6]/50' : 'border-white/5 opacity-70'}`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-gradient-to-r from-[#F05984]/20 to-[#BC455F]/20">
-                        <Repeat size={16} className="text-[#F05984]" />
+                      <div className="p-2 rounded-xl bg-gradient-to-r from-[#8A5CF6]/20 to-[#F26D5B]/20">
+                        <Repeat size={16} className="text-[#8A5CF6]" />
                       </div>
                       <div>
                         <h3 className="text-white font-semibold">{expense.descripcion || `Gasto #${expense.id}`}</h3>
@@ -634,13 +634,13 @@ export const RecurringExpensesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
-                <input type="text" value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Netflix" />
+                <input type="text" value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="Ej: Netflix" />
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0.01" value={formData.monto} onChange={(e) => setFormData({ ...formData, monto: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" required />
+                  <input type="number" step="0.01" min="0.01" value={formData.monto} onChange={(e) => setFormData({ ...formData, monto: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="0.00" required />
                 </div>
               </div>
             </div>
@@ -657,7 +657,7 @@ export const RecurringExpensesPage = () => {
               {formData.frecuencia === 'MENSUAL' && (
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Día del mes *</label>
-                  <input type="number" min="1" max="31" value={formData.diaMes} onChange={(e) => setFormData({ ...formData, diaMes: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="1-31" required />
+                  <input type="number" min="1" max="31" value={formData.diaMes} onChange={(e) => setFormData({ ...formData, diaMes: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="1-31" required />
                 </div>
               )}
               {formData.frecuencia === 'SEMANAL' && (
@@ -679,7 +679,7 @@ export const RecurringExpensesPage = () => {
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
                 Cancelar
               </motion.button>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 Guardar Gasto
               </motion.button>
             </div>
@@ -703,14 +703,14 @@ export const RecurringExpensesPage = () => {
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
-              <input type="text" value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+              <input type="text" value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto *</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0.01" value={formData.monto} onChange={(e) => setFormData({ ...formData, monto: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+                  <input type="number" step="0.01" min="0.01" value={formData.monto} onChange={(e) => setFormData({ ...formData, monto: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" required />
                 </div>
               </div>
               <div>
@@ -731,7 +731,7 @@ export const RecurringExpensesPage = () => {
               {formData.frecuencia === 'MENSUAL' && (
                 <div>
                   <label className="text-white/60 text-sm mb-1.5 block">Día del mes *</label>
-                  <input type="number" min="1" max="31" value={formData.diaMes} onChange={(e) => setFormData({ ...formData, diaMes: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="1-31" required />
+                  <input type="number" min="1" max="31" value={formData.diaMes} onChange={(e) => setFormData({ ...formData, diaMes: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="1-31" required />
                 </div>
               )}
               {formData.frecuencia === 'SEMANAL' && (
@@ -746,7 +746,7 @@ export const RecurringExpensesPage = () => {
               </div>
             </div>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+              <input type="checkbox" checked={formData.activo} onChange={(e) => setFormData({ ...formData, activo: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5" />
               <span className="text-white text-sm">Activo</span>
             </label>
             {selectedExpense?.ultimoProcesamiento && (
@@ -756,7 +756,7 @@ export const RecurringExpensesPage = () => {
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all">
                 Cancelar
               </motion.button>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all shadow-lg">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all shadow-lg">
                 Guardar Cambios
               </motion.button>
             </div>

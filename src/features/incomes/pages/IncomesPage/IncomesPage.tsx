@@ -79,9 +79,9 @@ const TIPO_GRADIENT: Record<Tipo, string> = {
   VOLATIL: 'from-amber-500 to-orange-500',
 };
 
-const inputCls    = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all";
+const inputCls    = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all";
 const selectStyle = { backgroundColor: 'rgba(255,255,255,0.05)', color: 'white' };
-const optStyle    = { backgroundColor: '#1a0f14', color: 'white' };
+const optStyle    = { backgroundColor: '#08080B', color: 'white' };
 
 const emptyCreate = (clienteId = '') => ({
   clienteId, monto: '',
@@ -320,20 +320,20 @@ export const IncomesPage = () => {
   return (
     <motion.div
       variants={containerVariants} initial="hidden" animate="visible"
-      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}
+      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <TrendingUp size={28} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold text-white tracking-tight">Ingresos</h1>
-                <span className="bg-[#F05984]/20 text-[#F05984] text-xs px-2 py-1 rounded-full">
+                <span className="bg-[#8A5CF6]/20 text-[#8A5CF6] text-xs px-2 py-1 rounded-full">
                   {ingresos.length} registros
                 </span>
               </div>
@@ -344,7 +344,7 @@ export const IncomesPage = () => {
             <motion.button
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => { setCreateForm(emptyCreate(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nuevo Ingreso</span>
@@ -357,7 +357,7 @@ export const IncomesPage = () => {
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg"
+          className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -366,14 +366,14 @@ export const IncomesPage = () => {
               <p className="text-white/40 text-xs mt-1">{currentYear}</p>
             </div>
             <div className="shrink-0 p-3 rounded-xl bg-white/10">
-              <Calendar size={20} className="text-[#F05984]" />
+              <Calendar size={20} className="text-[#8A5CF6]" />
             </div>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -381,7 +381,7 @@ export const IncomesPage = () => {
               <p className="text-2xl font-bold text-white mt-1 break-words">{formatCurrency(totalMonthlyIncome)}</p>
               <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
                 />
               </div>
@@ -395,7 +395,7 @@ export const IncomesPage = () => {
 
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -411,7 +411,7 @@ export const IncomesPage = () => {
 
         <motion.div
           whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
+          className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
@@ -428,7 +428,7 @@ export const IncomesPage = () => {
 
       {/* Pie chart + tipo summary */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-4 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-3 text-sm">Distribución de Ingresos</h3>
           <div className="w-full h-[280px]">
             {pieChartData.length > 0 ? (
@@ -464,7 +464,7 @@ export const IncomesPage = () => {
           </div>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10 shadow-lg">
+        <div className="bg-[#101015] rounded-xl p-4 border border-white/10 shadow-lg">
           <h3 className="text-white font-semibold mb-3 text-sm">Categorías destacadas</h3>
           {tipoSummary.length > 0 ? (
             <div className="space-y-3">
@@ -507,7 +507,7 @@ export const IncomesPage = () => {
       </motion.div>
 
       {/* Search + list */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-xl border border-white/10 shadow-lg">
         <div className="flex items-center px-4 pt-4 pb-3 border-b border-white/10">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
@@ -522,7 +522,7 @@ export const IncomesPage = () => {
             <div>
               <label className="text-white/60 text-xs mb-1 block">Tipo</label>
               <select value={selectedTipo} onChange={e => setSelectedTipo(e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                 style={selectStyle}>
                 <option value="todos"   style={optStyle}>Todos los tipos</option>
                 <option value="ESTABLE" style={optStyle}>Estable</option>
@@ -532,7 +532,7 @@ export const IncomesPage = () => {
             <div>
               <label className="text-white/60 text-xs mb-1 block">Estado</label>
               <select value={selectedActivo} onChange={e => setSelectedActivo(e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                 style={selectStyle}>
                 <option value="todos"    style={optStyle}>Todos los estados</option>
                 <option value="activo"   style={optStyle}>Activo</option>
@@ -542,7 +542,7 @@ export const IncomesPage = () => {
             <div>
               <label className="text-white/60 text-xs mb-1 block">Método de recepción</label>
               <select value={selectedMetodo} onChange={e => setSelectedMetodo(e.target.value)}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm"
                 style={selectStyle}>
                 <option value="todos"         style={optStyle}>Todos los métodos</option>
                 <option value="EFECTIVO"      style={optStyle}>Efectivo</option>
@@ -669,7 +669,7 @@ export const IncomesPage = () => {
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F05984]/50 transition-all group"
+                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#8A5CF6]/50 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -823,7 +823,7 @@ export const IncomesPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium">
                 <Save size={18} /><span>Guardar Ingreso</span>
               </motion.button>
             </div>
@@ -905,7 +905,7 @@ export const IncomesPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium">
                 <Save size={18} /><span>Guardar Cambios</span>
               </motion.button>
             </div>

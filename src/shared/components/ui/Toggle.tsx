@@ -9,7 +9,7 @@ interface ToggleProps {
 
 // Envuelve @headlessui/react Switch para tener rol/teclado correctos (a diferencia de un
 // <div onClick> plano), con el mismo tamaño/estilo que los toggles inline que reemplaza.
-export const Toggle = ({ value, onChange, label, activeColor = 'bg-[#F05984]' }: ToggleProps) => (
+export const Toggle = ({ value, onChange, label, activeColor = 'bg-[#8A5CF6]' }: ToggleProps) => (
   <Switch.Group as="div" className="flex items-center gap-3">
     <Switch
       checked={value}

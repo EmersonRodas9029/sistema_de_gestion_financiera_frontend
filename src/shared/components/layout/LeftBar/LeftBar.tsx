@@ -60,23 +60,23 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
     if (items.length === 0) return null;
     return (
       <div className="mb-4">
-        <h3 className="text-xs uppercase tracking-wider text-white/50 px-3 mb-2 font-semibold">{title}</h3>
-        <div className="space-y-1">
+        <h3 className="text-[10.5px] uppercase tracking-wider text-white/30 px-2 mb-1.5 font-bold">{title}</h3>
+        <div className="space-y-0.5">
           {items.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                `flex items-center gap-2.5 px-3 py-2.5 rounded-2xl transition-all duration-200 text-[13.5px] font-semibold ${
                   isActive
-                    ? 'bg-[#F05984] text-white shadow-lg shadow-[#F05984]/20'
-                    : 'text-white/70 hover:bg-[#F05984]/20 hover:text-white'
+                    ? 'bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] text-white shadow-lg shadow-[#8A5CF6]/20'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white'
                 }`
               }
             >
               <span className="flex-shrink-0">{item.icon}</span>
-              <span className="ml-3 text-sm font-medium">{item.name}</span>
+              <span>{item.name}</span>
             </NavLink>
           ))}
         </div>
@@ -85,25 +85,25 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
   };
 
   return (
-    <aside className="h-full w-64 bg-gradient-to-b from-[#321D28] via-[#6E4068] to-[#BC455F] flex flex-col">
+    <aside className="h-full w-64 bg-[#0C0C10] border-r border-white/[0.06] flex flex-col">
       {/* Logo */}
       <NavLink
         to="/"
         onClick={onNavigate}
-        className="flex items-center justify-center gap-2.5 p-5 border-b border-white/10 hover:opacity-80 transition-opacity"
+        className="flex items-center gap-2.5 px-5 py-[22px] border-b border-white/[0.06] hover:opacity-80 transition-opacity"
       >
-        <Logo size={32} />
-        <h1 className="text-xl font-bold text-white tracking-tight">BudgEase</h1>
+        <Logo size={30} />
+        <h1 className="font-display text-[17px] font-extrabold text-white tracking-tight">BudgEase</h1>
       </NavLink>
 
       {/* Perfil de usuario */}
-      <div className="flex items-center p-4 border-b border-white/10">
-        <div className="w-10 h-10 rounded-xl bg-[#F05984] flex items-center justify-center text-white font-bold shadow-lg">
-          {userAvatar ? <img src={userAvatar} alt={userName} className="w-full h-full rounded-xl object-cover" /> : userName.charAt(0).toUpperCase()}
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-white/[0.06]">
+        <div className="w-[34px] h-[34px] rounded-2xl bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          {userAvatar ? <img src={userAvatar} alt={userName} className="w-full h-full rounded-2xl object-cover" /> : userName.charAt(0).toUpperCase()}
         </div>
-        <div className="ml-3">
-          <p className="text-sm font-semibold text-white">{userName}</p>
-          <p className="text-xs text-white/60 capitalize">{userRole}</p>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-white truncate">{userName}</p>
+          <p className="text-[11.5px] text-white/40 capitalize">{userRole}</p>
         </div>
       </div>
 
@@ -134,18 +134,18 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
       </nav>
 
       {/* Botones adicionales */}
-      <div className="p-3 border-t border-white/10 space-y-1">
+      <div className="p-3 border-t border-white/[0.06] space-y-0.5">
         <button
           onClick={() => {
             onNavigate?.();
             navigate('/notifications');
           }}
-          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-[#F05984]/20 hover:text-white"
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-2xl transition-all duration-200 text-[13.5px] font-semibold text-white/60 hover:bg-white/5 hover:text-white"
         >
-          <Bell size={20} />
-          <span className="ml-3 text-sm font-medium">Notificaciones</span>
+          <Bell size={18} />
+          <span>Notificaciones</span>
           {unreadNotifications > 0 && (
-            <span className="ml-auto bg-[#F05984] text-white text-xs px-1.5 py-0.5 rounded-full">
+            <span className="ml-auto bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] text-white text-xs px-1.5 py-0.5 rounded-full">
               {unreadNotifications}
             </span>
           )}
@@ -156,10 +156,10 @@ export const LeftBar = ({ userRole, userName = 'Usuario', userAvatar, onNavigate
             onNavigate?.();
             navigate('/login');
           }}
-          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-white/70 hover:bg-red-500/20 hover:text-red-300"
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-2xl transition-all duration-200 text-[13.5px] font-semibold text-white/60 hover:bg-red-500/10 hover:text-red-300"
         >
-          <LogOut size={20} />
-          <span className="ml-3 text-sm font-medium">Cerrar sesión</span>
+          <LogOut size={18} />
+          <span>Cerrar sesión</span>
         </button>
       </div>
     </aside>

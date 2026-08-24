@@ -1,6 +1,6 @@
 export const tooltipStyle = {
-  backgroundColor: '#1a0f14',
-  border: '1px solid #F05984',
+  backgroundColor: '#08080B',
+  border: '1px solid #8A5CF6',
   borderRadius: '8px',
 };
 

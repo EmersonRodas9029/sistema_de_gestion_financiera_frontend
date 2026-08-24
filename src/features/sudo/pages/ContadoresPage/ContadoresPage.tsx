@@ -8,7 +8,7 @@ import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { Select } from '../../../../shared/components/ui/Select';
 import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 
-const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all";
+const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all";
 
 export const ContadoresPage = () => {
   const [usuarios, setUsuarios] = useState<ApiUsuario[]>([]);
@@ -116,14 +116,14 @@ export const ContadoresPage = () => {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible"
-      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
 
       <motion.div variants={itemVariants}
-        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+        className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <ShieldCheck size={28} className="text-white" />
             </div>
             <div>
@@ -133,7 +133,7 @@ export const ContadoresPage = () => {
           </div>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300 self-start lg:self-auto">
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300 self-start lg:self-auto">
             <UserPlus size={20} />
             <span className="hidden sm:inline font-medium">Nuevo Contador</span>
           </motion.button>
@@ -146,7 +146,7 @@ export const ContadoresPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={20} />
             <input type="text" placeholder="Buscar por username o email..." value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#F05984] transition-colors" />
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#8A5CF6] transition-colors" />
           </div>
           <div className="w-full lg:w-48">
             <Select value={selectedActivo} onChange={setSelectedActivo}
@@ -179,7 +179,7 @@ export const ContadoresPage = () => {
                   className="bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border border-white/10 hover:border-purple-400/50 transition-all hover:shadow-xl">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#6E4068] to-[#4a2d5a] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-[#46C7E0] to-[#4a2d5a] flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         {(c.username ?? '?').charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -211,7 +211,7 @@ export const ContadoresPage = () => {
                       <span className="text-white font-bold text-xs">{c.usados}/{limite}</span>
                     </div>
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <motion.div className="h-full rounded-full bg-gradient-to-r from-[#F05984] to-[#BC455F]"
+                      <motion.div className="h-full rounded-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]"
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: 'easeOut' }} />
                     </div>
                     <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-white/10">
@@ -275,7 +275,7 @@ export const ContadoresPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 <Save size={18} /><span>Crear Contador</span>
               </motion.button>
             </div>
@@ -322,7 +322,7 @@ export const ContadoresPage = () => {
                 Cancelar
               </motion.button>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 <Save size={18} /><span>Guardar Cambios</span>
               </motion.button>
             </div>

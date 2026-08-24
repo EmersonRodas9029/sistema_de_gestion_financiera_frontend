@@ -18,9 +18,8 @@ export const Logo = ({ size = 40, className = '' }: LogoProps) => {
   >
     <defs>
       <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#F05984" />
-        <stop offset="55%" stopColor="#BC455F" />
-        <stop offset="100%" stopColor="#6E4068" />
+        <stop offset="0%" stopColor="#8A5CF6" />
+        <stop offset="100%" stopColor="#F26D5B" />
       </linearGradient>
     </defs>
     <rect width="60" height="60" rx="16" fill={`url(#${gradientId})`} />

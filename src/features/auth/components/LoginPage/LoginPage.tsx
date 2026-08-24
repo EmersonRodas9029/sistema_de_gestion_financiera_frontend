@@ -22,13 +22,13 @@ export const LoginPage = () => {
         <div 
           className="absolute inset-0"
           style={{ 
-            background: 'linear-gradient(135deg, #321D28 0%, #6E4068 50%, #BC455F 100%)'
+            background: 'linear-gradient(135deg, #8A5CF6 0%, #46C7E0 50%, #F26D5B 100%)'
           }}
         >
           {/* Patrón de fondo */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
-            <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#F05984] rounded-full mix-blend-overlay filter blur-3xl"></div>
+            <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#8A5CF6] rounded-full mix-blend-overlay filter blur-3xl"></div>
           </div>
         </div>
 
@@ -113,22 +113,22 @@ export const LoginPage = () => {
               {/* Features grid */}
               <div className="grid grid-cols-2 gap-4 py-8">
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <Target className="w-8 h-8 text-[#F05984] mb-2" />
+                  <Target className="w-8 h-8 text-[#8A5CF6] mb-2" />
                   <h3 className="font-semibold text-gray-900">Metas</h3>
                   <p className="text-sm text-gray-600">Alcanza tus objetivos</p>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <CreditCard className="w-8 h-8 text-[#F05984] mb-2" />
+                  <CreditCard className="w-8 h-8 text-[#8A5CF6] mb-2" />
                   <h3 className="font-semibold text-gray-900">Gastos</h3>
                   <p className="text-sm text-gray-600">Control total</p>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <PieChart className="w-8 h-8 text-[#F05984] mb-2" />
+                  <PieChart className="w-8 h-8 text-[#8A5CF6] mb-2" />
                   <h3 className="font-semibold text-gray-900">Reportes</h3>
                   <p className="text-sm text-gray-600">Análisis detallado</p>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm">
-                  <Shield className="w-8 h-8 text-[#F05984] mb-2" />
+                  <Shield className="w-8 h-8 text-[#8A5CF6] mb-2" />
                   <h3 className="font-semibold text-gray-900">Seguro</h3>
                   <p className="text-sm text-gray-600">Datos protegidos</p>
                 </div>
@@ -154,7 +154,7 @@ export const LoginPage = () => {
               <button
                 onClick={() => setShowLogin(true)}
                 className="w-full py-4 px-6 rounded-xl text-white font-semibold flex items-center justify-center space-x-2 transition-all hover:shadow-lg transform hover:scale-[1.02]"
-                style={{ background: 'linear-gradient(135deg, #321D28 0%, #BC455F 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #8A5CF6 0%, #F26D5B 100%)' }}
               >
                 <span>Iniciar Sesión</span>
                 <ArrowRight size={20} />

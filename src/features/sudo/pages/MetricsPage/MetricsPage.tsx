@@ -61,8 +61,8 @@ export const MetricsPage = () => {
     }));
 
   const usuarioStats = [
-    { label: 'Total Usuarios', value: totalUsuarios,   icon: <Users size={24} className="text-[#F05984]" />, bg: 'from-[#321D28] to-[#6E4068]' },
-    { label: 'Clientes',       value: totalClientes,   icon: <User size={24} className="text-[#F05984]" />,   bg: 'from-[#321D28] to-[#4a2040]' },
+    { label: 'Total Usuarios', value: totalUsuarios,   icon: <Users size={24} className="text-[#8A5CF6]" />, bg: 'from-[#8A5CF6] to-[#46C7E0]' },
+    { label: 'Clientes',       value: totalClientes,   icon: <User size={24} className="text-[#8A5CF6]" />,   bg: 'from-[#8A5CF6] to-[#4a2040]' },
     { label: 'Contadores',     value: totalContadores, icon: <Shield size={24} className="text-purple-400" />, bg: 'from-[#1e1b2e] to-[#2d2a3d]' },
     { label: 'Sudo',           value: totalSudos,      icon: <ShieldCheck size={24} className="text-amber-400" />, bg: 'from-[#2e2410] to-[#3d3320]' },
     { label: 'Inactivos',      value: totalInactivos,  icon: <XCircle size={24} className="text-gray-400" />, bg: 'from-[#1e293b] to-[#334155]' },
@@ -71,20 +71,20 @@ export const MetricsPage = () => {
   const financeStats = [
     { label: 'Ingresos totales', value: formatCurrency(totalIngresos), icon: <TrendingUp size={24} className="text-green-400" />, bg: 'from-[#0f2e1c] to-[#1a3d2a]' },
     { label: 'Gastos totales',   value: formatCurrency(totalGastos),   icon: <TrendingDown size={24} className="text-red-400" />, bg: 'from-[#2e0f0f] to-[#3d1a1a]' },
-    { label: 'Balance',          value: formatCurrency(balance),       icon: <Wallet size={24} className={balance >= 0 ? 'text-green-400' : 'text-red-400'} />, bg: 'from-[#321D28] to-[#4a2040]' },
-    { label: 'Presupuestos activos', value: presupuestosActivos, icon: <Wallet size={24} className="text-[#F05984]" />, bg: 'from-[#1e1b2e] to-[#2d2a3d]' },
+    { label: 'Balance',          value: formatCurrency(balance),       icon: <Wallet size={24} className={balance >= 0 ? 'text-green-400' : 'text-red-400'} />, bg: 'from-[#8A5CF6] to-[#4a2040]' },
+    { label: 'Presupuestos activos', value: presupuestosActivos, icon: <Wallet size={24} className="text-[#8A5CF6]" />, bg: 'from-[#1e1b2e] to-[#2d2a3d]' },
     { label: 'Metas activas / completadas', value: `${metasActivas} / ${metasCompletadas}`, icon: <Target size={24} className="text-amber-400" />, bg: 'from-[#2e2410] to-[#3d3320]' },
   ];
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible"
-      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+      className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
 
       <motion.div variants={itemVariants}
-        className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+        className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+          <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
             <BarChart3 size={28} className="text-white" />
           </div>
           <div>
@@ -99,7 +99,7 @@ export const MetricsPage = () => {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {usuarioStats.map(s => (
             <motion.div key={s.label} whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
-              className={`bg-gradient-to-br ${s.bg} rounded-xl p-5 border border-white/10 shadow-lg`}>
+              className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/50 text-sm font-medium">{s.label}</p>
@@ -117,7 +117,7 @@ export const MetricsPage = () => {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {financeStats.map(s => (
             <motion.div key={s.label} whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
-              className={`bg-gradient-to-br ${s.bg} rounded-xl p-5 border border-white/10 shadow-lg`}>
+              className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/50 text-sm font-medium">{s.label}</p>
@@ -131,7 +131,7 @@ export const MetricsPage = () => {
       </motion.div>
 
       <motion.div variants={itemVariants}
-        className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg p-5">
+        className="bg-[#101015] rounded-xl border border-white/10 shadow-lg p-5">
         <p className="text-white font-semibold text-sm mb-4">Uso por contador (usuarios creados)</p>
         {contadores.length === 0 ? (
           <p className="text-white/40 text-sm">No hay contadores registrados.</p>
@@ -147,7 +147,7 @@ export const MetricsPage = () => {
                     <span className="text-white font-bold text-sm">{c.usados}/{limite}</span>
                   </div>
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div className="h-full rounded-full bg-gradient-to-r from-[#F05984] to-[#BC455F]"
+                    <motion.div className="h-full rounded-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]"
                       initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: 'easeOut' }} />
                   </div>
                 </div>

@@ -249,13 +249,13 @@ export const GoalsPage = () => {
   if (isLoading) return <PageSkeleton />;
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#1a0f14' }}>
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 min-h-screen p-6" style={{ backgroundColor: '#08080B' }}>
       {/* Header */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden bg-gradient-to-r from-[#321D28] via-[#4a2d40] to-[#321D28] rounded-2xl p-6 border border-white/10 shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05984]/10 rounded-full blur-3xl" />
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-[#101015] border border-white/[0.07] rounded-[20px] p-6">
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[#F26D5B]/10 rounded-full blur-[60px]" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#F05984] to-[#BC455F] rounded-xl shadow-lg">
+            <div className="p-3 bg-gradient-to-br from-[#8A5CF6] to-[#F26D5B] rounded-xl shadow-lg">
               <Target size={28} className="text-white" />
             </div>
             <div>
@@ -268,7 +268,7 @@ export const GoalsPage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300"
             >
               <Plus size={20} />
               <span className="hidden sm:inline font-medium">Nueva Meta</span>
@@ -279,21 +279,21 @@ export const GoalsPage = () => {
 
       {/* Summary Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#321D28] to-[#6E4068] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Progreso General</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{overallProgress.toFixed(0)}%</p>
               <p className="text-white/30 text-xs mt-1">{formatCurrency(totalActual)} ahorrados</p>
             </div>
-            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Target size={24} className="text-[#F05984]" /></div>
+            <div className="shrink-0 p-3 rounded-xl bg-white/10"><Target size={24} className="text-[#8A5CF6]" /></div>
           </div>
           <div className="w-full h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${overallProgress}%` }} transition={{ duration: 1 }} className="h-full bg-gradient-to-r from-[#F05984] to-[#BC455F] rounded-full" />
+            <motion.div initial={{ width: 0 }} animate={{ width: `${overallProgress}%` }} transition={{ duration: 1 }} className="h-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] rounded-full" />
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e293b] to-[#334155] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Total Ahorrado</p>
@@ -304,7 +304,7 @@ export const GoalsPage = () => {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1e1b2e] to-[#2d2a3d] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Metas Activas</p>
@@ -314,7 +314,7 @@ export const GoalsPage = () => {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-gradient-to-br from-[#1a2e2a] to-[#2d403a] rounded-xl p-5 border border-white/10 shadow-lg">
+        <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }} className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
               <p className="text-white/50 text-sm font-medium">Completadas</p>
@@ -328,9 +328,9 @@ export const GoalsPage = () => {
       {/* Distribución por Prioridad y Top Metas */}
       {pieChartData.length > 0 && (
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
             <div className="flex items-center gap-2 mb-4">
-              <PieChartIcon size={20} className="text-[#F05984]" />
+              <PieChartIcon size={20} className="text-[#8A5CF6]" />
               <h3 className="text-white font-semibold">Distribución por Prioridad</h3>
             </div>
             <div className="h-[260px]">
@@ -346,9 +346,9 @@ export const GoalsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10 shadow-lg">
+          <div className="bg-[#101015] rounded-xl p-5 border border-white/10 shadow-lg">
             <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp size={18} className="text-[#F05984]" />
+              <TrendingUp size={18} className="text-[#8A5CF6]" />
               Top Metas por Progreso
             </h3>
             <div className="space-y-4">
@@ -362,7 +362,7 @@ export const GoalsPage = () => {
                     </div>
                   </div>
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${progressOf(goal)}%` }} transition={{ duration: 0.8 }} className="h-full rounded-full bg-gradient-to-r from-[#F05984] to-[#BC455F]" />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${progressOf(goal)}%` }} transition={{ duration: 0.8 }} className="h-full rounded-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]" />
                   </div>
                 </motion.div>
               ))}
@@ -372,7 +372,7 @@ export const GoalsPage = () => {
       )}
 
       {/* Filters and list */}
-      <motion.div variants={itemVariants} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+      <motion.div variants={itemVariants} className="bg-[#101015] rounded-xl border border-white/10 shadow-lg">
         <div className="flex items-center px-4 pt-4">
           <ViewModeToggle viewMode={viewMode} onToggle={setViewMode} />
         </div>
@@ -388,20 +388,20 @@ export const GoalsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-white/60 text-xs mb-1 block">Estado</label>
-              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todos los estados</option>
-                <option value="activa" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Activas</option>
-                <option value="completada" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Completadas</option>
-                <option value="inactiva" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Inactivas</option>
+              <select value={selectedEstado} onChange={(e) => setSelectedEstado(e.target.value as Estado)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#08080B', color: 'white' }}>Todos los estados</option>
+                <option value="activa" style={{ backgroundColor: '#08080B', color: 'white' }}>Activas</option>
+                <option value="completada" style={{ backgroundColor: '#08080B', color: 'white' }}>Completadas</option>
+                <option value="inactiva" style={{ backgroundColor: '#08080B', color: 'white' }}>Inactivas</option>
               </select>
             </div>
             <div>
               <label className="text-white/60 text-xs mb-1 block">Prioridad</label>
-              <select value={selectedPrioridad} onChange={(e) => setSelectedPrioridad(e.target.value as 'todas' | Prioridad)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
-                <option value="todas" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Todas las prioridades</option>
-                <option value="ALTA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Alta</option>
-                <option value="MEDIA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Media</option>
-                <option value="BAJA" style={{ backgroundColor: '#1a0f14', color: 'white' }}>Baja</option>
+              <select value={selectedPrioridad} onChange={(e) => setSelectedPrioridad(e.target.value as 'todas' | Prioridad)} className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] text-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white' }}>
+                <option value="todas" style={{ backgroundColor: '#08080B', color: 'white' }}>Todas las prioridades</option>
+                <option value="ALTA" style={{ backgroundColor: '#08080B', color: 'white' }}>Alta</option>
+                <option value="MEDIA" style={{ backgroundColor: '#08080B', color: 'white' }}>Media</option>
+                <option value="BAJA" style={{ backgroundColor: '#08080B', color: 'white' }}>Baja</option>
               </select>
             </div>
           </div>
@@ -425,7 +425,7 @@ export const GoalsPage = () => {
             <div className="p-4 bg-white/10 rounded-full mb-4"><Target size={48} className="text-white/30" /></div>
             <h3 className="text-white font-semibold text-lg mb-2">No hay metas financieras</h3>
             <p className="text-white/40 text-sm text-center max-w-md">No se encontraron metas con los filtros actuales. Prueba a ajustar los filtros o crea una nueva meta.</p>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-xl hover:shadow-lg hover:shadow-[#F05984]/25 transition-all duration-300">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => { setFormData(emptyForm(isClientRole ? ownClienteId : '')); setShowCreateModal(true); }} className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-xl hover:shadow-lg hover:shadow-[#8A5CF6]/25 transition-all duration-300">
               <Plus size={20} />
               <span className="font-medium">Crear nueva meta</span>
             </motion.button>
@@ -454,7 +454,7 @@ export const GoalsPage = () => {
                     <motion.tr key={goal.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: index * 0.03 }} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <Target size={14} className="text-[#F05984]" />
+                          <Target size={14} className="text-[#8A5CF6]" />
                           <span className="text-white font-medium">{goal.nombre}</span>
                         </div>
                       </td>
@@ -463,7 +463,7 @@ export const GoalsPage = () => {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 w-32">
                           <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-gradient-to-r from-[#F05984] to-[#BC455F]" style={{ width: `${progressOf(goal)}%` }} />
+                            <div className="h-full rounded-full bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]" style={{ width: `${progressOf(goal)}%` }} />
                           </div>
                           <span className="text-white/60 text-xs shrink-0">{progressOf(goal).toFixed(0)}%</span>
                         </div>
@@ -506,12 +506,12 @@ export const GoalsPage = () => {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4, scale: 1.02 }}
-                    className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 ${isAtRisk ? 'border-red-500/50' : estado === 'completada' ? 'border-blue-500/50' : 'border-white/10 hover:border-[#F05984]/50'}`}
+                    className={`relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0 rounded-xl p-4 border transition-all duration-300 ${isAtRisk ? 'border-red-500/50' : estado === 'completada' ? 'border-blue-500/50' : 'border-white/10 hover:border-[#8A5CF6]/50'}`}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-r from-[#F05984]/20 to-[#BC455F]/20">
-                          <Target size={16} className="text-[#F05984]" />
+                        <div className="p-2 rounded-xl bg-gradient-to-r from-[#8A5CF6]/20 to-[#F26D5B]/20">
+                          <Target size={16} className="text-[#8A5CF6]" />
                         </div>
                         <div>
                           <h3 className="text-white font-semibold">{goal.nombre}</h3>
@@ -527,7 +527,7 @@ export const GoalsPage = () => {
                         <span className={`font-bold ${progress === 100 ? 'text-green-400' : isAtRisk ? 'text-red-400' : 'text-white'}`}>{progress.toFixed(0)}%</span>
                       </div>
                       <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }} className={`h-full rounded-full ${progress === 100 ? 'bg-green-500' : isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#F05984] to-[#BC455F]'}`} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }} className={`h-full rounded-full ${progress === 100 ? 'bg-green-500' : isAtRisk ? 'bg-red-500' : 'bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B]'}`} />
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-white/50">Actual:</span>
@@ -587,7 +587,7 @@ export const GoalsPage = () => {
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Nombre de la meta *</label>
-                <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Ej: Fondo de emergencia" required />
+                <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="Ej: Fondo de emergencia" required />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -595,14 +595,14 @@ export const GoalsPage = () => {
                 <label className="text-white/60 text-sm mb-1.5 block">Monto objetivo *</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0.01" value={formData.montoObjetivo} onChange={(e) => setFormData({ ...formData, montoObjetivo: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" required />
+                  <input type="number" step="0.01" min="0.01" value={formData.montoObjetivo} onChange={(e) => setFormData({ ...formData, montoObjetivo: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="0.00" required />
                 </div>
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto actual</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0" value={formData.montoActual} onChange={(e) => setFormData({ ...formData, montoActual: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="0.00" />
+                  <input type="number" step="0.01" min="0" value={formData.montoActual} onChange={(e) => setFormData({ ...formData, montoActual: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="0.00" />
                 </div>
               </div>
             </div>
@@ -622,17 +622,17 @@ export const GoalsPage = () => {
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
-              <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" placeholder="Descripción opcional..." />
+              <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" placeholder="Descripción opcional..." />
             </div>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={formData.activa} onChange={(e) => setFormData({ ...formData, activa: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+              <input type="checkbox" checked={formData.activa} onChange={(e) => setFormData({ ...formData, activa: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5" />
               <span className="text-white text-sm">Activa</span>
             </label>
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
                 Cancelar
               </motion.button>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-5 py-2.5 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 Guardar Meta
               </motion.button>
             </div>
@@ -650,21 +650,21 @@ export const GoalsPage = () => {
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Nombre</label>
-              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+              <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" required />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto objetivo</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0.01" value={formData.montoObjetivo} onChange={(e) => setFormData({ ...formData, montoObjetivo: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" required />
+                  <input type="number" step="0.01" min="0.01" value={formData.montoObjetivo} onChange={(e) => setFormData({ ...formData, montoObjetivo: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" required />
                 </div>
               </div>
               <div>
                 <label className="text-white/60 text-sm mb-1.5 block">Monto actual</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-                  <input type="number" step="0.01" min="0" value={formData.montoActual} onChange={(e) => setFormData({ ...formData, montoActual: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+                  <input type="number" step="0.01" min="0" value={formData.montoActual} onChange={(e) => setFormData({ ...formData, montoActual: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" />
                 </div>
               </div>
             </div>
@@ -684,15 +684,15 @@ export const GoalsPage = () => {
             </div>
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Descripción</label>
-              <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#F05984] transition-all" />
+              <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#8A5CF6] transition-all" />
             </div>
             <div className="flex items-center gap-6">
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={formData.activa} onChange={(e) => setFormData({ ...formData, activa: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+                <input type="checkbox" checked={formData.activa} onChange={(e) => setFormData({ ...formData, activa: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5" />
                 <span className="text-white text-sm">Activa</span>
               </label>
               <label className="flex items-center gap-2">
-                <input type="checkbox" checked={formData.completada} onChange={(e) => setFormData({ ...formData, completada: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#F05984] focus:ring-[#F05984] bg-white/5" />
+                <input type="checkbox" checked={formData.completada} onChange={(e) => setFormData({ ...formData, completada: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-[#8A5CF6] focus:ring-[#8A5CF6] bg-white/5" />
                 <span className="text-white text-sm">Completada</span>
               </label>
             </div>
@@ -700,7 +700,7 @@ export const GoalsPage = () => {
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all font-medium">
                 Cancelar
               </motion.button>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-4 py-2 bg-gradient-to-r from-[#F05984] to-[#BC455F] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-4 py-2 bg-gradient-to-r from-[#8A5CF6] to-[#F26D5B] text-white rounded-lg hover:opacity-90 transition-all font-medium shadow-lg">
                 Guardar Cambios
               </motion.button>
             </div>
