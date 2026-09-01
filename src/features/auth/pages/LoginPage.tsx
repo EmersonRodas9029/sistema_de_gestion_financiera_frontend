@@ -29,11 +29,12 @@ export const LoginPage = () => {
       localStorage.setItem('userId', String(userId));
       localStorage.setItem('authToken', token);
 
-      if (rol === 'CLIENTE' && email) {
-        // Único enlace usuario -> cliente es el email; se resuelve una vez aquí para
-        // que todas las páginas tengan clienteId disponible sin depender de visitar Configuración.
+      if (rol === 'CLIENTE') {
+        // Se resuelve una vez aquí para que todas las páginas tengan clienteId disponible
+        // sin depender de visitar Configuración. Para un CLIENTE, GET /clientes ya devuelve
+        // solo su propio registro, así que si no hay match por email caemos al primero.
         const clientes = await clientesService.getAll().catch(() => []);
-        const cliente = clientes.find(c => c.email?.toLowerCase() === email.toLowerCase());
+        const cliente = clientes.find(c => c.email?.toLowerCase() === email?.toLowerCase()) ?? clientes[0];
         if (cliente?.id != null) localStorage.setItem('clienteId', String(cliente.id));
       }
 
