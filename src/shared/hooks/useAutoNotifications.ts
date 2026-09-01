@@ -129,7 +129,9 @@ export async function generarNotificacionesAutomaticas(clienteId: number): Promi
       return sum + (g.monto ?? 0);
     }, 0);
     const limite = p.montoPresupuestado ?? 0;
-    if (gastado >= limite) {
+    // "Excedido" solo cuando se pasa del límite; gastado === limite es 100% consumido, no excedido
+    // (antes disparaba "Has excedido..." con gastado igual al presupuesto, lo cual es incorrecto).
+    if (gastado > limite) {
       tareas.push(crear(
         'PRESUPUESTO_EXCEDIDO',
         'Presupuesto excedido',

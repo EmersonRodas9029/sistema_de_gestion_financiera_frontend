@@ -84,20 +84,26 @@ export const getStatusIcon = (status: string) => {
   }
 };
 
+// ponytail: mismo bug que formatDate arriba — "YYYY-MM-DD" pasado por `new Date(...)` se corre un
+// día en zonas horarias detrás de UTC (p. ej. un registro del día 1 cae en el mes anterior). Año y
+// mes se comparan por string; solo "este-semana" necesita un Date real, y se fuerza a mediodía local.
+export const isSameMonth = (date: string | undefined, year: number, month1to12: number): boolean =>
+  !!date && date.slice(0, 7) === `${year}-${String(month1to12).padStart(2, '0')}`;
+
 export const filterByPeriod = (date: string, period: string): boolean => {
   if (period === 'todos') return true;
-  const d = new Date(date);
   const today = new Date();
   const yr = today.getFullYear();
-  const mo = today.getMonth();
+  const mo = today.getMonth() + 1;
   switch (period) {
-    case 'este-mes':    return d.getMonth() === mo && d.getFullYear() === yr;
+    case 'este-mes':    return isSameMonth(date, yr, mo);
     case 'este-semana': {
-      const start = new Date(today); start.setDate(today.getDate() - today.getDay());
-      const end   = new Date(today); end.setDate(today.getDate() + (6 - today.getDay()));
+      const d = new Date(`${date}T12:00:00`);
+      const start = new Date(today); start.setHours(12, 0, 0, 0); start.setDate(today.getDate() - today.getDay());
+      const end   = new Date(today); end.setHours(12, 0, 0, 0); end.setDate(today.getDate() + (6 - today.getDay()));
       return d >= start && d <= end;
     }
-    case 'este-ano': return d.getFullYear() === yr;
+    case 'este-ano': return date.slice(0, 4) === String(yr);
     default:         return true;
   }
 };

@@ -16,7 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, filterByPeriod, isSameMonth, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { ingresosService, type ApiIngreso } from '../../services';
 import { clientesService } from '../../../clients/services';
@@ -168,13 +168,13 @@ export const IncomesPage = () => {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  const yearlyIngresos = ingresos.filter(i => new Date(i.fecha).getFullYear() === currentYear);
+  // Por string ("YYYY-MM-DD"), no `new Date(...)`: ese parseo cae en UTC y corre un ingreso del día 1
+  // al mes/año anterior en zonas horarias detrás de UTC (misma familia de bug que formatDate/isSameMonth
+  // en shared/utils) — desalineaba "Este mes" aquí con lo que muestran Inicio y Análisis.
+  const yearlyIngresos = ingresos.filter(i => i.fecha?.slice(0, 4) === String(currentYear));
   const totalYearlyIncome = yearlyIngresos.reduce((s, i) => s + i.monto, 0);
 
-  const monthlyIngresos = ingresos.filter(i => {
-    const d = new Date(i.fecha);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
+  const monthlyIngresos = ingresos.filter(i => isSameMonth(i.fecha, currentYear, currentMonth + 1));
   const totalMonthlyIncome = monthlyIngresos.reduce((s, i) => s + i.monto, 0);
 
   const recurrentesIngresos = ingresos.filter(i => i.esRecurrente);
