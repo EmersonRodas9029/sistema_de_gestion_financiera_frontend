@@ -8,9 +8,9 @@ import {
 import { containerVariants, itemVariants, notifyConnectionError } from '../../../../shared/utils';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
-import { gastosService } from '../../../expenses/services';
-import { ingresosService } from '../../../incomes/services';
-import { categoriasService } from '../../../categories/services';
+import { gastosService, type ApiGasto } from '../../../expenses/services';
+import { ingresosService, type ApiIngreso } from '../../../incomes/services';
+import { categoriasService, type ApiCategoria } from '../../../categories/services';
 import {
   TrendingUp,
   TrendingDown,
@@ -273,8 +273,12 @@ export const ChartsPage = () => {
 
   const [monthlyData, setMonthlyData] = useState<ChartData[]>([]);
   const [quarterlyData, setQuarterlyData] = useState<QuarterData[]>([]);
-  const [incomeCategories, setIncomeCategories] = useState<CategoryData[]>([]);
-  const [expenseCategories, setExpenseCategories] = useState<CategoryData[]>([]);
+  // Gastos/ingresos crudos (con fecha) + categorías: se guardan sin agregar para poder recalcular
+  // "por categoría" y los totales de cabecera según el período seleccionado (ver getFilteredData),
+  // en vez de mostrar siempre el histórico completo sin importar el selector de período.
+  const [gastosRaw, setGastosRaw] = useState<ApiGasto[]>([]);
+  const [ingresosRaw, setIngresosRaw] = useState<ApiIngreso[]>([]);
+  const [catById, setCatById] = useState<Map<number | undefined, ApiCategoria>>(new Map());
 
   const [clienteId] = useState(() => Number(getCurrentClientSession().ownClienteId || 0));
 
@@ -309,21 +313,9 @@ export const ChartsPage = () => {
         return { quarter: `Q${Math.floor(lastMonthDate.getMonth() / 3) + 1} ${lastMonthDate.getFullYear()}`, income, expense, savings: income - expense };
       });
       setQuarterlyData(quarters);
-
-      const expenseTotals = new Map<number, number>();
-      gastos.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
-      setExpenseCategories([...expenseTotals.entries()]
-        .map(([catId, value]) => {
-          const cat = catById.get(catId);
-          return { name: cat?.nombre ?? 'Sin categoría', value, color: cat?.color ?? '#6b7280', icon: iconFor(cat?.icono) };
-        })
-        .sort((a, b) => b.value - a.value));
-
-      const incomeTotals = new Map<string, number>();
-      ingresos.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotals.set(key, (incomeTotals.get(key) ?? 0) + (i.monto ?? 0)); });
-      setIncomeCategories([...incomeTotals.entries()]
-        .map(([name, value], idx) => ({ name, value, color: INCOME_PALETTE[idx % INCOME_PALETTE.length], icon: <Wallet size={14} /> }))
-        .sort((a, b) => b.value - a.value));
+      setGastosRaw(gastos);
+      setIngresosRaw(ingresos);
+      setCatById(catById);
     } catch (e) {
       console.error('Error cargando datos de gráficos:', e);
       notifyConnectionError();
@@ -344,9 +336,12 @@ export const ChartsPage = () => {
 
   const getFilteredData = () => {
     let filtered = [...monthlyData];
+    if (selectedPeriod === '1m') filtered = filtered.slice(-1);
     if (selectedPeriod === '3m') filtered = filtered.slice(-3);
     if (selectedPeriod === '6m') filtered = filtered.slice(-6);
     if (selectedPeriod === '1y') filtered = filtered.slice(-12);
+    // ponytail: '2y' se queda con los 12 meses cargados (monthlyData solo trae un año hacia atrás);
+    // para 2 años reales habría que ampliar el fetch en fetchChartData, no solo el filtro.
     if (selectedPeriod === 'custom') {
       const start = dateRange.start.slice(0, 7);
       const end = dateRange.end.slice(0, 7);
@@ -356,8 +351,30 @@ export const ChartsPage = () => {
   };
 
   const filteredData = getFilteredData();
-  const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.value, 0);
-  const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.value, 0);
+
+  // Totales de cabecera y "por categoría" recalculados sobre el mismo período que el selector
+  // (antes se mostraba siempre el histórico completo sin importar qué período eligiera el usuario).
+  const filteredKeys = new Set(filteredData.map(d => d.key));
+  const periodGastos = gastosRaw.filter(g => filteredKeys.has(g.fecha?.slice(0, 7) ?? ''));
+  const periodIngresos = ingresosRaw.filter(i => filteredKeys.has(i.fecha?.slice(0, 7) ?? ''));
+
+  const expenseTotalsPeriodo = new Map<number, number>();
+  periodGastos.forEach(g => { if (g.categoriaId != null) expenseTotalsPeriodo.set(g.categoriaId, (expenseTotalsPeriodo.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
+  const expenseCategories: CategoryData[] = [...expenseTotalsPeriodo.entries()]
+    .map(([catId, value]) => {
+      const cat = catById.get(catId);
+      return { name: cat?.nombre ?? 'Sin categoría', value, color: cat?.color ?? '#6b7280', icon: iconFor(cat?.icono) };
+    })
+    .sort((a, b) => b.value - a.value);
+
+  const incomeTotalsPeriodo = new Map<string, number>();
+  periodIngresos.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotalsPeriodo.set(key, (incomeTotalsPeriodo.get(key) ?? 0) + (i.monto ?? 0)); });
+  const incomeCategories: CategoryData[] = [...incomeTotalsPeriodo.entries()]
+    .map(([name, value], idx) => ({ name, value, color: INCOME_PALETTE[idx % INCOME_PALETTE.length], icon: <Wallet size={14} /> }))
+    .sort((a, b) => b.value - a.value);
+
+  const totalIncome = sumBy(periodIngresos.map(i => i.monto ?? 0));
+  const totalExpense = sumBy(periodGastos.map(g => g.monto ?? 0));
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
 
   const topExpenseCategories = [...expenseCategories].sort((a, b) => b.value - a.value).slice(0, 5);
@@ -652,7 +669,8 @@ export const ChartsPage = () => {
                       <option value="3m">Últimos 3 meses</option>
                       <option value="6m">Últimos 6 meses</option>
                       <option value="1y">Último año</option>
-                      <option value="2y">Últimos 2 años</option>
+                      {/* Cubre lo mismo que "1y": solo se cargan 12 meses de historial (ver fetchChartData) */}
+                      <option value="2y">Todo el historial (12 meses)</option>
                     </select>
                   </div>
 

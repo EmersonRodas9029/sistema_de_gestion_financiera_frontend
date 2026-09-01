@@ -33,7 +33,7 @@ import {
   FileText
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
+import { formatCurrency, formatDate, containerVariants, itemVariants, getStatusColor, getStatusIcon, getPaymentMethodLabel, filterByPeriod, isSameMonth, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences';
 import { PageSkeleton } from '../../../../shared/components/ui/PageSkeleton';
 import { ViewModeToggle } from '../../../../shared/components/ui/ViewModeToggle';
@@ -197,7 +197,9 @@ export const ExpensesPage = () => {
   const weeklyTrends = (() => {
     const weeks: Record<string, number> = {};
     expenses.forEach(e => {
-      const d = new Date(e.date); const ws = new Date(d); ws.setDate(d.getDate() - d.getDay());
+      // "YYYY-MM-DD"+T00:00:00 fuerza hora local: `new Date(e.date)` a secas se interpreta como UTC
+      // y se corre un día atrás en zonas horarias detrás de UTC (ver ponytail en formatDate/isSameMonth).
+      const d = new Date(`${e.date}T00:00:00`); const ws = new Date(d); ws.setDate(d.getDate() - d.getDay());
       const key = ws.toISOString().slice(0, 10);
       weeks[key] = (weeks[key] ?? 0) + e.amount;
     });
@@ -209,19 +211,13 @@ export const ExpensesPage = () => {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  // Calcular estadísticas en tiempo real
-  const yearlyExpenses = expenses.filter(exp => {
-    const expDate = new Date(exp.date);
-    return exp.status === 'completado' && expDate.getFullYear() === currentYear;
-  });
+  // Calcular estadísticas en tiempo real. Se compara por string ("YYYY-MM-DD"), no con `new Date(...)`:
+  // ese parseo cae en UTC y corre un gasto del día 1 al mes anterior en zonas horarias detrás de UTC
+  // (misma familia de bug que formatDate/isSameMonth) — desalineaba "Este mes" aquí con Inicio/Análisis.
+  const yearlyExpenses = expenses.filter(exp => exp.status === 'completado' && exp.date.slice(0, 4) === String(currentYear));
   const totalYearlyExpense = yearlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-  const monthlyExpenses = expenses.filter(exp => {
-    const expDate = new Date(exp.date);
-    return exp.status === 'completado' && 
-           expDate.getMonth() === currentMonth && 
-           expDate.getFullYear() === currentYear;
-  });
+  const monthlyExpenses = expenses.filter(exp => exp.status === 'completado' && isSameMonth(exp.date, currentYear, currentMonth + 1));
   const totalMonthlyExpense = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
   // Presupuesto vs gasto real del mes en curso, por categoría (solo categorías con presupuesto asignado)
@@ -242,14 +238,9 @@ export const ExpensesPage = () => {
     .filter(cat => cat.budget > 0);
 
   // Calcular mes anterior
-  const previousMonthExpenses = expenses.filter(exp => {
-    const expDate = new Date(exp.date);
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    return exp.status === 'completado' && 
-           expDate.getMonth() === prevMonth && 
-           expDate.getFullYear() === prevYear;
-  });
+  const prevMonth1 = currentMonth === 0 ? 12 : currentMonth; // 1-indexado: currentMonth ya es (mes actual - 1)
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const previousMonthExpenses = expenses.filter(exp => exp.status === 'completado' && isSameMonth(exp.date, prevYear, prevMonth1));
   const totalPreviousMonth = previousMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const monthlyChange = totalPreviousMonth > 0 
     ? ((totalMonthlyExpense - totalPreviousMonth) / totalPreviousMonth) * 100 

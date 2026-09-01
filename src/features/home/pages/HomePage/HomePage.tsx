@@ -155,8 +155,10 @@ export const HomePage = () => {
       const currentMonthKey = now.toISOString().slice(0, 7);
 
       const balance = sumBy(ingresos.map(i => i.monto ?? 0)) - sumBy(gastos.map(g => g.monto ?? 0));
-      const monthlyIncome = sumBy(ingresos.filter(i => i.fecha?.slice(0, 7) === currentMonthKey).map(i => i.monto ?? 0));
-      const monthlyExpenses = sumBy(gastos.filter(g => g.fecha?.slice(0, 7) === currentMonthKey).map(g => g.monto ?? 0));
+      const gastosDelMes = gastos.filter(g => g.fecha?.slice(0, 7) === currentMonthKey);
+      const ingresosDelMes = ingresos.filter(i => i.fecha?.slice(0, 7) === currentMonthKey);
+      const monthlyIncome = sumBy(ingresosDelMes.map(i => i.monto ?? 0));
+      const monthlyExpenses = sumBy(gastosDelMes.map(g => g.monto ?? 0));
       const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
 
       const days = Array.from({ length: 7 }, (_, idx) => {
@@ -192,8 +194,10 @@ export const HomePage = () => {
       const prevSavingsRate = prevMonth && prevMonth.ingresos > 0 ? ((prevMonth.ingresos - prevMonth.gastos) / prevMonth.ingresos) * 100 : 0;
       const savingsRateTrend = savingsRate - prevSavingsRate;
 
+      // Del mes en curso (no histórico): coincide con las tarjetas "Ingresos/Gastos del mes" de arriba
+      // en vez de mezclar todo lo que el cliente registró alguna vez bajo el mismo total.
       const expenseTotals = new Map<number, number>();
-      gastos.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
+      gastosDelMes.forEach(g => { if (g.categoriaId != null) expenseTotals.set(g.categoriaId, (expenseTotals.get(g.categoriaId) ?? 0) + (g.monto ?? 0)); });
       const totalExpenseAmount = sumBy([...expenseTotals.values()]);
       const expensesByCategory: PieItem[] = [...expenseTotals.entries()]
         .map(([catId, amount]) => {
@@ -203,7 +207,7 @@ export const HomePage = () => {
         .sort((a, b) => b.amount - a.amount);
 
       const incomeTotals = new Map<string, number>();
-      ingresos.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotals.set(key, (incomeTotals.get(key) ?? 0) + (i.monto ?? 0)); });
+      ingresosDelMes.forEach(i => { const key = i.fuente || i.tipo || 'Otros'; incomeTotals.set(key, (incomeTotals.get(key) ?? 0) + (i.monto ?? 0)); });
       const totalIncomeAmount = sumBy([...incomeTotals.values()]);
       const incomeBySource: PieItem[] = [...incomeTotals.entries()]
         .map(([name, amount], idx) => ({ name, amount, color: INCOME_PALETTE[idx % INCOME_PALETTE.length], value: totalIncomeAmount > 0 ? Math.round((amount / totalIncomeAmount) * 100) : 0 }))
@@ -238,8 +242,13 @@ export const HomePage = () => {
 
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
       const daysElapsed = now.getDate();
-      const projectedIncome = (monthlyIncome / daysElapsed) * daysInMonth;
-      const projectedExpenses = (monthlyExpenses / daysElapsed) * daysInMonth;
+      // ponytail: con pocos días transcurridos (p. ej. el día 1) extrapolar linealmente dispara la
+      // proyección a niveles absurdos (÷1 × 30). Se limita el factor de extrapolación a 3x; a partir
+      // de ahí "días transcurridos" ya sostiene una estimación razonable. Subir a un promedio móvil
+      // de meses anteriores si se necesita precisión real desde el día 1.
+      const factorProyeccion = Math.min(daysInMonth / daysElapsed, 3);
+      const projectedIncome = monthlyIncome * factorProyeccion;
+      const projectedExpenses = monthlyExpenses * factorProyeccion;
 
       setData({
         balance, monthlyIncome, monthlyExpenses, savingsRate,
@@ -624,7 +633,7 @@ export const HomePage = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">
-                {activePieChart === 'expenses' ? 'Distribución de Gastos' : 'Distribución de Ingresos'}
+                {activePieChart === 'expenses' ? 'Distribución de Gastos (este mes)' : 'Distribución de Ingresos (este mes)'}
               </h3>
               <div className="flex gap-2">
                 <button

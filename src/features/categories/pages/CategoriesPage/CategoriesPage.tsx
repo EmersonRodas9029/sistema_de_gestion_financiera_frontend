@@ -5,7 +5,7 @@ import { getViewPreferences } from '../../../../shared/hooks/useViewPreferences'
 import { clientesService } from '../../../clients/services';
 import { gastosService } from '../../../expenses/services';
 import { getCurrentClientSession } from '../../../../shared/hooks/useCurrentClient';
-import { formatCurrency, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
+import { formatCurrency, isSameMonth, notifyConnectionError, notifyActionError } from '../../../../shared/utils';
 import { ModalOverlay } from '../../../../shared/components/ui/ModalOverlay';
 import { Select } from '../../../../shared/components/ui/Select';
 import { Pagination } from '../../../../shared/components/ui/Pagination';
@@ -69,6 +69,7 @@ interface Category {
   subcategories?: Category[];
   budget?: number;
   spent?: number;
+  spentThisMonth: number;
   transactions: number;
   totalAmount: number;
   isActive: boolean;
@@ -108,6 +109,7 @@ const toCategory = (api: ApiCategoria): Category => ({
   description: api.descripcion,
   budget: api.presupuestoMensual,
   spent: 0,
+  spentThisMonth: 0,
   transactions: 0,
   totalAmount: 0,
   isActive: api.activa ?? true,
@@ -210,19 +212,32 @@ export const CategoriesPage = () => {
         gastosService.getAll(),
       ]);
 
-      // Agregar gastos activos de este cliente por categoriaId
+      // Agregar gastos activos de este cliente por categoriaId (histórico, para "Más usada"/Top 3,
+      // que son de popularidad de uso, no de presupuesto) y por separado solo el mes en curso
+      // (para comparar contra presupuestoMensual, que es una cifra mensual — sumarle el histórico
+      // completo hacía que "% utilizado" solo pudiera crecer con el tiempo y nunca reflejara el mes).
+      const hoy = new Date();
+      const anioActual = hoy.getFullYear();
+      const mesActual = hoy.getMonth() + 1;
       const byCategoria = new Map<number, { spent: number; transactions: number }>();
+      const byCategoriaMes = new Map<number, number>();
       fullGastos.forEach(g => {
         if (g.clienteId !== clienteId || !g.activo) return;
         const id = g.categoriaId!;
         const cur = byCategoria.get(id) ?? { spent: 0, transactions: 0 };
         byCategoria.set(id, { spent: cur.spent + (g.monto ?? 0), transactions: cur.transactions + 1 });
+        if (isSameMonth(g.fecha, anioActual, mesActual)) {
+          byCategoriaMes.set(id, (byCategoriaMes.get(id) ?? 0) + (g.monto ?? 0));
+        }
       });
 
       setCategories(fullCats.map(api => {
         const cat = toCategory(api);
         const agg = byCategoria.get(Number(api.id));
-        return agg ? { ...cat, spent: agg.spent, transactions: agg.transactions, totalAmount: agg.spent } : cat;
+        const spentThisMonth = byCategoriaMes.get(Number(api.id)) ?? 0;
+        return agg
+          ? { ...cat, spent: agg.spent, transactions: agg.transactions, totalAmount: agg.spent, spentThisMonth }
+          : { ...cat, spentThisMonth };
       }));
     } catch (e) {
       console.error('Error cargando categorías:', e);
@@ -700,7 +715,7 @@ export const CategoriesPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <AnimatePresence>
                   {paginatedCategories.map((category) => {
-                    const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                    const budgetPercentage = category.budget ? (category.spentThisMonth / category.budget) * 100 : 0;
                     const isOverBudget = budgetPercentage >= 90;
                     const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
                     return (
@@ -737,11 +752,15 @@ export const CategoriesPage = () => {
                             <span className="text-white font-medium">{category.transactions}</span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-white/50">Total gastado:</span>
+                            <span className="text-white/50">Total gastado (histórico):</span>
                             <span className="text-white font-semibold">{formatCurrency(category.totalAmount)}</span>
                           </div>
                           {category.budget && (
                             <div className="space-y-1">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">Gastado este mes:</span>
+                                <span className="text-white font-medium">{formatCurrency(category.spentThisMonth)}</span>
+                              </div>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-white/50">Presupuesto:</span>
                                 <span className={`font-semibold ${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white'}`}>
@@ -764,8 +783,8 @@ export const CategoriesPage = () => {
                                 <span className={`${isOverBudget ? 'text-rose-400' : isWarning ? 'text-yellow-400' : 'text-white/40'}`}>
                                   {budgetPercentage.toFixed(0)}% utilizado
                                 </span>
-                                <span className={`${(category.budget - (category.spent || 0)) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                                  Restante: {formatCurrency((category.budget - (category.spent || 0)))}
+                                <span className={`${(category.budget - category.spentThisMonth) < 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                                  Restante: {formatCurrency((category.budget - category.spentThisMonth))}
                                 </span>
                               </div>
                             </div>
@@ -805,7 +824,7 @@ export const CategoriesPage = () => {
               <div className="space-y-2">
                 <AnimatePresence>
                   {paginatedCategories.map((category) => {
-                    const budgetPercentage = category.budget ? ((category.spent || 0) / category.budget) * 100 : 0;
+                    const budgetPercentage = category.budget ? (category.spentThisMonth / category.budget) * 100 : 0;
                     const isOverBudget = budgetPercentage >= 90;
                     const isWarning = budgetPercentage >= 70 && budgetPercentage < 90;
                     return (

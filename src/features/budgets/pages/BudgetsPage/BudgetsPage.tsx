@@ -215,13 +215,22 @@ export const BudgetsPage = () => {
   const totalPages = Math.ceil(sortedBudgets.length / itemsPerPage);
   const paginatedBudgets = sortedBudgets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const totalBudget = budgets.reduce((sum, b) => sum + (b.montoPresupuestado ?? 0), 0);
+  // "Presupuesto Total" y la distribución por categoría se limitan al mes/año en curso (igual que
+  // el "Presupuestos X%" de Inicio): antes sumaban TODOS los presupuestos guardados alguna vez,
+  // de cualquier mes e incluso inactivos, así que el total de esta página no coincidía con el que
+  // usa Inicio para calcular el % de uso del presupuesto.
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const budgetsMesActual = budgets.filter(b => b.mes === currentMonth && b.anio === currentYear && b.activo !== false);
+
+  const totalBudget = budgetsMesActual.reduce((sum, b) => sum + (b.montoPresupuestado ?? 0), 0);
   const activeCount = budgets.filter(b => b.activo).length;
   const inactiveCount = budgets.filter(b => !b.activo).length;
 
-  // Distribución por categoría (agrupando los presupuestos por categoriaId)
+  // Distribución por categoría (agrupando los presupuestos del mes en curso por categoriaId)
   const categoryTotals = new Map<string, { nombre: string; total: number; count: number }>();
-  budgets.forEach(b => {
+  budgetsMesActual.forEach(b => {
     const key = b.categoriaId != null ? String(b.categoriaId) : 'sin-categoria';
     const nombre = categoriaNombre(b.clienteId, b.categoriaId);
     const entry = categoryTotals.get(key) ?? { nombre, total: 0, count: 0 };
@@ -285,7 +294,7 @@ export const BudgetsPage = () => {
         <div className="bg-[#101015] rounded-[20px] p-5 border border-white/[0.07] shadow-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="min-w-0">
-              <p className="text-white/50 text-sm font-medium">Presupuesto Total</p>
+              <p className="text-white/50 text-sm font-medium">Presupuesto Total (mes actual)</p>
               <p className="text-2xl font-bold text-white mt-1 tracking-tight break-words">{formatCurrency(totalBudget)}</p>
             </div>
             <div className="shrink-0 p-3 rounded-xl bg-white/10"><Wallet size={24} className="text-[#8A5CF6]" /></div>
